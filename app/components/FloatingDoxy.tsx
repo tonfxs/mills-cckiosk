@@ -56,9 +56,10 @@ export default function FloatingDoxy({
                                 x: lastPosition.x,
                                 y: lastPosition.y,
                             }}
-                            className={`fixed bottom-6 right-6 transition-all duration-500 bg-white shadow-xl border border-gray-200 ${minimized
-                                    ? "w-72 h-72 rounded-xl overflow-hidden cursor-move"
-                                    : "w-[90vw] md:w-[60vw] h-[70vh] rounded-2xl overflow-hidden"
+                            className={`fixed bottom-6 right-6 transition-all duration-500 bg-white shadow-xl border border-gray-200 
+                                ${minimized
+                                    ? "w-60 h-70 rounded-xl overflow-hidden cursor-move"
+                                    : "w-[80vw] md:w-[50vw] h-[40vh] rounded-2xl overflow-hidden"
                                 }`}
                         >
                             {!isLoaded && (

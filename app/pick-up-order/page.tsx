@@ -119,7 +119,7 @@ export default function PickUpOrderForm() {
   };
 
   const getInputClassName = (fieldName: string) => {
-    const baseClass = "w-full px-10 py-8 border-2 rounded-2xl text-3xl placeholder-gray-400 focus:outline-none transition-all";
+    const baseClass = "w-full px-10 py-8 border-2 rounded-2xl text-3xl text-black placeholder-gray-400 focus:outline-none transition-all";
     const hasError = touched[fieldName] && errors[fieldName];
     
     if (hasError) {
@@ -169,7 +169,7 @@ export default function PickUpOrderForm() {
                   className="px-8 py-8 border-2 border-gray-300 rounded-2xl flex items-center gap-4 hover:bg-gray-50"
                 >
                   <span className="text-5xl text-black">🇦🇺</span>
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="black" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
