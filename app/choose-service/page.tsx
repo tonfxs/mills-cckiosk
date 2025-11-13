@@ -70,6 +70,11 @@ import { useRouter } from "next/navigation";
 export default function ChooseService() {
   const router = useRouter();
 
+  const handleConnectToAgent = (e: React.MouseEvent) => {
+    e.preventDefault(); // prevent navigation
+    window.dispatchEvent(new Event("open-doxy")); // 👈 trigger FloatingDoxy
+  };
+
   return (
     <main className="flex flex-col items-center justify-between w-full min-h-screen bg-white px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
       {/* Logo Section */}
@@ -110,18 +115,30 @@ export default function ChooseService() {
           Choose Service
         </h2>
 
-        <a href="/pick-up-order" className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl py-10 sm:py-14 md:py-16 text-2xl sm:text-4xl md:text-5xl lg:text-7xl text-white font-semibold rounded-xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-md hover:opacity-90 transition">
+        <a
+          href="/pick-up-order"
+          className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl py-10 sm:py-14 md:py-16 text-2xl sm:text-4xl md:text-5xl lg:text-7xl text-white font-semibold rounded-xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-md hover:opacity-90 transition"
+        >
           Pick Up Order
         </a>
 
-        <a href="/return-a-product" className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl py-10 sm:py-14 md:py-16 text-2xl sm:text-4xl md:text-5xl lg:text-7xl text-white font-semibold rounded-xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-md hover:opacity-90 transition">
+        <a
+          href="/return-a-product"
+          className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl py-10 sm:py-14 md:py-16 text-2xl sm:text-4xl md:text-5xl lg:text-7xl text-white font-semibold rounded-xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-md hover:opacity-90 transition"
+        >
           Return a Product
         </a>
 
-         <a href="/connect-to-a-live-agent" className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl py-10 sm:py-14 md:py-16 text-2xl sm:text-4xl md:text-5xl lg:text-7xl text-white font-semibold rounded-xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-md hover:opacity-90 transition">
+        {/* 👇 Updated button to trigger FloatingDoxy */}
+        <a
+          href="#"
+          onClick={handleConnectToAgent}
+          className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl py-10 sm:py-14 md:py-16 text-2xl sm:text-4xl md:text-5xl lg:text-7xl text-white font-semibold rounded-xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-md hover:opacity-90 transition"
+        >
           Connect to a Live Agent
         </a>
       </section>
     </main>
   );
 }
+

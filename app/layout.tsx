@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import FloatingDoxy from "@/app/components/FloatingDoxy"; // 👈 import here
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+
+        {/* 👇 Always mounted globally, but hidden until triggered */}
+        <FloatingDoxy doxyUrl="https://doxy.me/testmills" />
       </body>
     </html>
   );
