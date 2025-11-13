@@ -28,10 +28,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+         {/* 👇 Always mounted globally, but hidden until triggered */}
+        <FloatingDoxy doxyUrl="https://doxy.me/testmills" />
         {children}
 
-        {/* 👇 Always mounted globally, but hidden until triggered */}
-        <FloatingDoxy doxyUrl="https://doxy.me/testmills" />
+       
       </body>
     </html>
   );
