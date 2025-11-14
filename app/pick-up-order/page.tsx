@@ -49,7 +49,7 @@ export default function PickUpOrderForm() {
           <h1 className="text-4xl md:text-6xl font-bold text-black">PICK UP ORDER</h1>
 
           <a
-            href="/"
+            href="/choose-service"
             className="p-3 md:p-4 bg-gray-100 rounded-xl md:rounded-2xl hover:bg-gray-200 transition-colors"
           >
             <svg
