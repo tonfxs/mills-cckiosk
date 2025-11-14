@@ -236,8 +236,18 @@ function PickUpOrderForm() {
         {/* Header */}
         <div className="flex justify-between items-center mb-12 md:mb-20">
           <h1 className="text-4xl md:text-6xl font-bold text-black">PICK UP ORDER</h1>
-          <a href="/" className="p-3 md:p-4 bg-gray-100 rounded-xl md:rounded-2xl hover:bg-gray-200 transition-colors">
-            <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="black" viewBox="0 0 24 24" strokeWidth={2.5}>
+
+          <a
+            href="/choose-service"
+            className="p-3 md:p-4 bg-gray-100 rounded-xl md:rounded-2xl hover:bg-gray-200 transition-colors"
+          >
+            <svg
+              className="w-8 h-8 md:w-12 md:h-12"
+              fill="none"
+              stroke="black"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </a>
