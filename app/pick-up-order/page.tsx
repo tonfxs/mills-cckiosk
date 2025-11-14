@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import PickUpConfirmationModal from "../components/PickUpConfirmationModal";
 
 export default function PickUpOrderForm() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,9 @@ export default function PickUpOrderForm() {
     confirmed: false,
   });
 
+  const [showModal, setShowModal] = useState(false);
+
+
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -22,8 +26,11 @@ export default function PickUpOrderForm() {
   };
 
   const handleSubmit = () => {
-    console.log("Form submitted:", formData);
-    alert("Order submitted successfully!");
+    // console.log("Form submitted:", formData);
+    // alert("Order submitted successfully!");
+
+    // Open the modal
+    setShowModal(true);
 
     setFormData({
       fullName: "",
@@ -35,7 +42,10 @@ export default function PickUpOrderForm() {
       carParkBay: "",
       confirmed: false,
     });
+
   };
+
+  const closeModal = () => setShowModal(false);
 
   const inputClass =
     "w-full px-6 md:px-10 py-6 md:py-8 border-2 border-gray-300 rounded-2xl text-2xl md:text-3xl text-black placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all";
@@ -247,6 +257,8 @@ export default function PickUpOrderForm() {
           SUBMIT
         </button>
       </div>
+      {/* PickUp Confirmation Modal */}
+      {showModal && <PickUpConfirmationModal onClose={closeModal} />}
     </div>
   );
 }
