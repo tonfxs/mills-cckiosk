@@ -12,6 +12,7 @@ export default function ReturnAProductForm() {
     carParkBay: "",
     itemDescription:"",
     confirmed: false,
+    heavy: false,
   });
 
   const handleChange = (e: any) => {
@@ -34,6 +35,7 @@ export default function ReturnAProductForm() {
       carParkBay: "",
       itemDescription:"",
       confirmed: false,
+      heavy: false,
     });
 
     const now = new Date();
@@ -82,30 +84,30 @@ export default function ReturnAProductForm() {
 
         {/* Arrival Date + Arrival Time */}
         <div className="flex flex-col md:flex-row gap-8 md:gap-16 mb-10 md:mb-14">
-        
+
           {/* Arrival Date */}
           <div className="flex flex-col w-full">
             <span className="text-xl md:text-3xl font-semibold text-black mb-3">
               Arrival Date:
             </span>
-        
+
             <span className="text-2xl md:text-3xl text-black tracking-wide">
               {formData.arrivalDate || "--/--/----"}
             </span>
           </div>
-        
+
           {/* Arrival Time */}
           <div className="flex flex-col w-full">
             <span className="text-xl md:text-3xl font-semibold text-black mb-3">
               Arrival Time:
             </span>
-        
+
             <span className="text-2xl md:text-3xl text-black tracking-wide">
               {formData.arrivalTime || "--:--"}
             </span>
           </div>
         </div>
-        
+
 
         <div className="mb-6 md:mb-8">
           <input
@@ -142,7 +144,7 @@ export default function ReturnAProductForm() {
           />
         </div>
 
-        <div className="mb-10 md:mb-16">
+        {/* <div className="mb-10 md:mb-16">
           <textarea
             name="itemDescription"
             placeholder="Item Description"
@@ -150,7 +152,70 @@ export default function ReturnAProductForm() {
             onChange={handleChange}
             className={inputClass}
           />
+        </div> */}
+
+        {/* <div className="mb-10 md:mb-12">
+          <label className="flex items-start gap-4 md:gap-6 cursor-pointer">
+            <div className="w-8 h-8 md:w-10 md:h-10 mt-1 border-2 border-gray-300 rounded-lg flex items-center justify-center relative">
+              <input
+                type="button"
+                name="heavy"
+                checked={formData.heavy}
+                onChange={handleChange}
+                className="opacity-0 absolute inset-0"
+              />
+              {formData.confirmed && (
+                <svg
+                  className="w-5 h-5 md:w-7 md:h-7 text-blue-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </div>
+
+            <button className="text-2xl md:text-3xl leading-relaxed text-black">
+              Heavy Item  need assistance/forklift assistance
+            </button>
+          </label>
+        </div> */}
+
+        {/* Heavy Item Toggle */}
+        <div className="mb-10 md:mb-12">
+          <button
+            type="button"
+            onClick={() =>
+              setFormData((prev) => ({ ...prev, heavy: !prev.heavy }))
+            }
+            className="flex items-center gap-4 md:gap-6 cursor-pointer"
+          >
+            <div className="w-8 h-8 md:w-10 md:h-10 border-2 border-gray-300 rounded-lg flex items-center justify-center bg-white">
+              {formData.heavy && (
+                <svg
+                  className="w-5 h-5 md:w-7 md:h-7 text-blue-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </div>
+          
+            <span className="text-2xl md:text-3xl leading-relaxed text-black">
+              Heavy item – need assistance / forklift assistance
+            </span>
+          </button>
         </div>
+
 
         {/* Confirm Checkbox */}
         <div className="mb-10 md:mb-12">
