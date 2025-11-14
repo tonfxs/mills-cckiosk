@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.17.3",
+    "googleapis": "^166.0.0",
     "motion": "^12.23.24",
     "next": "16.0.2",
     "postcss": "^8.5.6",
