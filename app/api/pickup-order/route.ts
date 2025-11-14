@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
-import { PassThrough } from 'stream';
+import { NextRequest, NextResponse } from "next/server";
+import { google } from "googleapis";
+import { supabase } from "@/app/lib/supabase";
 
 // ----------------------------
 // Types
@@ -17,7 +17,7 @@ interface OrderData {
 }
 
 // ----------------------------
-// Google Auth Helper
+// Google Auth Helper (Sheets only)
 // ----------------------------
 async function getGoogleAuth() {
     const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -32,63 +32,30 @@ async function getGoogleAuth() {
             client_email: clientEmail,
             private_key: privateKey,
         },
-        scopes: [
-            "https://www.googleapis.com/auth/drive.file",
-            "https://www.googleapis.com/auth/spreadsheets"
-        ],
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 }
 
-// Give permission to uploaded files
-async function makeFilePublic(drive: any, fileId: string) {
-    await drive.permissions.create({
-        fileId,
-        requestBody: {
-            role: "reader",
-            type: "anyone",
-        },
-    });
-
-    const file = await drive.files.get({
-        fileId,
-        fields: "webViewLink, webContentLink",
-    });
-
-    return file.data.webViewLink;
-}
-
 // ----------------------------
-// Upload File to Google Drive
+// Upload File to Supabase
 // ----------------------------
-async function uploadToDrive(file: File, fileName: string): Promise<string> {
-    const auth = await getGoogleAuth();
-    const drive = google.drive({ version: "v3", auth });
-
+async function uploadToSupabase(file: File, fileName: string): Promise<string> {
+    const bucket = process.env.SUPABASE_BUCKET_NAME!;
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-    if (!folderId) throw new Error("GOOGLE_DRIVE_FOLDER_ID missing");
+    const { error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, buffer, {
+            contentType: file.type,
+            upsert: true,
+        });
 
-    // ---- FIX: Convert buffer → stream ----
-    const stream = new PassThrough();
-    stream.end(buffer);
-    // --------------------------------------
+    if (error) throw new Error("Supabase upload failed: " + error.message);
 
-    const upload = await drive.files.create({
-        requestBody: {
-            name: fileName,
-            parents: [folderId],
-        },
-        media: {
-            mimeType: file.type,
-            body: stream, // ← fixed
-        },
-        fields: "id",
-    });
+    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
 
-    const fileId = upload.data.id!;
-    return await makeFilePublic(drive, fileId);
+    return data.publicUrl;
 }
 
 // ----------------------------
@@ -108,20 +75,22 @@ async function saveToSheet(orderData: OrderData, idUrl: string, cardUrl: string)
         range: "Sheet1!A:K",
         valueInputOption: "USER_ENTERED",
         requestBody: {
-            values: [[
-                timestamp,
-                orderData.fullName,
-                orderData.phone,
-                orderData.orderNumber,
-                orderData.creditCard,
-                orderData.validId,
-                orderData.paymentMethod,
-                orderData.carParkBay,
-                idUrl,
-                cardUrl,
-                "Pending Verification"
-            ]]
-        }
+            values: [
+                [
+                    timestamp,
+                    orderData.fullName,
+                    orderData.phone,
+                    orderData.orderNumber,
+                    orderData.creditCard,
+                    orderData.validId,
+                    orderData.paymentMethod,
+                    orderData.carParkBay,
+                    idUrl,
+                    cardUrl,
+                    "Pending Verification",
+                ],
+            ],
+        },
     });
 }
 
@@ -140,19 +109,25 @@ export async function POST(request: NextRequest) {
             validId: (formData.get("validId") || "").toString(),
             paymentMethod: (formData.get("paymentMethod") || "").toString(),
             carParkBay: (formData.get("carParkBay") || "").toString(),
-            confirmed: formData.get("confirmed") === "true"
+            confirmed: formData.get("confirmed") === "true",
         };
 
         const idScan = formData.get("idScan") as File | null;
         const cardScan = formData.get("creditCardScan") as File | null;
 
         if (!idScan || !cardScan) {
-            return NextResponse.json({ success: false, error: "Images missing" }, { status: 400 });
+            return NextResponse.json(
+                { success: false, error: "Images missing" },
+                { status: 400 }
+            );
         }
 
-        // Upload to Google Drive
-        const idUrl = await uploadToDrive(idScan, `ID-${orderData.orderNumber}.jpg`);
-        const cardUrl = await uploadToDrive(cardScan, `CARD-${orderData.orderNumber}.jpg`);
+        // Upload images to Supabase
+        const idUrl = await uploadToSupabase(idScan, `ID-${orderData.orderNumber}.jpg`);
+        const cardUrl = await uploadToSupabase(
+            cardScan,
+            `CARD-${orderData.orderNumber}.jpg`
+        );
 
         // Save row in Google Sheets
         await saveToSheet(orderData, idUrl, cardUrl);
@@ -161,9 +136,8 @@ export async function POST(request: NextRequest) {
             success: true,
             message: "Order saved",
             idUrl,
-            cardUrl
+            cardUrl,
         });
-
     } catch (err: any) {
         console.error("❌ ERROR:", err);
         return NextResponse.json(
@@ -193,11 +167,11 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Sheet1!A:K"
+            range: "Sheet1!A:K",
         });
 
         const rows = resp.data.values || [];
-        const match = rows.find(row => row[3] === orderNumber);
+        const match = rows.find((row) => row[3] === orderNumber);
 
         if (!match) {
             return NextResponse.json(
@@ -219,10 +193,9 @@ export async function GET(request: NextRequest) {
                 carParkBay: match[7],
                 idUrl: match[8],
                 cardUrl: match[9],
-                status: match[10]
-            }
+                status: match[10],
+            },
         });
-
     } catch (err: any) {
         return NextResponse.json(
             { success: false, error: err.message },
