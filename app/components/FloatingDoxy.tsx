@@ -7,7 +7,7 @@ interface FloatingDoxyProps {
 }
 
 export default function FloatingDoxy({
-    doxyUrl = "https://doxy.me/testmills",
+    doxyUrl = process.env.NEXT_PUBLIC_DOXY_URL,
     autoResetMinutes = 10,
 }: FloatingDoxyProps) {
     const [started, setStarted] = useState(false);
