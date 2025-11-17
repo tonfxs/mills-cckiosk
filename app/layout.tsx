@@ -25,13 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {/* 👇 Always mounted globally, but hidden until triggered */}
-        <FloatingDoxy />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
-
+        <FloatingDoxy />
 
       </body>
     </html>
