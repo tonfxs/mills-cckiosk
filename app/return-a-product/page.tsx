@@ -1,6 +1,8 @@
 "use client";
-import { useState } from 'react';
-import { ChevronRight, Package, CreditCard, FileText } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
+import Link from 'next/link';
+
 
 interface FormData {
   fullName: string;
@@ -138,27 +140,24 @@ export default function ReturnAProductForm() {
       )}
 
       {/* Header */}
-      <div className="bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
+      <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
+
+        <Link href="/choose-service"
+            className="absolute top-6 right-6 
+             backdrop-blur-md bg-white/20 
+             text-white px-8 py-4 rounded-full
+             shadow-xl border border-white/30 
+             text-xl font-semibold
+             hover:bg-white/30 hover:scale-110 
+             transition-all duration-300"
+          >
+            Back to Main Menu
+          </Link>
         <div className="max-w-4xl mx-auto relative">
           <h1 className="text-7xl font-bold mb-2">Return a Product</h1>
           <p className="text-4xl text-blue-100">Mills Click & Collect - Return</p>
-
-          {/* Back Button */}
-          <a
-            href="/choose-service"
-            className="absolute top-0 right-0 w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors shadow-lg"
-          >
-            <svg
-              className="w-10 h-10"
-              fill="none"
-              stroke="black"
-              viewBox="0 0 24 24"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </a>
         </div>
+        
       </div>
 
       {/* Progress Steps */}
