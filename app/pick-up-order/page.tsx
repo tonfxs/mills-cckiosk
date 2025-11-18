@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef } from 'react';
 import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
+import NumberPad from "@/app/components/KioskNumberPad";
+
 
 interface FormData {
   fullName: string;
@@ -290,18 +292,14 @@ export default function PickupKiosk() {
 
                   <div>
                     <label className="block text-2xl font-semibold mb-4 text-gray-700">Last 4 Digits of Credit Card</label>
-                    <input
-                      type="text"
-                      name="creditCard"
-                      maxLength={4}
+                    <NumberPad
                       value={formData.creditCard}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        setFormData(prev => ({ ...prev, creditCard: value }));
-                      }}
-                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none"
-                      placeholder="1234"
+                      onChange={(value: string) =>
+                        setFormData(prev => ({ ...prev, creditCard: value }))
+                      }
+                      maxLength={4}
                     />
+
                     {errors.creditCard && <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>}
                   </div>
                 </div>
@@ -371,8 +369,8 @@ export default function PickupKiosk() {
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, validId: value }))}
                           className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.validId === value
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                             }`}
                         >
                           {label}
@@ -395,8 +393,8 @@ export default function PickupKiosk() {
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, paymentMethod: value }))}
                           className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                             }`}
                         >
                           {label}
@@ -554,8 +552,8 @@ export default function PickupKiosk() {
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
               className={`flex-1 text-3xl font-bold py-6 px-8 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               Continue
@@ -566,8 +564,8 @@ export default function PickupKiosk() {
               onClick={handleSubmit}
               disabled={!canProceed() || isSubmitting}
               className={`flex-1 text-3xl font-bold py-6 px-8 rounded-2xl transition-all ${canProceed() && !isSubmitting
-                  ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
