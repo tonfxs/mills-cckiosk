@@ -243,22 +243,6 @@ export default function PickupKiosk() {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-7xl font-bold mb-2">Pick Up Your Order</h1>
           <p className="text-4xl text-blue-100">Fast & Easy Self-Service</p>
-
-          {/* Back Button */}
-          <a
-            href="/choose-service"
-            className="absolute top-0 right-0 w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            <svg
-              className="w-10 h-10"
-              fill="none"
-              stroke="black"
-              viewBox="0 0 24 24"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </a>
         </div>
       </div>
 
