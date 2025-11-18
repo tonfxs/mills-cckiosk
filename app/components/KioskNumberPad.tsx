@@ -45,7 +45,7 @@ export default function KioskNumberPad({
 
             {/* KEYPAD */}
             <div className="grid grid-cols-3 gap-6 mt-4 text-3xl">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                     <button
                         key={num}
                         onClick={() => addDigit(String(num))}
@@ -55,13 +55,10 @@ export default function KioskNumberPad({
                     </button>
                 ))}
 
-                {/* Delete */}
-                <button
-                    onClick={deleteDigit}
-                    className="bg-red-300 p-6 rounded-xl shadow active:scale-95"
-                >
-                    ←
+                <button>
+
                 </button>
+
 
                 {/* 0 */}
                 <button
@@ -73,16 +70,16 @@ export default function KioskNumberPad({
 
                 {/* Confirm */}
                 <button
-                    onClick={handleSubmit}
-                    disabled={value.length !== maxLength}
+                    onClick={deleteDigit}
+                    disabled={value.length === 0}
                     className={`p-6 rounded-xl shadow active:scale-95 ${value.length === maxLength
-                            ? "bg-green-400"
-                            : "bg-gray-400 opacity-50"
+                        ? "bg-red-400"
+                        : "bg-red-400"
                         }`}
                 >
-                    ✓
+                    ←
                 </button>
             </div>
-        </div>
+        </div >
     );
 }
