@@ -1,10 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { ChevronRight, Package, CreditCard, Car } from 'lucide-react';
-import NumberPad from "@/app/components/KioskNumberPad";
-import SuccessScreen from "@/app/components/SuccessScreen";
-import Link from 'next/link';
-
+import SuccessScreen from '@/app/components/SuccessScreen'
 
 interface FormData {
   fullName: string;
@@ -20,6 +17,61 @@ interface FormData {
 interface Errors {
   [key: string]: string;
 }
+
+// NumberPad Component
+const NumberPad = ({ value, onChange, maxLength }: { value: string; onChange: (value: string) => void; maxLength: number }) => {
+  const handleNumberClick = (num: string) => {
+    if (value.length < maxLength) {
+      onChange(value + num);
+    }
+  };
+
+  const handleBackspace = () => {
+    onChange(value.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    onChange('');
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="text-5xl font-bold text-center p-6 bg-gray-100 rounded-2xl border-4 border-gray-300 min-h-[100px] flex items-center justify-center text-black">
+        {value || '----'}
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+          <button
+            key={num}
+            onClick={() => handleNumberClick(num.toString())}
+            className="text-4xl font-bold p-8 bg-white border-4 border-gray-300 rounded-2xl hover:bg-blue-50 hover:border-blue-400 transition-all"
+          >
+            {num}
+          </button>
+        ))}
+        <button
+          onClick={handleClear}
+          className="text-3xl font-bold p-8 bg-red-100 border-4 border-red-300 rounded-2xl hover:bg-red-200 transition-all"
+        >
+          Clear
+        </button>
+        <button
+          onClick={() => handleNumberClick('0')}
+          className="text-4xl font-bold p-8 bg-white border-4 border-gray-300 rounded-2xl hover:bg-blue-50 hover:border-blue-400 transition-all"
+        >
+          0
+        </button>
+        <button
+          onClick={handleBackspace}
+          className="text-3xl font-bold p-8 bg-yellow-100 border-4 border-yellow-300 rounded-2xl hover:bg-yellow-200 transition-all"
+        >
+          ← Del
+        </button>
+      </div>
+    </div>
+  );
+};
+
 
 export default function PickupKiosk() {
   const [step, setStep] = useState(1);
@@ -37,6 +89,7 @@ export default function PickupKiosk() {
 
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -47,6 +100,8 @@ export default function PickupKiosk() {
       ...prev,
       [fieldName]: type === "checkbox" ? checked : value,
     }));
+
+    // Clear errors when user starts typing
     if (errors[fieldName]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -54,37 +109,111 @@ export default function PickupKiosk() {
         return newErrors;
       });
     }
+
+    // Clear step validation errors
+    if (stepValidationErrors.length > 0) {
+      setStepValidationErrors([]);
+    }
+  };
+
+  const validateStep = (stepNumber: number): string[] => {
+    const stepErrors: string[] = [];
+
+    switch (stepNumber) {
+      case 1:
+        if (!formData.orderNumber.trim()) {
+          stepErrors.push("Order number is required");
+        }
+        if (!formData.creditCard.trim()) {
+          stepErrors.push("Last 4 digits of credit card are required");
+        } else if (formData.creditCard.length !== 4) {
+          stepErrors.push("Credit card must be exactly 4 digits");
+        } else if (!/^\d{4}$/.test(formData.creditCard)) {
+          stepErrors.push("Credit card must contain only numbers");
+        }
+        break;
+      case 2:
+        if (!formData.fullName.trim()) {
+          stepErrors.push("Full name is required");
+        }
+        if (!formData.phone.trim()) {
+          stepErrors.push("Phone number is required");
+        } else if (formData.phone.replace(/\s/g, '').length <= 10) {
+          stepErrors.push("Phone number must be at least 10 digits");
+        }
+        break;
+      case 3:
+        if (!formData.validId) {
+          stepErrors.push("Please select a valid ID type");
+        }
+        if (!formData.paymentMethod) {
+          stepErrors.push("Please select a payment method");
+        }
+        break;
+      case 4:
+        if (!formData.carParkBay.trim()) {
+          stepErrors.push("Car park bay number is required");
+        }
+        if (!formData.confirmed) {
+          stepErrors.push("You must confirm that all information is accurate");
+        }
+        break;
+    }
+
+    return stepErrors;
   };
 
   const canProceed = () => {
-    switch (step) {
-      case 1: return formData.orderNumber && formData.creditCard;
-      case 2: return formData.fullName && formData.phone;
-      case 3: return formData.validId && formData.paymentMethod;
-      case 4: return formData.confirmed && formData.carParkBay;
-      default: return false;
+    const stepErrors = validateStep(step);
+    return stepErrors.length === 0;
+  };
+
+  const handleContinue = () => {
+    const stepErrors = validateStep(step);
+
+    if (stepErrors.length > 0) {
+      setStepValidationErrors(stepErrors);
+      alert("Please correct the following before continuing:\n\n• " + stepErrors.join("\n• "));
+      return;
     }
+
+    setStepValidationErrors([]);
+    setStep(step + 1);
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setErrors({});
+    // Final validation before submission
+    const allErrors: string[] = [];
 
-    const newErrors: Errors = {};
-    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-    if (!formData.orderNumber.trim()) newErrors.orderNumber = "Order number is required";
-    if (!formData.creditCard.trim()) newErrors.creditCard = "Last 4 digits are required";
-    if (!formData.validId) newErrors.validId = "Please select a valid ID";
-    if (!formData.paymentMethod) newErrors.paymentMethod = "Please select a payment method";
-    if (!formData.carParkBay.trim()) newErrors.carParkBay = "Car park bay is required";
-    if (!formData.confirmed) newErrors.confirmed = "You must confirm the data";
+    if (!formData.fullName.trim()) allErrors.push("Full name is required");
+    if (!formData.phone.trim()) {
+      allErrors.push("Phone number is required");
+    } else if (formData.phone.replace(/\s/g, '').length < 9) {
+      allErrors.push("Phone number must be at least 9 digits");
+    }
+    if (!formData.orderNumber.trim()) allErrors.push("Order number is required");
+    if (!formData.creditCard.trim()) {
+      allErrors.push("Last 4 digits of credit card are required");
+    } else if (formData.creditCard.length !== 4) {
+      allErrors.push("Credit card must be exactly 4 digits");
+    } else if (!/^\d{4}$/.test(formData.creditCard)) {
+      allErrors.push("Credit card must contain only numbers");
+    }
+    if (!formData.validId) allErrors.push("Please select a valid ID");
+    if (!formData.paymentMethod) allErrors.push("Please select a payment method");
+    if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
+    if (!formData.confirmed) allErrors.push("You must confirm the data");
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (allErrors.length > 0) {
+      setStepValidationErrors(allErrors);
+      alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
       setIsSubmitting(false);
       return;
     }
+
+    setIsSubmitting(true);
+    setErrors({});
+    setStepValidationErrors([]);
 
     try {
       const formDataToSend = new FormData();
@@ -103,6 +232,8 @@ export default function PickupKiosk() {
       if (!response.ok) {
         if (result.errors) {
           setErrors(result.errors);
+          const errorMessages = Object.values(result.errors).join("\n• ");
+          alert("Submission failed:\n\n• " + errorMessages);
         } else {
           alert(result.error || "Submission failed");
         }
@@ -140,17 +271,18 @@ export default function PickupKiosk() {
 
       {/* Header */}
       <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-30">
-        <Link href="/choose-service"
-            className="absolute top-6 right-6 
-             backdrop-blur-md bg-white/20 
-             text-white px-8 py-4 rounded-full
-             shadow-xl border border-white/30 
-             text-xl font-semibold
-             hover:bg-white/30 hover:scale-110 
-             transition-all duration-300"
-          >
-            Back to Main Menu
-          </Link>
+        <button
+          onClick={() => window.location.href = "/choose-service"}
+          className="absolute top-6 right-6 
+           backdrop-blur-md bg-white/20 
+           text-white px-8 py-4 rounded-full
+           shadow-xl border border-white/30 
+           text-xl font-semibold
+           hover:bg-white/30 hover:scale-110 
+           transition-all duration-300"
+        >
+          Back to Main Menu
+        </button>
         <div className="max-w-4xl mx-auto">
           <h1 className="text-7xl font-bold mb-2">Pick Up Your Order</h1>
           <p className="text-4xl text-blue-100">Fast & Easy Self-Service</p>
@@ -183,6 +315,20 @@ export default function PickupKiosk() {
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
 
+          {/* Validation Errors Alert */}
+          {stepValidationErrors.length > 0 && (
+            <div className="mb-6 bg-red-50 border-4 border-red-500 rounded-2xl p-8">
+              <h3 className="text-3xl font-bold text-red-700 mb-4">⚠️ Please Fix These Issues:</h3>
+              <ul className="list-disc list-inside space-y-2">
+                {stepValidationErrors.map((error, index) => (
+                  <li key={index} className="text-2xl text-red-600 font-semibold">
+                    {error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Step 1: Verify Order */}
           {step === 1 && (
             <div className="space-y-6">
@@ -207,12 +353,16 @@ export default function PickupKiosk() {
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">Last 4 Digits of Credit Card</label>
                     <NumberPad
                       value={formData.creditCard}
-                      onChange={(value: string) =>
-                        setFormData(prev => ({ ...prev, creditCard: value }))
-                      }
+                      onChange={(value: string) => {
+                        setFormData(prev => ({ ...prev, creditCard: value }));
+                        if (stepValidationErrors.length > 0) {
+                          setStepValidationErrors([]);
+                        }
+                      }}
                       maxLength={4}
                     />
                     {errors.creditCard && <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>}
+                    <p className="text-gray-500 text-2xl mt-2">Must be exactly 4 digits</p>
                   </div>
                 </div>
               </div>
@@ -280,7 +430,12 @@ export default function PickupKiosk() {
                         <button
                           key={value}
                           type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, validId: value }))}
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, validId: value }));
+                            if (stepValidationErrors.length > 0) {
+                              setStepValidationErrors([]);
+                            }
+                          }}
                           className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.validId === value
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
@@ -305,7 +460,12 @@ export default function PickupKiosk() {
                         <button
                           key={value}
                           type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, paymentMethod: value }))}
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, paymentMethod: value }));
+                            if (stepValidationErrors.length > 0) {
+                              setStepValidationErrors([]);
+                            }
+                          }}
                           className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
@@ -354,7 +514,7 @@ export default function PickupKiosk() {
                 <div className="mb-8">
                   <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
                   <input
-                    type="number"
+                    type="text"
                     name="carParkBay"
                     value={formData.carParkBay}
                     onChange={handleChange}
@@ -398,8 +558,7 @@ export default function PickupKiosk() {
 
           {step < 4 ? (
             <button
-              onClick={() => setStep(step + 1)}
-              disabled={!canProceed()}
+              onClick={handleContinue}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
                 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'

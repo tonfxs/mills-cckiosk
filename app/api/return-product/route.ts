@@ -37,25 +37,34 @@ async function getGoogleAuth() {
 // Save to Google Sheets
 // ----------------------------
 async function saveToSheet(returnData: ReturnData) {
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID; // Same sheet as pickups
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     if (!spreadsheetId) throw new Error("GOOGLE_SHEET_ID missing");
 
     const auth = await getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Format timestamp as DD/MM/YYYY HH:MM:SS
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timestamp = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    function getAustraliaTimestamp() {
+        const now = new Date();
+
+        const australiaTime = new Intl.DateTimeFormat("en-AU", {
+            timeZone: "Australia/Sydney",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+        }).format(now);
+
+        return australiaTime.replace(",", "");
+    }
+
+    const timestamp = getAustraliaTimestamp();
 
     await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: "Returns!A:H", // Different tab: "Returns"
+        range: "Returns!A:H",
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -67,12 +76,13 @@ async function saveToSheet(returnData: ReturnData) {
                     returnData.carParkBay,
                     returnData.itemIsHeavy ? "Yes" : "No",
                     returnData.confirmed ? "Yes" : "No",
-                    "Pending Pickup", // Status column
+                    "Pending Pickup",
                 ],
             ],
         },
     });
 }
+
 
 // ----------------------------
 // POST — Handle Return Form Submit
