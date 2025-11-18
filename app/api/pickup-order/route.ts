@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
-import { supabase } from "@/app/lib/supabase";
 
 // ----------------------------
 // Types
@@ -17,14 +16,14 @@ interface OrderData {
 }
 
 // ----------------------------
-// Google Auth Helper (Sheets only)
+// Google Auth
 // ----------------------------
 async function getGoogleAuth() {
     const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
     const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 
     if (!clientEmail || !privateKey) {
-        throw new Error("Missing GOOGLE credentials");
+        throw new Error("Missing Google credentials");
     }
 
     return new google.auth.GoogleAuth({
@@ -37,50 +36,27 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Upload File to Supabase
-// ----------------------------
-async function uploadToSupabase(file: File, fileName: string): Promise<string> {
-    const bucket = process.env.SUPABASE_BUCKET_NAME!;
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const { error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, buffer, {
-            contentType: file.type,
-            upsert: true,
-        });
-
-    if (error) throw new Error("Supabase upload failed: " + error.message);
-
-    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
-
-    return data.publicUrl;
-}
-
-// ----------------------------
 // Save to Google Sheets
 // ----------------------------
-async function saveToSheet(orderData: OrderData, idUrl: string, cardUrl: string) {
+async function saveToSheet(orderData: OrderData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     if (!spreadsheetId) throw new Error("GOOGLE_SHEET_ID missing");
 
     const auth = await getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Format timestamp as DD/MM/YYYY HH:MM:SS
     const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timestamp = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    const timestamp =
+        now.toLocaleDateString("en-AU") + " " + now.toLocaleTimeString("en-AU", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+        });
 
     await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: "Pickups!A:K",
+        range: "Pickupsv1!A:I",
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -89,63 +65,41 @@ async function saveToSheet(orderData: OrderData, idUrl: string, cardUrl: string)
                     orderData.fullName,
                     orderData.phone,
                     orderData.orderNumber,
-                    "'" + orderData.creditCard,
+                    "'" + orderData.creditCard, // <-- FIX HERE
                     orderData.validId,
                     orderData.paymentMethod,
                     orderData.carParkBay,
-                    idUrl,
-                    cardUrl,
                     "Pending Verification",
                 ],
             ],
-
         },
     });
 }
 
+
 // ----------------------------
-// POST — Handle Form Submit
+// POST — Save Order
 // ----------------------------
 export async function POST(request: NextRequest) {
     try {
-        const formData = await request.formData();
+        const form = await request.formData();
 
         const orderData: OrderData = {
-            fullName: (formData.get("fullName") || "").toString(),
-            phone: (formData.get("phone") || "").toString(),
-            orderNumber: (formData.get("orderNumber") || "").toString(),
-            creditCard: (formData.get("creditCard") || "").toString(),
-            validId: (formData.get("validId") || "").toString(),
-            paymentMethod: (formData.get("paymentMethod") || "").toString(),
-            carParkBay: (formData.get("carParkBay") || "").toString(),
-            confirmed: formData.get("confirmed") === "true",
+            fullName: String(form.get("fullName") || ""),
+            phone: String(form.get("phone") || ""),
+            orderNumber: String(form.get("orderNumber") || ""),
+            creditCard: String(form.get("creditCard") || ""),
+            validId: String(form.get("validId") || ""),
+            paymentMethod: String(form.get("paymentMethod") || ""),
+            carParkBay: String(form.get("carParkBay") || ""),
+            confirmed: form.get("confirmed") === "true",
         };
 
-        const idScan = formData.get("idScan") as File | null;
-        const cardScan = formData.get("creditCardScan") as File | null;
-
-        if (!idScan || !cardScan) {
-            return NextResponse.json(
-                { success: false, error: "Images missing" },
-                { status: 400 }
-            );
-        }
-
-        // Upload images to Supabase
-        const idUrl = await uploadToSupabase(idScan, `ID-${orderData.orderNumber}.jpg`);
-        const cardUrl = await uploadToSupabase(
-            cardScan,
-            `CARD-${orderData.orderNumber}.jpg`
-        );
-
-        // Save row in Google Sheets
-        await saveToSheet(orderData, idUrl, cardUrl);
+        await saveToSheet(orderData);
 
         return NextResponse.json({
             success: true,
             message: "Order saved",
-            idUrl,
-            cardUrl,
         });
     } catch (err: any) {
         console.error("❌ ERROR:", err);
@@ -157,7 +111,7 @@ export async function POST(request: NextRequest) {
 }
 
 // ----------------------------
-// GET — Fetch Order
+// GET — Fetch by Order Number
 // ----------------------------
 export async function GET(request: NextRequest) {
     try {
@@ -176,7 +130,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Pickups!A:K",
+            range: "Pickupsv1A:I",
         });
 
         const rows = resp.data.values || [];
@@ -200,9 +154,8 @@ export async function GET(request: NextRequest) {
                 validId: match[5],
                 paymentMethod: match[6],
                 carParkBay: match[7],
-                idUrl: match[8],
-                cardUrl: match[9],
-                status: match[10],
+                confirmed: match[8],
+                status: match[9],
             },
         });
     } catch (err: any) {
