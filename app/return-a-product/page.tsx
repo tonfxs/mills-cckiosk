@@ -83,7 +83,7 @@ export default function ReturnAProductForm() {
         formDataToSend.append(key, formData[fieldKey].toString());
       });
 
-      const response = await fetch("/api/return-order", {
+      const response = await fetch("/api/return-product", {
         method: "POST",
         body: formDataToSend,
       });
