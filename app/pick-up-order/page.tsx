@@ -1,6 +1,6 @@
 "use client";
-import { useState, useRef } from 'react';
-import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronRight, Package, CreditCard, Car } from 'lucide-react';
 import NumberPad from "@/app/components/KioskNumberPad";
 import SuccessScreen from "@/app/components/SuccessScreen";
 
@@ -13,16 +13,6 @@ interface FormData {
   paymentMethod: string;
   carParkBay: string;
   confirmed: boolean;
-}
-
-interface Scans {
-  idScan: File | null;
-  creditCardScan: File | null;
-}
-
-interface Previews {
-  idScan: string;
-  creditCardScan: string;
 }
 
 interface Errors {
@@ -43,23 +33,8 @@ export default function PickupKiosk() {
     confirmed: false,
   });
 
-  const [scans, setScans] = useState<Scans>({
-    idScan: null,
-    creditCardScan: null,
-  });
-
-  const [previews, setPreviews] = useState<Previews>({
-    idScan: "",
-    creditCardScan: "",
-  });
-
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCamera, setShowCamera] = useState<"id" | "card" | null>(null);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -79,70 +54,11 @@ export default function PickupKiosk() {
     }
   };
 
-  const startCamera = async (type: "id" | "card") => {
-    setShowCamera(type);
-
-    setTimeout(async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-      } catch (err) {
-        console.error("Error accessing camera:", err);
-        alert("Could not access camera. Please check permissions.");
-        setShowCamera(null);
-      }
-    }, 100);
-  };
-
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current || !showCamera) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
-
-    if (!context) return;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0);
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-
-      const file = new File([blob], `${showCamera}_scan.jpg`, { type: "image/jpeg" });
-      const scanKey = showCamera === "id" ? "idScan" : "creditCardScan";
-
-      setScans((prev) => ({ ...prev, [scanKey]: file }));
-      setPreviews((prev) => ({ ...prev, [scanKey]: canvas.toDataURL() }));
-
-      stopCamera();
-    }, "image/jpeg", 0.9);
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    setShowCamera(null);
-  };
-
   const canProceed = () => {
     switch (step) {
       case 1: return formData.orderNumber && formData.creditCard;
       case 2: return formData.fullName && formData.phone;
-      case 3: return formData.validId && formData.paymentMethod && scans.idScan && scans.creditCardScan;
+      case 3: return formData.validId && formData.paymentMethod;
       case 4: return formData.confirmed && formData.carParkBay;
       default: return false;
     }
@@ -161,8 +77,6 @@ export default function PickupKiosk() {
     if (!formData.paymentMethod) newErrors.paymentMethod = "Please select a payment method";
     if (!formData.carParkBay.trim()) newErrors.carParkBay = "Car park bay is required";
     if (!formData.confirmed) newErrors.confirmed = "You must confirm the data";
-    if (!scans.idScan) newErrors.idScan = "ID scan is required";
-    if (!scans.creditCardScan) newErrors.creditCardScan = "Credit card scan is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -176,9 +90,6 @@ export default function PickupKiosk() {
         const fieldKey = key as keyof FormData;
         formDataToSend.append(key, formData[fieldKey].toString());
       });
-
-      if (scans.idScan) formDataToSend.append("idScan", scans.idScan);
-      if (scans.creditCardScan) formDataToSend.append("creditCardScan", scans.creditCardScan);
 
       const response = await fetch("/api/pickup-order", {
         method: "POST",
@@ -255,7 +166,7 @@ export default function PickupKiosk() {
           {[
             { num: 1, label: 'Verify Order', icon: Package },
             { num: 2, label: 'Contact Info', icon: CreditCard },
-            { num: 3, label: 'Scan Documents', icon: FileText },
+            { num: 3, label: 'ID & Payment', icon: CreditCard },
             { num: 4, label: 'Confirm', icon: Car }
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
@@ -304,7 +215,6 @@ export default function PickupKiosk() {
                       }
                       maxLength={4}
                     />
-
                     {errors.creditCard && <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>}
                   </div>
                 </div>
@@ -354,7 +264,7 @@ export default function PickupKiosk() {
             </div>
           )}
 
-          {/* Step 3: Scan Documents */}
+          {/* Step 3: ID & Payment */}
           {step === 3 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
@@ -409,46 +319,6 @@ export default function PickupKiosk() {
                       ))}
                     </div>
                     {errors.paymentMethod && <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>}
-                  </div>
-
-                  {/* ID Scan */}
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4 text-gray-700">Scan Valid ID</h3>
-                    <button
-                      type="button"
-                      onClick={() => startCamera("id")}
-                      className="flex items-center gap-4 px-8 py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-2xl transition shadow-lg"
-                    >
-                      <Camera size={32} />
-                      Take Photo of ID
-                    </button>
-                    {previews.idScan && (
-                      <div className="mt-4">
-                        <img src={previews.idScan} alt="ID Preview" className="max-w-md rounded-2xl border-4 border-green-500 shadow-lg" />
-                        <p className="text-green-600 text-xl font-semibold mt-2">✓ ID Captured</p>
-                      </div>
-                    )}
-                    {errors.idScan && <p className="text-red-600 text-xl mt-2">{errors.idScan}</p>}
-                  </div>
-
-                  {/* Credit Card Scan */}
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4 text-gray-700">Scan Credit Card</h3>
-                    <button
-                      type="button"
-                      onClick={() => startCamera("card")}
-                      className="flex items-center gap-4 px-8 py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-2xl transition shadow-lg"
-                    >
-                      <Camera size={32} />
-                      Take Photo of Card
-                    </button>
-                    {previews.creditCardScan && (
-                      <div className="mt-4">
-                        <img src={previews.creditCardScan} alt="Card Preview" className="max-w-md rounded-2xl border-4 border-green-500 shadow-lg" />
-                        <p className="text-green-600 text-xl font-semibold mt-2">✓ Card Captured</p>
-                      </div>
-                    )}
-                    {errors.creditCardScan && <p className="text-red-600 text-xl mt-2">{errors.creditCardScan}</p>}
                   </div>
                 </div>
               </div>
@@ -516,31 +386,6 @@ export default function PickupKiosk() {
 
         </div>
       </div>
-
-      {/* Camera Modal */}
-      {showCamera && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-4xl w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-3xl font-bold text-gray-800">
-                {showCamera === "id" ? "Scan Your ID" : "Scan Your Credit Card"}
-              </h3>
-              <button onClick={stopCamera} className="text-4xl hover:text-red-600 text-gray-800 font-bold">
-                ✕
-              </button>
-            </div>
-            <video ref={videoRef} autoPlay playsInline className="w-full rounded-2xl mb-6 bg-black" />
-            <canvas ref={canvasRef} className="hidden" />
-            <button
-              onClick={capturePhoto}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-3xl py-6 rounded-2xl transition shadow-lg flex items-center justify-center gap-4"
-            >
-              <Camera size={40} />
-              Capture Photo
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Bottom Navigation */}
       <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg px-10 py-20">
