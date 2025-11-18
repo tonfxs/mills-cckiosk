@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
 import NumberPad from "@/app/components/KioskNumberPad";
+import Link from 'next/link';
 
 
 interface FormData {
@@ -237,7 +238,18 @@ export default function PickupKiosk() {
       )}
 
       {/* Header */}
-      <div className="bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
+      <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-30">
+        <Link href="/choose-service"
+            className="absolute top-6 right-6 
+             backdrop-blur-md bg-white/20 
+             text-white px-8 py-4 rounded-full
+             shadow-xl border border-white/30 
+             text-xl font-semibold
+             hover:bg-white/30 hover:scale-110 
+             transition-all duration-300"
+          >
+            Back to Main Menu
+          </Link>
         <div className="max-w-4xl mx-auto">
           <h1 className="text-7xl font-bold mb-2">Pick Up Your Order</h1>
           <p className="text-4xl text-blue-100">Fast & Easy Self-Service</p>
