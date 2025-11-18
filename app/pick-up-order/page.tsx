@@ -235,10 +235,10 @@ export default function PickupKiosk() {
       )}
 
       {/* Header */}
-      <div className="bg-blue-600 text-white p-8 shadow-lg">
+      <div className="bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-bold mb-2">Pick Up Your Order</h1>
-          <p className="text-2xl text-blue-100">Fast & Easy Self-Service</p>
+          <h1 className="text-7xl font-bold mb-2">Pick Up Your Order</h1>
+          <p className="text-4xl text-blue-100">Fast & Easy Self-Service</p>
         </div>
       </div>
 
@@ -272,24 +272,24 @@ export default function PickupKiosk() {
           {step === 1 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
-                <h2 className="text-4xl font-bold mb-8 text-gray-800">Enter Your Order Details</h2>
+                <h2 className="text-5xl font-bold mb-8 text-gray-800">Enter Your Order Details</h2>
 
-                <div className="space-y-6">
+                <div className="space-y-10">
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Order Number</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Order Number</label>
                     <input
                       type="text"
                       name="orderNumber"
                       value={formData.orderNumber}
                       onChange={handleChange}
-                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="e.g., ORD-12345"
                     />
                     {errors.orderNumber && <p className="text-red-600 text-xl mt-2">{errors.orderNumber}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Last 4 Digits of Credit Card</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Last 4 Digits of Credit Card</label>
                     <input
                       type="text"
                       name="creditCard"
@@ -299,7 +299,7 @@ export default function PickupKiosk() {
                         const value = e.target.value.replace(/\D/g, '');
                         setFormData(prev => ({ ...prev, creditCard: value }));
                       }}
-                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="1234"
                     />
                     {errors.creditCard && <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>}
@@ -323,7 +323,7 @@ export default function PickupKiosk() {
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
-                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="John Smith"
                     />
                     {errors.fullName && <p className="text-red-600 text-xl mt-2">{errors.fullName}</p>}
@@ -332,15 +332,15 @@ export default function PickupKiosk() {
                   <div>
                     <label className="block text-2xl font-semibold mb-4 text-gray-700">Phone Number</label>
                     <div className="flex gap-4">
-                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50">
-                        🇦🇺 AU
+                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
+                        AU
                       </div>
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none"
+                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                         placeholder="412 345 678"
                       />
                     </div>
@@ -364,7 +364,8 @@ export default function PickupKiosk() {
                       {[
                         { value: 'drivers-license', label: "Driver's License" },
                         { value: 'passport', label: 'Passport' },
-                        { value: 'national-id', label: 'National ID' }
+                        { value: 'medicare-card', label: 'Medicare Card' },
+                        { value: 'immicard', label: 'ImmiCard' }
                       ].map(({ value, label }) => (
                         <button
                           key={value}
@@ -388,7 +389,8 @@ export default function PickupKiosk() {
                       {[
                         { value: 'credit-card', label: 'Credit Card' },
                         { value: 'debit-card', label: 'Debit Card' },
-                        { value: 'cash', label: 'Cash' }
+                        { value: 'cash', label: 'Cash' },
+                        { value: 'others', label: 'Others' }
                       ].map(({ value, label }) => (
                         <button
                           key={value}
@@ -459,48 +461,48 @@ export default function PickupKiosk() {
                 <div className="space-y-4 mb-8 bg-gray-50 p-8 rounded-2xl">
                   <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Order Number:</span>
-                    <span className="font-bold">{formData.orderNumber}</span>
+                    <span className="font-bold text-black">{formData.orderNumber}</span>
                   </div>
                   <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
-                    <span className="font-bold">{formData.fullName}</span>
+                    <span className="font-bold text-black">{formData.fullName}</span>
                   </div>
                   <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Phone:</span>
-                    <span className="font-bold">{formData.phone}</span>
+                    <span className="font-bold text-black">{formData.phone}</span>
                   </div>
                   <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">ID Type:</span>
-                    <span className="font-bold capitalize">{formData.validId.replace('-', ' ')}</span>
+                    <span className="font-bold capitalize text-black">{formData.validId.replace('-', ' ')}</span>
                   </div>
                   <div className="flex justify-between text-2xl">
                     <span className="font-semibold text-gray-600">Payment:</span>
-                    <span className="font-bold capitalize">{formData.paymentMethod.replace('-', ' ')}</span>
+                    <span className="font-bold capitalize text-black">{formData.paymentMethod.replace('-', ' ')}</span>
                   </div>
                 </div>
 
                 <div className="mb-8">
                   <label className="block text-2xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
                   <input
-                    type="text"
+                    type="number"
                     name="carParkBay"
                     value={formData.carParkBay}
                     onChange={handleChange}
-                    className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none"
+                    className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                     placeholder="e.g., Bay 15"
                   />
                   {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
                 </div>
 
-                <label className="flex items-start gap-6 p-6 bg-yellow-50 border-4 border-yellow-300 rounded-2xl cursor-pointer">
+                <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                   <input
                     type="checkbox"
                     name="confirmed"
                     checked={formData.confirmed}
                     onChange={handleChange}
-                    className="w-10 h-10 mt-1"
+                    className="w-12 h-12 mt-1"
                   />
-                  <span className="text-2xl font-semibold text-gray-800">
+                  <span className="text-3xl font-semibold text-gray-800">
                     I confirm that all provided information is accurate and valid
                   </span>
                 </label>
@@ -538,12 +540,12 @@ export default function PickupKiosk() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg">
+      <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto flex gap-6">
           {step > 1 && (
             <button
               onClick={() => setStep(step - 1)}
-              className="flex-1 text-3xl font-bold py-6 px-8 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all"
+              className="flex-1 text-4xl font-bold py-8 px-10 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all"
             >
               ← Back
             </button>
@@ -553,7 +555,7 @@ export default function PickupKiosk() {
             <button
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
-              className={`flex-1 text-3xl font-bold py-6 px-8 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
                   ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
@@ -565,7 +567,7 @@ export default function PickupKiosk() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || isSubmitting}
-              className={`flex-1 text-3xl font-bold py-6 px-8 rounded-2xl transition-all ${canProceed() && !isSubmitting
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting
                   ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
