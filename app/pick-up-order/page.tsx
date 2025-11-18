@@ -291,7 +291,7 @@ export default function PickupKiosk() {
                   </div>
 
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Last 4 Digits of Credit Card</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Last 4 Digits of Credit Card</label>
                     <NumberPad
                       value={formData.creditCard}
                       onChange={(value: string) =>
@@ -454,39 +454,39 @@ export default function PickupKiosk() {
           {step === 4 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
-                <h2 className="text-4xl font-bold mb-8 text-gray-800">Review & Confirm</h2>
+                <h2 className="text-6xl font-bold mb-8 text-gray-800">Review & Confirm</h2>
 
                 <div className="space-y-4 mb-8 bg-gray-50 p-8 rounded-2xl">
-                  <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
+                  <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Order Number:</span>
                     <span className="font-bold text-black">{formData.orderNumber}</span>
                   </div>
-                  <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
+                  <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
                     <span className="font-bold text-black">{formData.fullName}</span>
                   </div>
-                  <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
+                  <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Phone:</span>
                     <span className="font-bold text-black">{formData.phone}</span>
                   </div>
-                  <div className="flex justify-between text-2xl border-b border-gray-200 pb-4">
+                  <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">ID Type:</span>
                     <span className="font-bold capitalize text-black">{formData.validId.replace('-', ' ')}</span>
                   </div>
-                  <div className="flex justify-between text-2xl">
+                  <div className="flex justify-between text-4xl">
                     <span className="font-semibold text-gray-600">Payment:</span>
                     <span className="font-bold capitalize text-black">{formData.paymentMethod.replace('-', ' ')}</span>
                   </div>
                 </div>
 
                 <div className="mb-8">
-                  <label className="block text-2xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
+                  <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
                   <input
                     type="number"
                     name="carParkBay"
                     value={formData.carParkBay}
                     onChange={handleChange}
-                    className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                    className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                     placeholder="e.g., Bay 15"
                   />
                   {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}

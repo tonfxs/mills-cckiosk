@@ -36,7 +36,7 @@ export default function KioskNumberPad({
                 {Array.from({ length: maxLength }).map((_, i) => (
                     <div
                         key={i}
-                        className="h-14 w-12 border-b-4 border-gray-600 text-center"
+                        className="h-14 w-12 border-b-4 border-gray-600 text-center text-black"
                     >
                         {value[i] ? "•" : ""}
                     </div>
@@ -49,38 +49,31 @@ export default function KioskNumberPad({
                     <button
                         key={num}
                         onClick={() => addDigit(String(num))}
-                        className="bg-gray-200 p-6 rounded-xl shadow active:scale-95"
+                        className="bg-gray-700 p-6 rounded-xl shadow active:scale-95"
                     >
                         {num}
                     </button>
                 ))}
 
-                {/* Delete */}
-                <button
-                    onClick={deleteDigit}
-                    className="bg-red-300 p-6 rounded-xl shadow active:scale-95"
-                >
-                    ←
-                </button>
-
-                {/* 0 */}
-                <button
-                    onClick={() => addDigit("0")}
-                    className="bg-gray-200 p-6 rounded-xl shadow active:scale-95"
-                >
-                    0
-                </button>
 
                 {/* Confirm */}
-                <button
+                {/* <button
                     onClick={handleSubmit}
                     disabled={value.length !== maxLength}
                     className={`p-6 rounded-xl shadow active:scale-95 ${value.length === maxLength
-                            ? "bg-green-400"
+                            ? "bg-green-600"
                             : "bg-gray-400 opacity-50"
                         }`}
                 >
-                    ✓
+                   
+                </button> */}
+
+                {/* Delete */}
+                <button
+                    onClick={deleteDigit}
+                    className="bg-red-400 p-6 rounded-xl shadow active:scale-95"
+                >
+                    ←
                 </button>
             </div>
         </div>
