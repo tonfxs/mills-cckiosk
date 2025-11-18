@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ChevronRight, Package, CreditCard, Car } from 'lucide-react';
 import NumberPad from "@/app/components/KioskNumberPad";
 import SuccessScreen from "@/app/components/SuccessScreen";
+import Link from 'next/link';
+
 
 interface FormData {
   fullName: string;

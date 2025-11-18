@@ -1,6 +1,8 @@
 "use client";
-import { useState } from 'react';
-import { ChevronRight, Package, CreditCard, FileText } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
+import Link from 'next/link';
+
 
 interface FormData {
   fullName: string;
