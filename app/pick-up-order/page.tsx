@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
 import NumberPad from "@/app/components/KioskNumberPad";
-
+import SuccessScreen from "@/app/components/SuccessScreen";
 
 interface FormData {
   fullName: string;
@@ -216,24 +216,13 @@ export default function PickupKiosk() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {/* Success Screen */}
       {showSuccess && (
-        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-          <div className="text-center px-8 max-w-2xl">
-            <div className="mb-8 animate-bounce">
-              <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-2xl">
-                <svg className="w-20 h-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <h1 className="text-6xl font-bold text-gray-800 mb-4">Success!</h1>
-            <p className="text-3xl text-gray-600 mb-8">Your order pickup request has been submitted</p>
-            <div className="bg-blue-50 rounded-3xl p-8 border-4 border-blue-200">
-              <p className="text-2xl text-gray-700 mb-2">Order Number</p>
-              <p className="text-5xl font-bold text-blue-600">{formData.orderNumber}</p>
-            </div>
-            <p className="text-2xl text-gray-500 mt-8">Redirecting to main menu...</p>
-          </div>
-        </div>
+        <SuccessScreen
+          title="Success!"
+          message="Your order pickup request has been submitted"
+          identifierLabel="Order Number"
+          identifierValue={formData.orderNumber}
+          redirectMessage="Redirecting to main menu..."
+        />
       )}
 
       {/* Header */}
@@ -554,8 +543,8 @@ export default function PickupKiosk() {
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               Continue
@@ -566,8 +555,8 @@ export default function PickupKiosk() {
               onClick={handleSubmit}
               disabled={!canProceed() || isSubmitting}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting
-                  ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}

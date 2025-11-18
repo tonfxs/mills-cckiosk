@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
-import { supabase } from "@/app/lib/supabase";
 
 // ----------------------------
 // Types
 // ----------------------------
-interface OrderData {
+interface ReturnData {
     fullName: string;
     phone: string;
-    orderNumber: string;
-    creditCard: string;
-    validId: string;
-    paymentMethod: string;
+    rmaID: string;
     carParkBay: string;
+    itemIsHeavy: boolean;
     confirmed: boolean;
 }
 
@@ -37,32 +34,10 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Upload File to Supabase
-// ----------------------------
-async function uploadToSupabase(file: File, fileName: string): Promise<string> {
-    const bucket = process.env.SUPABASE_BUCKET_NAME!;
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const { error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, buffer, {
-            contentType: file.type,
-            upsert: true,
-        });
-
-    if (error) throw new Error("Supabase upload failed: " + error.message);
-
-    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
-
-    return data.publicUrl;
-}
-
-// ----------------------------
 // Save to Google Sheets
 // ----------------------------
-async function saveToSheet(orderData: OrderData, idUrl: string, cardUrl: string) {
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+async function saveToSheet(returnData: ReturnData) {
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID; // Same sheet as pickups
     if (!spreadsheetId) throw new Error("GOOGLE_SHEET_ID missing");
 
     const auth = await getGoogleAuth();
@@ -80,72 +55,63 @@ async function saveToSheet(orderData: OrderData, idUrl: string, cardUrl: string)
 
     await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: "Pickups!A:K",
+        range: "Returns!A:H", // Different tab: "Returns"
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
                 [
                     timestamp,
-                    orderData.fullName,
-                    orderData.phone,
-                    orderData.orderNumber,
-                    "'" + orderData.creditCard,
-                    orderData.validId,
-                    orderData.paymentMethod,
-                    orderData.carParkBay,
-                    idUrl,
-                    cardUrl,
-                    "Pending Verification",
+                    returnData.fullName,
+                    returnData.phone,
+                    returnData.rmaID,
+                    returnData.carParkBay,
+                    returnData.itemIsHeavy ? "Yes" : "No",
+                    returnData.confirmed ? "Yes" : "No",
+                    "Pending Pickup", // Status column
                 ],
             ],
-
         },
     });
 }
 
 // ----------------------------
-// POST — Handle Form Submit
+// POST — Handle Return Form Submit
 // ----------------------------
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
 
-        const orderData: OrderData = {
-            fullName: (formData.get("fullName") || "").toString(),
-            phone: (formData.get("phone") || "").toString(),
-            orderNumber: (formData.get("orderNumber") || "").toString(),
-            creditCard: (formData.get("creditCard") || "").toString(),
-            validId: (formData.get("validId") || "").toString(),
-            paymentMethod: (formData.get("paymentMethod") || "").toString(),
-            carParkBay: (formData.get("carParkBay") || "").toString(),
+        const returnData: ReturnData = {
+            fullName: (formData.get("fullName") || "").toString().trim(),
+            phone: (formData.get("phone") || "").toString().trim(),
+            rmaID: (formData.get("rmaID") || "").toString().trim(),
+            carParkBay: (formData.get("carParkBay") || "").toString().trim(),
+            itemIsHeavy: formData.get("itemIsHeavy") === "true",
             confirmed: formData.get("confirmed") === "true",
         };
 
-        const idScan = formData.get("idScan") as File | null;
-        const cardScan = formData.get("creditCardScan") as File | null;
+        // Validation
+        const errors: { [key: string]: string } = {};
+        if (!returnData.fullName) errors.fullName = "Full name is required";
+        if (!returnData.phone) errors.phone = "Phone number is required";
+        if (!returnData.rmaID) errors.rmaID = "RMA ID is required";
+        if (!returnData.carParkBay) errors.carParkBay = "Car park bay is required";
+        if (!returnData.confirmed) errors.confirmed = "You must confirm the data";
 
-        if (!idScan || !cardScan) {
+        if (Object.keys(errors).length > 0) {
             return NextResponse.json(
-                { success: false, error: "Images missing" },
+                { success: false, errors },
                 { status: 400 }
             );
         }
 
-        // Upload images to Supabase
-        const idUrl = await uploadToSupabase(idScan, `ID-${orderData.orderNumber}.jpg`);
-        const cardUrl = await uploadToSupabase(
-            cardScan,
-            `CARD-${orderData.orderNumber}.jpg`
-        );
-
-        // Save row in Google Sheets
-        await saveToSheet(orderData, idUrl, cardUrl);
+        // Save to Google Sheets
+        await saveToSheet(returnData);
 
         return NextResponse.json({
             success: true,
-            message: "Order saved",
-            idUrl,
-            cardUrl,
+            message: "Return request submitted successfully",
+            rmaID: returnData.rmaID,
         });
     } catch (err: any) {
         console.error("❌ ERROR:", err);
@@ -157,14 +123,14 @@ export async function POST(request: NextRequest) {
 }
 
 // ----------------------------
-// GET — Fetch Order
+// GET — Fetch Return Order by RMA ID
 // ----------------------------
 export async function GET(request: NextRequest) {
     try {
-        const orderNumber = request.nextUrl.searchParams.get("orderNumber");
-        if (!orderNumber) {
+        const rmaID = request.nextUrl.searchParams.get("rmaID");
+        if (!rmaID) {
             return NextResponse.json(
-                { success: false, error: "orderNumber required" },
+                { success: false, error: "rmaID required" },
                 { status: 400 }
             );
         }
@@ -176,15 +142,15 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Pickups!A:K",
+            range: "Returns!A:H",
         });
 
         const rows = resp.data.values || [];
-        const match = rows.find((row) => row[3] === orderNumber);
+        const match = rows.find((row) => row[3] === rmaID);
 
         if (!match) {
             return NextResponse.json(
-                { success: false, error: "Order not found" },
+                { success: false, error: "Return order not found" },
                 { status: 404 }
             );
         }
@@ -195,14 +161,11 @@ export async function GET(request: NextRequest) {
                 timestamp: match[0],
                 fullName: match[1],
                 phone: match[2],
-                orderNumber: match[3],
-                creditCard: match[4],
-                validId: match[5],
-                paymentMethod: match[6],
-                carParkBay: match[7],
-                idUrl: match[8],
-                cardUrl: match[9],
-                status: match[10],
+                rmaID: match[3],
+                carParkBay: match[4],
+                itemIsHeavy: match[5] === "Yes",
+                confirmed: match[6] === "Yes",
+                status: match[7],
             },
         });
     } catch (err: any) {
