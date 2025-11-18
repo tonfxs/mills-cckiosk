@@ -36,7 +36,7 @@ export default function KioskNumberPad({
                 {Array.from({ length: maxLength }).map((_, i) => (
                     <div
                         key={i}
-                        className="h-14 w-12 border-b-4 border-gray-600 text-center"
+                        className="h-14 w-12 border-b-4 border-gray-600 text-center text-black"
                     >
                         {value[i] ? "•" : ""}
                     </div>
@@ -49,7 +49,7 @@ export default function KioskNumberPad({
                     <button
                         key={num}
                         onClick={() => addDigit(String(num))}
-                        className="bg-gray-200 p-6 rounded-xl shadow active:scale-95"
+                        className="bg-gray-700 p-6 rounded-xl shadow active:scale-95"
                     >
                         {num}
                     </button>
