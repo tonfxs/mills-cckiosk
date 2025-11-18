@@ -49,7 +49,7 @@ export default function KioskNumberPad({
                     <button
                         key={num}
                         onClick={() => addDigit(String(num))}
-                        className="bg-gray-700 p-6 rounded-xl shadow active:scale-95"
+                        className="bg-gray-700 p-6 rounded-xl shadow active:scale-95 text-white"
                     >
                         {num}
                     </button>
@@ -63,7 +63,7 @@ export default function KioskNumberPad({
                 {/* 0 */}
                 <button
                     onClick={() => addDigit("0")}
-                    className="bg-gray-200 p-6 rounded-xl shadow active:scale-95"
+                    className="bg-gray-700 p-6 rounded-xl shadow active:scale-95 text-white"
                 >
                     0
                 </button>
@@ -72,7 +72,7 @@ export default function KioskNumberPad({
                 <button
                     onClick={deleteDigit}
                     disabled={value.length === 0}
-                    className={`p-6 rounded-xl shadow active:scale-95 ${value.length === maxLength
+                    className={`bg-gray-700 p-6 rounded-xl shadow active:scale-95 text-white ${value.length === maxLength
                         ? "bg-red-400"
                         : "bg-red-400"
                         }`}
