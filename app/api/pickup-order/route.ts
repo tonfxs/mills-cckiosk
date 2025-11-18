@@ -81,7 +81,7 @@ async function saveToSheet(orderData: OrderData, idUrl: string, cardUrl: string)
                     orderData.fullName,
                     orderData.phone,
                     orderData.orderNumber,
-                    orderData.creditCard,
+                    "'" + orderData.creditCard,   // <-- FIX
                     orderData.validId,
                     orderData.paymentMethod,
                     orderData.carParkBay,
@@ -90,6 +90,7 @@ async function saveToSheet(orderData: OrderData, idUrl: string, cardUrl: string)
                     "Pending Verification",
                 ],
             ],
+
         },
     });
 }
