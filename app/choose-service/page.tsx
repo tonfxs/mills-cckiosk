@@ -73,7 +73,7 @@ export default function ChooseService() {
 
   const handleConnectToAgent = (e: React.MouseEvent) => {
     e.preventDefault(); // prevent navigation
-    window.dispatchEvent(new Event("open-doxy")); // 👈 trigger FloatingDoxy
+    window.dispatchEvent(new Event("open-doxy")); // trigger FloatingDoxy
   };
 
   const baseButton =
