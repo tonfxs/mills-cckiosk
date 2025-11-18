@@ -1,270 +1,12 @@
-// "use client";
-// import { useState } from "react";
-
-// export default function ReturnAProductForm() {
-
-
-//   const [formData, setFormData] = useState({
-//     arrivalDate: "",
-//     arrivalTime: "",
-//     rmaID: "",
-//     fullName: "",
-//     carParkBay: "",
-//     itemDescription:"",
-//     confirmed: false,
-//     heavy: false,
-//   });
-
-//   const handleChange = (e: any) => {
-//     const { name, value, type, checked } = e.target;
-//     setFormData((prev) => ({
-//       ...prev,
-//       [name]: type === "checkbox" ? checked : value,
-//     }));
-//   };
-
-//   const handleSubmit = () => {
-//     console.log("Form submitted:", formData);
-//     alert("Order submitted successfully!");
-
-//     setFormData({
-//       arrivalDate: "",
-//       arrivalTime: "",
-//       rmaID: "",
-//       fullName: "",
-//       carParkBay: "",
-//       itemDescription:"",
-//       confirmed: false,
-//       heavy: false,
-//     });
-
-//     const now = new Date();
-
-//     const date = now.toISOString().split("T")[0]; // YYYY-MM-DD
-//     const time = now.toTimeString().slice(0, 5); // HH:MM
-
-//     setFormData((prev) => ({
-//       ...prev,
-//       arrivalDate: date,
-//       arrivalTime: time,
-//     }));
-//   };
-
-//   const inputClass =
-//     "w-full px-6 md:px-10 py-6 md:py-8 border-2 border-gray-300 rounded-2xl text-2xl md:text-3xl text-black placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all";
-
-//   return (
-//     <div className="min-h-screen bg-white flex items-start justify-center p-6 md:p-16">
-//       <div className="bg-white w-full max-w-4xl lg:max-w-6xl pt-10 md:pt-16">
-
-//         {/* Header */}
-//         <div className="flex justify-between items-center mb-12 md:mb-20">
-//           <h1 className="text-4xl md:text-6xl font-bold text-black">RETURN A PRODUCT</h1>
-
-//           <a
-//             href="/choose-service"
-//             className="p-3 md:p-4 bg-gray-100 rounded-xl md:rounded-2xl hover:bg-gray-200 transition-colors"
-//           >
-//             <svg
-//               className="w-8 h-8 md:w-12 md:h-12"
-//               fill="none"
-//               stroke="black"
-//               viewBox="0 0 24 24"
-//               strokeWidth={2.5}
-//             >
-//               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-//             </svg>
-//           </a>
-//         </div>
-
-//         {/* Form Section */}
-//         <h2 className="text-3xl md:text-5xl font-bold mb-10 md:mb-16 text-black">
-//           Fill in the form
-//         </h2>
-
-//         {/* Arrival Date + Arrival Time */}
-//         <div className="flex flex-col md:flex-row gap-8 md:gap-16 mb-10 md:mb-14">
-
-//           {/* Arrival Date */}
-//           <div className="flex flex-col w-full">
-//             <span className="text-xl md:text-3xl font-semibold text-black mb-3">
-//               Arrival Date:
-//             </span>
-
-//             <span className="text-2xl md:text-3xl text-black tracking-wide">
-//               {formData.arrivalDate || "--/--/----"}
-//             </span>
-//           </div>
-
-//           {/* Arrival Time */}
-//           <div className="flex flex-col w-full">
-//             <span className="text-xl md:text-3xl font-semibold text-black mb-3">
-//               Arrival Time:
-//             </span>
-
-//             <span className="text-2xl md:text-3xl text-black tracking-wide">
-//               {formData.arrivalTime || "--:--"}
-//             </span>
-//           </div>
-//         </div>
-
-
-//         <div className="mb-6 md:mb-8">
-//           <input
-//             type="rmaID"
-//             name="rmaID"
-//             placeholder="RMA ID"
-//             value={formData.rmaID}
-//             onChange={handleChange}
-//             className={inputClass}
-//           />
-//         </div>
-
-//         {/* Full Name */}
-//         <div className="mb-6 md:mb-8">
-//           <input
-//             type="text"
-//             name="fullName"
-//             placeholder="Full Name"
-//             value={formData.fullName}
-//             onChange={handleChange}
-//             className={inputClass}
-//           />
-//         </div>
-
-//         {/* Car Park Bay */}
-//         <div className="mb-6 md:mb-8">
-//           <input
-//             type="text"
-//             name="carParkBay"
-//             placeholder="Car Park Bay Number"
-//             value={formData.carParkBay}
-//             onChange={handleChange}
-//             className={inputClass}
-//           />
-//         </div>
-
-//         {/* <div className="mb-10 md:mb-16">
-//           <textarea
-//             name="itemDescription"
-//             placeholder="Item Description"
-//             value={formData.itemDescription}
-//             onChange={handleChange}
-//             className={inputClass}
-//           />
-//         </div> */}
-
-//         {/* <div className="mb-10 md:mb-12">
-//           <label className="flex items-start gap-4 md:gap-6 cursor-pointer">
-//             <div className="w-8 h-8 md:w-10 md:h-10 mt-1 border-2 border-gray-300 rounded-lg flex items-center justify-center relative">
-//               <input
-//                 type="button"
-//                 name="heavy"
-//                 checked={formData.heavy}
-//                 onChange={handleChange}
-//                 className="opacity-0 absolute inset-0"
-//               />
-//               {formData.confirmed && (
-//                 <svg
-//                   className="w-5 h-5 md:w-7 md:h-7 text-blue-600"
-//                   fill="currentColor"
-//                   viewBox="0 0 20 20"
-//                 >
-//                   <path
-//                     fillRule="evenodd"
-//                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-//                     clipRule="evenodd"
-//                   />
-//                 </svg>
-//               )}
-//             </div>
-
-//             <button className="text-2xl md:text-3xl leading-relaxed text-black">
-//               Heavy Item  need assistance/forklift assistance
-//             </button>
-//           </label>
-//         </div> */}
-
-//         {/* Heavy Item Toggle */}
-//         <div className="mb-10 md:mb-12">
-//           <button
-//             type="button"
-//             onClick={() =>
-//               setFormData((prev) => ({ ...prev, heavy: !prev.heavy }))
-//             }
-//             className="flex items-center gap-4 md:gap-6 cursor-pointer"
-//           >
-//             <div className="w-8 h-8 md:w-10 md:h-10 border-2 border-gray-300 rounded-lg flex items-center justify-center bg-white">
-//               {formData.heavy && (
-//                 <svg
-//                   className="w-5 h-5 md:w-7 md:h-7 text-blue-600"
-//                   fill="currentColor"
-//                   viewBox="0 0 20 20"
-//                 >
-//                   <path
-//                     fillRule="evenodd"
-//                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-//                     clipRule="evenodd"
-//                   />
-//                 </svg>
-//               )}
-//             </div>
-
-//             <span className="text-2xl md:text-3xl leading-relaxed text-black">
-//               Heavy item – need assistance / forklift assistance
-//             </span>
-//           </button>
-//         </div>
-
-
-//         {/* Confirm Checkbox */}
-//         <div className="mb-10 md:mb-12">
-//           <label className="flex items-start gap-4 md:gap-6 cursor-pointer">
-//             <div className="w-8 h-8 md:w-10 md:h-10 mt-1 border-2 border-gray-300 rounded-lg flex items-center justify-center relative">
-//               <input
-//                 type="checkbox"
-//                 name="confirmed"
-//                 checked={formData.confirmed}
-//                 onChange={handleChange}
-//                 className="opacity-0 absolute inset-0"
-//               />
-//               {formData.confirmed && (
-//                 <svg
-//                   className="w-5 h-5 md:w-7 md:h-7 text-blue-600"
-//                   fill="currentColor"
-//                   viewBox="0 0 20 20"
-//                 >
-//                   <path
-//                     fillRule="evenodd"
-//                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-//                     clipRule="evenodd"
-//                   />
-//                 </svg>
-//               )}
-//             </div>
-
-//             <span className="text-2xl md:text-3xl leading-relaxed text-black">
-//               I confirm that all provided data is accurate and valid.
-//             </span>
-//           </label>
-//         </div>
-
-//         {/* Submit Button */}
-//         <button
-//           onClick={handleSubmit}
-//           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-3xl md:text-4xl py-8 md:py-10 rounded-2xl transition-colors shadow-lg active:scale-95"
-//         >
-//           SUBMIT
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
 "use client";
+<<<<<<< HEAD
 import { useState, useRef } from 'react';
 import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
 import Link from 'next/link';
+=======
+import { useState } from 'react';
+import { ChevronRight, Package, CreditCard, FileText } from 'lucide-react';
+>>>>>>> 3a74495f3afa9e629ea37bfeccc57c4ed533f7fc
 
 interface FormData {
   fullName: string;
@@ -312,7 +54,6 @@ export default function ReturnAProductForm() {
     }
   };
 
-
   const canProceed = () => {
     switch (step) {
       case 1: return formData.rmaID;
@@ -346,7 +87,7 @@ export default function ReturnAProductForm() {
         formDataToSend.append(key, formData[fieldKey].toString());
       });
 
-      const response = await fetch("/api/pickup-order", {
+      const response = await fetch("/api/return-order", {
         method: "POST",
         body: formDataToSend,
       });
@@ -403,6 +144,7 @@ export default function ReturnAProductForm() {
       )}
 
       {/* Header */}
+<<<<<<< HEAD
       <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
         {/* Top-right creative button */}
           <Link href="/choose-service"
@@ -417,8 +159,28 @@ export default function ReturnAProductForm() {
             Back to Main Menu
           </Link>
         <div className="max-w-4xl mx-auto">
+=======
+      <div className="bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
+        <div className="max-w-4xl mx-auto relative">
+>>>>>>> 3a74495f3afa9e629ea37bfeccc57c4ed533f7fc
           <h1 className="text-7xl font-bold mb-2">Return a Product</h1>
           <p className="text-4xl text-blue-100">Mills Click & Collect - Return</p>
+
+          {/* Back Button */}
+          <a
+            href="/choose-service"
+            className="absolute top-0 right-0 w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors shadow-lg"
+          >
+            <svg
+              className="w-10 h-10"
+              fill="none"
+              stroke="black"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </a>
         </div>
         
       </div>
@@ -514,7 +276,6 @@ export default function ReturnAProductForm() {
             </div>
           )}
 
-
           {/* Step 3: Confirm */}
           {step === 3 && (
             <div className="space-y-6">
@@ -551,34 +312,33 @@ export default function ReturnAProductForm() {
 
                 <div className="mb-8 flex flex-col gap-4">
                   <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="itemIsHeavy"
-                    checked={formData.itemIsHeavy}
-                    onChange={handleChange}
-                    className="w-12 h-12 mt-1"
-                  />
-                  <span className="text-3xl font-semibold text-gray-800">
-                    My item is heavy and I need assistance/forklift assistance.
-                  </span>
-                </label>
-                {errors.confirmed && <p className="text-red-600 text-xl mt-2">{errors.itemIsHeavy}</p>}
+                    <input
+                      type="checkbox"
+                      name="itemIsHeavy"
+                      checked={formData.itemIsHeavy}
+                      onChange={handleChange}
+                      className="w-12 h-12 mt-1"
+                    />
+                    <span className="text-3xl font-semibold text-gray-800">
+                      My item is heavy and I need assistance/forklift assistance.
+                    </span>
+                  </label>
+                  {errors.itemIsHeavy && <p className="text-red-600 text-xl mt-2">{errors.itemIsHeavy}</p>}
 
-                <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="confirmed"
-                    checked={formData.confirmed}
-                    onChange={handleChange}
-                    className="w-12 h-12 mt-1"
-                  />
-                  <span className="text-3xl font-semibold text-gray-800">
-                    I confirm that all provided information is accurate and valid
-                  </span>
-                </label>
-                {errors.confirmed && <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>}
+                  <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="confirmed"
+                      checked={formData.confirmed}
+                      onChange={handleChange}
+                      className="w-12 h-12 mt-1"
+                    />
+                    <span className="text-3xl font-semibold text-gray-800">
+                      I confirm that all provided information is accurate and valid
+                    </span>
+                  </label>
+                  {errors.confirmed && <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>}
                 </div>
-
               </div>
             </div>
           )}
@@ -598,13 +358,13 @@ export default function ReturnAProductForm() {
             </button>
           )}
 
-          {step < 4 ? (
+          {step < 3 ? (
             <button
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               Continue
@@ -615,8 +375,8 @@ export default function ReturnAProductForm() {
               onClick={handleSubmit}
               disabled={!canProceed() || isSubmitting}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting
-                  ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT RETURN REQUEST"}

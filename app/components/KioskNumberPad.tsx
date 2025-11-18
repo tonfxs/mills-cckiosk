@@ -45,37 +45,41 @@ export default function KioskNumberPad({
 
             {/* KEYPAD */}
             <div className="grid grid-cols-3 gap-6 mt-4 text-3xl">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                     <button
                         key={num}
                         onClick={() => addDigit(String(num))}
-                        className="bg-gray-700 p-6 rounded-xl shadow active:scale-95"
+                        className="bg-gray-700 p-6 rounded-xl shadow active:scale-95 text-white"
                     >
                         {num}
                     </button>
                 ))}
 
+                <button>
+
+                </button>
+
+
+                {/* 0 */}
+                <button
+                    onClick={() => addDigit("0")}
+                    className="bg-gray-700 p-6 rounded-xl shadow active:scale-95 text-white"
+                >
+                    0
+                </button>
 
                 {/* Confirm */}
-                {/* <button
-                    onClick={handleSubmit}
-                    disabled={value.length !== maxLength}
-                    className={`p-6 rounded-xl shadow active:scale-95 ${value.length === maxLength
-                            ? "bg-green-600"
-                            : "bg-gray-400 opacity-50"
-                        }`}
-                >
-                   
-                </button> */}
-
-                {/* Delete */}
                 <button
                     onClick={deleteDigit}
-                    className="bg-red-400 p-6 rounded-xl shadow active:scale-95"
+                    disabled={value.length === 0}
+                    className={`bg-gray-700 p-6 rounded-xl shadow active:scale-95 text-white ${value.length === maxLength
+                        ? "bg-red-400"
+                        : "bg-red-400"
+                        }`}
                 >
                     ←
                 </button>
             </div>
-        </div>
+        </div >
     );
 }
