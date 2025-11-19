@@ -366,7 +366,7 @@ export default function ReturnAProductForm() {
               {/* MAIN MENU BUTTON (visible only on step 1) */}
         {step === 1 && (
           <Link
-            href="/"
+            href="/choose-service"
             className="flex-1 text-4xl font-bold py-8 px-10 
                        bg-yellow-200 text-yellow-700 
                        rounded-2xl hover:bg-yellow-300 transition-all
