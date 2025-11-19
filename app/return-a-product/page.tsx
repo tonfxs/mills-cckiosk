@@ -157,7 +157,6 @@ export default function ReturnAProductForm() {
           <h1 className="text-7xl font-bold mb-2">Return a Product</h1>
           <p className="text-4xl text-blue-100">Mills Click & Collect - Return</p>
         </div>
-        
       </div>
 
       {/* Progress Steps */}
