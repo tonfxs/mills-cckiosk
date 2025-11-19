@@ -65,7 +65,7 @@ const NumberPad = ({ value, onChange, maxLength }: { value: string; onChange: (v
           onClick={handleBackspace}
           className="text-3xl font-bold p-8 bg-yellow-100 border-4 border-yellow-300 rounded-2xl hover:bg-yellow-200 transition-all"
         >
-          ← Del
+          ←
         </button>
       </div>
     </div>

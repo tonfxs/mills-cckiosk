@@ -11,8 +11,18 @@ export default function ChooseService() {
     window.dispatchEvent(new Event("open-doxy"));
   };
 
+  const handleServiceClick = (href: string) => {
+    // Open Doxy first
+    window.dispatchEvent(new Event("open-doxy"));
+
+    // Small delay to ensure Doxy starts opening, then navigate
+    setTimeout(() => {
+      router.push(href);
+    }, 100);
+  };
+
   const baseButton =
-    "w-full max-w-xs sm:max-w-md md:max-w-2xl lg:max-w-4xl py-8 sm:py-12 md:py-14 text-xl sm:text-3xl md:text-4xl lg:text-6xl text-white font-semibold rounded-2xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-lg focus:ring-4 focus:ring-blue-300 focus:outline-none transition-all";
+    "w-full max-w-xs sm:max-w-md md:max-w-2xl lg:max-w-4xl py-8 sm:py-12 md:py-14 text-xl sm:text-3xl md:text-4xl lg:text-6xl text-white font-semibold rounded-2xl bg-gradient-to-r from-[#0070C9] to-[#004E9A] shadow-lg focus:ring-4 focus:ring-blue-300 focus:outline-none transition-all hover:scale-105 cursor-pointer";
 
   return (
     <main className="flex flex-col items-center justify-between w-full min-h-screen bg-white px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
@@ -52,13 +62,21 @@ export default function ChooseService() {
           Choose Service
         </h2>
 
-        <Link href="/pick-up-order" className={baseButton}>
+        <button
+          onClick={() => handleServiceClick("/pick-up-order")}
+          className={baseButton}
+          type="button"
+        >
           Pick Up Order
-        </Link>
+        </button>
 
-        <Link href="/return-a-product" className={baseButton}>
+        <button
+          onClick={() => handleServiceClick("/return-a-product")}
+          className={baseButton}
+          type="button"
+        >
           Return a Product
-        </Link>
+        </button>
 
         <button onClick={handleConnectToAgent} className={baseButton} type="button">
           Connect to a Live Agent
