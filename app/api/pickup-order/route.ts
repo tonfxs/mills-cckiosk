@@ -45,14 +45,23 @@ async function saveToSheet(orderData: OrderData) {
     const auth = await getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    const now = new Date();
-    const timestamp =
-        now.toLocaleDateString("en-AU") + " " + now.toLocaleTimeString("en-AU", {
+    function getAustraliaTimestamp() {
+        const now = new Date();
+        const australiaTime = new Intl.DateTimeFormat("en-AU", {
+            timeZone: "Australia/Sydney",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit",
             hour12: false,
-        });
+        }).format(now);
+
+        return australiaTime.replace(",", "");
+    }
+
+    const timestamp = getAustraliaTimestamp();
 
     await sheets.spreadsheets.values.append({
         spreadsheetId,
@@ -75,6 +84,7 @@ async function saveToSheet(orderData: OrderData) {
         },
     });
 }
+
 
 
 // ----------------------------
