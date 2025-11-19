@@ -145,7 +145,11 @@ export default function ReturnAProductForm() {
 
         <div className="max-w-4xl mx-auto relative">
           <h1 className="text-7xl font-bold mb-2">Return a Product</h1>
-          <p className="text-4xl text-blue-100">Mills Click & Collect - Return</p>
+          <p className="text-3xl text-blue-100 font-bold">
+            NOTE:
+          </p>
+          <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
+          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p>
         </div>
       </div>
 
