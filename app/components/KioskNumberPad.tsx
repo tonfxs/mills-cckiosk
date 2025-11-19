@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 export default function KioskNumberPad({
     value,
     onChange,
@@ -12,14 +14,29 @@ export default function KioskNumberPad({
     onSubmit?: (val: string) => void;
 }) {
 
+    const [recentDigitIndex, setRecentDigitIndex] = useState<number | null>(null);
+    const [recentDigitValue, setRecentDigitValue] = useState<string | null>(null);
+
     const addDigit = (digit: string) => {
         if (value.length < maxLength) {
-            onChange(value + digit);
+            const newValue = value + digit;
+            onChange(newValue);
+
+            // briefly show the last typed digit
+            setRecentDigitIndex(newValue.length - 1);
+            setRecentDigitValue(digit);
+
+            setTimeout(() => {
+                setRecentDigitIndex(null);
+                setRecentDigitValue(null);
+            }, 500);
         }
     };
 
     const deleteDigit = () => {
         onChange(value.slice(0, -1));
+        setRecentDigitIndex(null);
+        setRecentDigitValue(null);
     };
 
     const handleSubmit = () => {
@@ -33,14 +50,23 @@ export default function KioskNumberPad({
 
             {/* DISPLAY */}
             <div className="flex gap-4 text-4xl">
-                {Array.from({ length: maxLength }).map((_, i) => (
-                    <div
-                        key={i}
-                        className="h-14 w-12 border-b-4 border-gray-600 text-center text-black"
-                    >
-                        {value[i] ? "•" : ""}
-                    </div>
-                ))}
+                {Array.from({ length: maxLength }).map((_, i) => {
+                    const showDigit =
+                        i === recentDigitIndex
+                            ? recentDigitValue
+                            : value[i]
+                                ? "•"
+                                : "";
+
+                    return (
+                        <div
+                            key={i}
+                            className="h-14 w-12 border-b-4 border-gray-600 text-center text-black"
+                        >
+                            {showDigit}
+                        </div>
+                    );
+                })}
             </div>
 
             {/* KEYPAD */}
@@ -55,10 +81,8 @@ export default function KioskNumberPad({
                     </button>
                 ))}
 
-                <button>
-
-                </button>
-
+                {/* blank placeholder */}
+                <button className="opacity-0" />
 
                 {/* 0 */}
                 <button
@@ -68,18 +92,15 @@ export default function KioskNumberPad({
                     0
                 </button>
 
-                {/* Confirm */}
+                {/* Delete */}
                 <button
                     onClick={deleteDigit}
                     disabled={value.length === 0}
-                    className={`bg-gray-700 p-6 rounded-xl shadow active:scale-95 text-white ${value.length === maxLength
-                        ? "bg-red-400"
-                        : "bg-red-400"
-                        }`}
+                    className="bg-red-400 p-6 rounded-xl shadow active:scale-95 text-white"
                 >
                     ←
                 </button>
             </div>
-        </div >
+        </div>
     );
 }
