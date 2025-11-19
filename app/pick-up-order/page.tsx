@@ -38,8 +38,9 @@ const NumberPad = ({ value, onChange, maxLength }: { value: string; onChange: (v
   return (
     <div className="space-y-4">
       <div className="text-5xl font-bold text-center p-6 bg-gray-100 rounded-2xl border-4 border-gray-300 min-h-[100px] flex items-center justify-center text-black">
-        {value || '----'}
+        {value.length > 0 ? '*'.repeat(value.length) : '----'}
       </div>
+
       <div className="grid grid-cols-3 gap-4">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <button
@@ -189,7 +190,7 @@ export default function PickupKiosk() {
     if (!formData.fullName.trim()) allErrors.push("Full name is required");
     if (!formData.phone.trim()) {
       allErrors.push("Phone number is required");
-    } else if (formData.phone.replace(/\s/g, '').length < 10) {
+    } else if (formData.phone.replace(/\s/g, '').length < 9) {
       allErrors.push("Phone number must be at least 10 digits");
     }
     if (!formData.orderNumber.trim()) allErrors.push("Order number is required");
@@ -535,7 +536,7 @@ export default function PickupKiosk() {
                       <p className="text-red-600 text-xl mt-2">{errors.validId}</p>
                     )}
                   </div>
-                  
+
                   {/* PAYMENT METHOD SECTION */}
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
