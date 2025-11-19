@@ -197,9 +197,14 @@ export default function ReturnAProductForm() {
                       type="text"
                       name="rmaID"
                       value={formData.rmaID}
-                      onChange={handleChange}
+                       onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "");
+                        if (cleaned.length <= 6) {
+                          setFormData({ ...formData, rmaID: cleaned });
+                        }
+                      }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., ORD-12345"
+                      placeholder="e.g., 123456"
                     />
                     {errors.rmaID && <p className="text-red-600 text-xl mt-2">{errors.rmaID}</p>}
                   </div>
@@ -228,23 +233,57 @@ export default function ReturnAProductForm() {
                     {errors.fullName && <p className="text-red-600 text-xl mt-2">{errors.fullName}</p>}
                   </div>
 
-                  <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Phone Number</label>
+                                    <div>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                     <div className="flex gap-4">
                       <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
                         AU
                       </div>
                       <input
-                        type="tel"
+                        type="text"
                         name="phone"
                         value={formData.phone}
-                        onChange={handleChange}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                        placeholder="412 345 678"
+                        onChange={(e) => {
+                          // Keep digits only
+                          let digits = e.target.value.replace(/\D/g, "");
+                        
+                          // Limit to 10 digits
+                          if (digits.length > 10) digits = digits.slice(0, 10);
+                        
+                          // Apply formatting: 4-3-3 (AU mobile format)
+                          let formatted = digits;
+                          if (digits.length > 4 && digits.length <= 7) {
+                            formatted = digits.slice(0, 4) + " " + digits.slice(4);
+                          } else if (digits.length > 7) {
+                            formatted =
+                              digits.slice(0, 4) +
+                              " " +
+                              digits.slice(4, 7) +
+                              " " +
+                              digits.slice(7);
+                          }
+                        
+                          // Push cleaned digits to state (your handleChange)
+                          handleChange({
+                            ...e,
+                            target: {
+                              ...e.target,
+                              value: formatted, // store formatted value
+                              name: "phone"
+                            }
+                          });
+                        }}
+                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl
+                                   focus:border-blue-500 focus:outline-none text-black"
+                        placeholder="04XX XXX XXX"
+                        required
                       />
+
                     </div>
                     {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
                   </div>
+
+
                 </div>
               </div>
             </div>
@@ -323,6 +362,20 @@ export default function ReturnAProductForm() {
       {/* Bottom Navigation */}
       <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto flex gap-6">
+
+              {/* MAIN MENU BUTTON (visible only on step 1) */}
+        {step === 1 && (
+          <Link
+            href="/choose-service"
+            className="flex-1 text-4xl font-bold py-8 px-10 
+                       bg-yellow-200 text-yellow-700 
+                       rounded-2xl hover:bg-yellow-300 transition-all
+                       flex items-center justify-center"
+          >
+            ⬑ Main Menu
+          </Link>
+        )}
+
           {step > 1 && (
             <button
               onClick={() => setStep(step - 1)}
