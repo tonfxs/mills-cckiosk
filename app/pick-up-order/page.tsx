@@ -344,7 +344,7 @@ export default function PickupKiosk() {
                       value={formData.orderNumber}
                       onChange={handleChange}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., ORD-12345"
+                      placeholder="e.g., E1234567 or M1234567"
                     />
                     {errors.orderNumber && <p className="text-red-600 text-xl mt-2">{errors.orderNumber}</p>}
                   </div>
@@ -373,11 +373,11 @@ export default function PickupKiosk() {
           {step === 2 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
-                <h2 className="text-4xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
+                <h2 className="text-5xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Full Name</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Full Name</label>
                     <input
                       type="text"
                       name="fullName"
@@ -390,7 +390,7 @@ export default function PickupKiosk() {
                   </div>
 
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Phone Number</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                     <div className="flex gap-4">
                       <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
                         AU
@@ -401,7 +401,7 @@ export default function PickupKiosk() {
                         value={formData.phone}
                         onChange={handleChange}
                         className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                        placeholder="412 345 678"
+                        placeholder="04XX XXX XXX"
                       />
                     </div>
                     {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
@@ -413,19 +413,83 @@ export default function PickupKiosk() {
 
           {/* Step 3: ID & Payment */}
           {step === 3 && (
+            // <div className="space-y-6">
+            //   <div className="bg-white rounded-3xl shadow-xl p-10">
+            //     <h2 className="text-5xl font-bold mb-8 text-gray-800">Identification & Payment</h2>
+
+            //     <div className="space-y-12">
+            //       <div>
+            //         <label className="block text-4xl font-semibold mb-4 text-gray-700">Select Valid ID</label>
+            //         <div className="grid grid-cols-2 gap-4">
+            //           {[
+            //             { value: 'drivers-license', label: "Driver's License" },
+            //             { value: 'passport', label: 'Passport' },
+            //             { value: 'medicare-card', label: 'Medicare Card' },
+            //             { value: 'immicard', label: 'ImmiCard' }
+            //           ].map(({ value, label }) => (
+            //             <button
+            //               key={value}
+            //               type="button"
+            //               onClick={() => setFormData(prev => ({ ...prev, validId: value }))}
+            //               className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.validId === value
+            //                 ? 'bg-blue-600 text-white border-blue-600'
+            //                 : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+            //                 }`}
+            //             >
+            //               {label}
+            //             </button>
+            //           ))}
+            //         </div>
+            //         {errors.validId && <p className="text-red-600 text-xl mt-2">{errors.validId}</p>}
+            //       </div>
+
+            //       <div>
+            //         <label className="block text-4xl font-semibold mb-4 text-gray-700">Payment Method</label>
+            //         <div className="grid grid-cols-2 gap-4">
+            //           {[
+            //             { value: 'credit-card', label: 'Credit Card' },
+            //             { value: 'debit-card', label: 'Debit Card' },
+            //             { value: 'cash', label: 'Cash' },
+            //             { value: 'others', label: 'Others' }
+            //           ].map(({ value, label }) => (
+            //             <button
+            //               key={value}
+            //               type="button"
+            //               onClick={() => setFormData(prev => ({ ...prev, paymentMethod: value }))}
+            //               className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
+            //                 ? 'bg-blue-600 text-white border-blue-600'
+            //                 : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+            //                 }`}
+            //             >
+            //               {label}
+            //             </button>
+            //           ))}
+            //         </div>
+            //         {errors.paymentMethod && <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>}
+            //       </div>
+            //     </div>
+            //   </div>
+            // </div>
+
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
-                <h2 className="text-4xl font-bold mb-8 text-gray-800">Identification & Payment</h2>
+                <h2 className="text-5xl font-bold mb-8 text-gray-800">Identification & Payment</h2>
 
-                <div className="space-y-8">
+                <div className="space-y-12">
+
+                  {/* VALID ID SECTION */}
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Select Valid ID</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      Select Valid ID
+                    </label>
+
                     <div className="grid grid-cols-2 gap-4">
                       {[
                         { value: 'drivers-license', label: "Driver's License" },
                         { value: 'passport', label: 'Passport' },
                         { value: 'medicare-card', label: 'Medicare Card' },
-                        { value: 'immicard', label: 'ImmiCard' }
+                        { value: 'immicard', label: 'ImmiCard' },
+                        { value: 'others', label: 'Others' }
                       ].map(({ value, label }) => (
                         <button
                           key={value}
@@ -445,11 +509,17 @@ export default function PickupKiosk() {
                         </button>
                       ))}
                     </div>
-                    {errors.validId && <p className="text-red-600 text-xl mt-2">{errors.validId}</p>}
-                  </div>
 
+                    {errors.validId && (
+                      <p className="text-red-600 text-xl mt-2">{errors.validId}</p>
+                    )}
+                  </div>
+                  
+                  {/* PAYMENT METHOD SECTION */}
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Payment Method</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      Payment Method
+                    </label>
                     <div className="grid grid-cols-2 gap-4">
                       {[
                         { value: 'credit-card', label: 'Credit Card' },
@@ -480,6 +550,7 @@ export default function PickupKiosk() {
                 </div>
               </div>
             </div>
+
           )}
 
           {/* Step 4: Confirm */}

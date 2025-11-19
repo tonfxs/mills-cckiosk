@@ -74,7 +74,7 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.fullName,
                     orderData.phone,
                     orderData.orderNumber,
-                    "'" + orderData.creditCard,
+                    "'" + orderData.creditCard, // <-- FIX HERE
                     orderData.validId,
                     orderData.paymentMethod,
                     orderData.carParkBay,
