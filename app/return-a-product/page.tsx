@@ -99,9 +99,12 @@ export default function ReturnAProductForm() {
     if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
+
     if (formData.itemIsHeavy && !formData.carParkBay.trim()) {
       newErrors.carParkBay = "Car park bay is required for heavy items";
-    }    if (!formData.confirmed) newErrors.confirmed = "You must confirm the data";
+    }    
+    
+    if (!formData.confirmed) newErrors.confirmed = "You must confirm the data";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);

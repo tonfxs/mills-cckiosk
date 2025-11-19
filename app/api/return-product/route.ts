@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         if (!returnData.fullName) errors.fullName = "Full name is required";
         if (!returnData.phone) errors.phone = "Phone number is required";
         if (!returnData.rmaID) errors.rmaID = "RMA ID is required";
-        if (!returnData.carParkBay) errors.carParkBay = "Car park bay is required";
+        // if (!returnData.carParkBay) errors.carParkBay = "Car park bay is required";
         if (!returnData.confirmed) errors.confirmed = "You must confirm the data";
 
         if (Object.keys(errors).length > 0) {
