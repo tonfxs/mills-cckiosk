@@ -336,7 +336,36 @@ export default function PickupKiosk() {
                       type="text"
                       name="orderNumber"
                       value={formData.orderNumber}
-                      onChange={handleChange}
+                      // onChange={handleChange}
+
+                      onChange={(e) => {
+                        let val = e.target.value.toUpperCase();
+                                          
+                        // Remove all non-alphanumeric characters
+                        val = val.replace(/[^A-Z0-9]/g, "");
+                                          
+                        // Enforce: first char = letter only
+                        if (val.length === 1) {
+                          val = val.replace(/[^A-Z]/g, ""); 
+                        }
+                      
+                        // Enforce: second → eighth chars = digits only
+                        if (val.length > 1) {
+                          val = val[0] + val.slice(1).replace(/\D/g, ""); 
+                        }
+                      
+                        // Limit to 1 letter + 7 digits = 8 characters total
+                        val = val.slice(0, 8);
+                      
+                        handleChange({
+                          ...e,
+                          target: {
+                            ...e.target,
+                            value: val,
+                            name: "orderNumber"
+                          }
+                        });
+                      }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="e.g., E1234567 or M1234567"
                     />

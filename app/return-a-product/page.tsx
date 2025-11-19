@@ -32,29 +32,61 @@ export default function ReturnAProductForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    const fieldName = name as keyof FormData;
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  //   const { name, value, type } = e.target;
+  //   const checked = (e.target as HTMLInputElement).checked;
+  //   const fieldName = name as keyof FormData;
 
-    setFormData((prev) => ({
+  //   setFormData((prev) => ({
+
+  //     ...prev,
+  //     [fieldName]: type === "checkbox" ? checked : value,
+
+  //   }));
+  //   if (errors[fieldName]) {
+  //     setErrors((prev) => {
+  //       const newErrors = { ...prev };
+  //       delete newErrors[fieldName];
+  //       return newErrors;
+  //     });
+  //   }
+  // };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value, type } = e.target;
+  const checked = (e.target as HTMLInputElement).checked;
+  const fieldName = name as keyof FormData;
+
+  setFormData((prev) => {
+    const updated = {
       ...prev,
       [fieldName]: type === "checkbox" ? checked : value,
-    }));
-    if (errors[fieldName]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldName];
-        return newErrors;
-      });
+    };
+
+    // Clear car park bay if heavy item checkbox is unticked
+    if (fieldName === "itemIsHeavy" && !checked) {
+      updated.carParkBay = "";
     }
-  };
+
+    return updated;
+  });
+
+  // Clear errors for the field when typing
+  if (errors[fieldName]) {
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[fieldName];
+      return newErrors;
+    });
+  }
+};
+
 
   const canProceed = () => {
     switch (step) {
       case 1: return formData.rmaID;
       case 2: return formData.fullName;
-      case 3: return formData.confirmed && formData.carParkBay;
+      case 3: return formData.confirmed && (!formData.itemIsHeavy || formData.carParkBay);
       default: return false;
     }
   };
@@ -67,8 +99,9 @@ export default function ReturnAProductForm() {
     if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
-    if (!formData.carParkBay.trim()) newErrors.carParkBay = "Car park bay is required";
-    if (!formData.confirmed) newErrors.confirmed = "You must confirm the data";
+    if (formData.itemIsHeavy && !formData.carParkBay.trim()) {
+      newErrors.carParkBay = "Car park bay is required for heavy items";
+    }    if (!formData.confirmed) newErrors.confirmed = "You must confirm the data";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -304,7 +337,7 @@ export default function ReturnAProductForm() {
                   </div>
                 </div>
 
-                <div className="mb-8">
+                {/* <div className="mb-8">
                   <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
                   <input
                     type="number"
@@ -315,7 +348,23 @@ export default function ReturnAProductForm() {
                     placeholder="e.g., Bay 15"
                   />
                   {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
-                </div>
+                </div> */}
+
+                {formData.itemIsHeavy && (
+                  <div className="mb-8">
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
+                    <input
+                      type="number"
+                      name="carParkBay"
+                      value={formData.carParkBay}
+                      onChange={handleChange}
+                      className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                      placeholder="e.g., Bay 15"
+                    />
+                    {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
+                  </div>
+                )}
+
 
                 <div className="mb-8 flex flex-col gap-4">
                   <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
