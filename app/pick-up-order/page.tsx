@@ -1,7 +1,8 @@
 "use client";
 import { useState } from 'react';
 import { ChevronRight, Package, CreditCard, Car } from 'lucide-react';
-import SuccessScreen from '@/app/components/SuccessScreen'
+import SuccessScreen from '@/app/components/SuccessScreen';
+import Link from "next/link";
 
 interface FormData {
   fullName: string;
@@ -37,8 +38,9 @@ const NumberPad = ({ value, onChange, maxLength }: { value: string; onChange: (v
   return (
     <div className="space-y-4">
       <div className="text-5xl font-bold text-center p-6 bg-gray-100 rounded-2xl border-4 border-gray-300 min-h-[100px] flex items-center justify-center text-black">
-        {value || '----'}
+        {value.length > 0 ? '*'.repeat(value.length) : '----'}
       </div>
+
       <div className="grid grid-cols-3 gap-4">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <button
@@ -138,7 +140,7 @@ export default function PickupKiosk() {
         }
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
-        } else if (formData.phone.replace(/\s/g, '').length <= 10) {
+        } else if (formData.phone.replace(/\s/g, '').length < 9) {
           stepErrors.push("Phone number must be at least 10 digits");
         }
         break;
@@ -189,7 +191,7 @@ export default function PickupKiosk() {
     if (!formData.phone.trim()) {
       allErrors.push("Phone number is required");
     } else if (formData.phone.replace(/\s/g, '').length < 9) {
-      allErrors.push("Phone number must be at least 9 digits");
+      allErrors.push("Phone number must be at least 10 digits");
     }
     if (!formData.orderNumber.trim()) allErrors.push("Order number is required");
     if (!formData.creditCard.trim()) {
@@ -270,19 +272,7 @@ export default function PickupKiosk() {
       )}
 
       {/* Header */}
-      <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-30">
-        <button
-          onClick={() => window.location.href = "/choose-service"}
-          className="absolute top-6 right-6 
-           backdrop-blur-md bg-white/20 
-           text-white px-8 py-4 rounded-full
-           shadow-xl border border-white/30 
-           text-xl font-semibold
-           hover:bg-white/30 hover:scale-110 
-           transition-all duration-300"
-        >
-          Back to Main Menu
-        </button>
+      <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-7xl font-bold mb-2">Pick Up Your Order</h1>
           <p className="text-4xl text-blue-100">Fast & Easy Self-Service</p>
@@ -318,7 +308,7 @@ export default function PickupKiosk() {
           {/* Validation Errors Alert */}
           {stepValidationErrors.length > 0 && (
             <div className="mb-6 bg-red-50 border-4 border-red-500 rounded-2xl p-8">
-              <h3 className="text-3xl font-bold text-red-700 mb-4">⚠️ Please Fix These Issues:</h3>
+              <h3 className="text-3xl font-bold text-red-700 mb-4">REQUIRED FIELDS CANNOT BE BLANK:</h3>
               <ul className="list-disc list-inside space-y-2">
                 {stepValidationErrors.map((error, index) => (
                   <li key={index} className="text-2xl text-red-600 font-semibold">
@@ -332,7 +322,7 @@ export default function PickupKiosk() {
           {/* Step 1: Verify Order */}
           {step === 1 && (
             <div className="space-y-6">
-              <div className="bg-white rounded-3xl shadow-xl p-10">
+              <div className="bg-white rounded-3xl shadow-xl p-10 text-black">
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Enter Your Order Details</h2>
 
                 <div className="space-y-10">
@@ -396,13 +386,45 @@ export default function PickupKiosk() {
                         AU
                       </div>
                       <input
-                        type="tel"
+                        type="text"
                         name="phone"
                         value={formData.phone}
-                        onChange={handleChange}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                        onChange={(e) => {
+                          // Keep digits only
+                          let digits = e.target.value.replace(/\D/g, "");
+                        
+                          // Limit to 10 digits
+                          if (digits.length > 10) digits = digits.slice(0, 10);
+                        
+                          // Apply formatting: 4-3-3 (AU mobile format)
+                          let formatted = digits;
+                          if (digits.length > 4 && digits.length <= 7) {
+                            formatted = digits.slice(0, 4) + " " + digits.slice(4);
+                          } else if (digits.length > 7) {
+                            formatted =
+                              digits.slice(0, 4) +
+                              " " +
+                              digits.slice(4, 7) +
+                              " " +
+                              digits.slice(7);
+                          }
+                        
+                          // Push cleaned digits to state (your handleChange)
+                          handleChange({
+                            ...e,
+                            target: {
+                              ...e.target,
+                              value: formatted, // store formatted value
+                              name: "phone"
+                            }
+                          });
+                        }}
+                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl
+                                   focus:border-blue-500 focus:outline-none text-black"
                         placeholder="04XX XXX XXX"
+                        required
                       />
+
                     </div>
                     {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
                   </div>
@@ -514,7 +536,7 @@ export default function PickupKiosk() {
                       <p className="text-red-600 text-xl mt-2">{errors.validId}</p>
                     )}
                   </div>
-                  
+
                   {/* PAYMENT METHOD SECTION */}
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
@@ -618,7 +640,22 @@ export default function PickupKiosk() {
       {/* Bottom Navigation */}
       <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto flex gap-6">
+
+            {/* MAIN MENU BUTTON (visible only on step 1) */}
+        {step === 1 && (
+          <Link
+            href="/choose-service"
+            className="flex-1 text-4xl font-bold py-8 px-10 
+                       bg-yellow-200 text-yellow-700 
+                       rounded-2xl hover:bg-yellow-300 transition-all
+                       flex items-center justify-center"
+          >
+            ⬑ Main Menu
+          </Link>
+        )}
+
           {step > 1 && (
+            
             <button
               onClick={() => setStep(step - 1)}
               className="flex-1 text-4xl font-bold py-8 px-10 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all"
@@ -655,3 +692,5 @@ export default function PickupKiosk() {
     </div>
   );
 }
+
+
