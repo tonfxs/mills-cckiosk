@@ -221,7 +221,7 @@ export default function ReturnAProductForm() {
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-2xl font-semibold mb-4 text-gray-700">Full Name</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Full Name</label>
                     <input
                       type="text"
                       name="fullName"
