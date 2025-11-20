@@ -63,12 +63,18 @@ export default function FloatingDoxy({
                     <p className="text-3xl font-semibold mb-3 animate-pulse">Connecting…</p>
                     <p className="text-lg opacity-70">Please allow camera & microphone</p>
                 </div>
+
             )}
 
             {/* Attention Banner */}
             {!minimized && (
-                <div className="absolute top-0 left-0 w-full bg-yellow-400 text-black text-center py-4 text-3xl font-bold z-50">
-                    ⚠️ Please CHECK IN first before continuing
+                <div className="flex items-center justify-center z-50">
+                    <div className="bg-yellow-300 text-black text-center py-6 px-8">
+                        <p className="text-3xl text-black font-bold">
+                        NOTE:
+                        </p>
+                        <p className="text-2xl text-black font-bold">Check in with your name to connect to a Live Agent and consent to a live video call for assistance.</p>
+                    </div>
                 </div>
             )}
 
@@ -82,13 +88,13 @@ export default function FloatingDoxy({
 
             {!minimized && (
                 <button
-                    className="absolute bottom-0 w-full py-6 text-4xl font-bold bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition"
+                    className="absolute bottom-0 w-full py-6 text-5xl font-bold bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition px-6 py-10"
                     onClick={() => {
                         setMinimized(true);
                         router.push("/choose-service");
                     }}
                 >
-                    CONTINUE
+                    CLICK TO CONTINUE
                 </button>
             )}
 

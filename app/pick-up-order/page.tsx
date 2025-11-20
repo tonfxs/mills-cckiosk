@@ -248,7 +248,7 @@ export default function PickupKiosk() {
 
       // Redirect after 3 seconds
       setTimeout(() => {
-        window.location.href = "/choose-service";
+        window.location.href = "/";
       }, 3000);
 
     } catch (error) {
@@ -275,11 +275,11 @@ export default function PickupKiosk() {
       <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-7xl font-bold mb-2">Pick Up Order</h1>
-          <p className="text-3xl text-blue-100 font-bold">
+          {/* <p className="text-3xl text-blue-100 font-bold">
             NOTE:
           </p>
           <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
-          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p>
+          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p> */}
         </div>
       </div>
 
@@ -336,36 +336,36 @@ export default function PickupKiosk() {
                       type="text"
                       name="orderNumber"
                       value={formData.orderNumber}
-                      // onChange={handleChange}
+                      onChange={handleChange}
 
-                      onChange={(e) => {
-                        let val = e.target.value.toUpperCase();
-                                          
-                        // Remove all non-alphanumeric characters
-                        val = val.replace(/[^A-Z0-9]/g, "");
-                                          
-                        // Enforce: first char = letter only
-                        if (val.length === 1) {
-                          val = val.replace(/[^A-Z]/g, ""); 
-                        }
+                      // onChange={(e) => {
+                      //   let val = e.target.value.toUpperCase();
+
+                      //   // Remove all non-alphanumeric characters
+                      //   val = val.replace(/[^A-Z0-9]/g, "");
+
+                      //   // Enforce: first char = letter only
+                      //   if (val.length === 1) {
+                      //     val = val.replace(/[^A-Z]/g, ""); 
+                      //   }
                       
-                        // Enforce: second → eighth chars = digits only
-                        if (val.length > 1) {
-                          val = val[0] + val.slice(1).replace(/\D/g, ""); 
-                        }
+                      //   // Enforce: second → eighth chars = digits only
+                      //   if (val.length > 1) {
+                      //     val = val[0] + val.slice(1).replace(/\D/g, ""); 
+                      //   }
                       
-                        // Limit to 1 letter + 7 digits = 8 characters total
-                        val = val.slice(0, 8);
+                      //   // Limit to 1 letter + 7 digits = 8 characters total
+                      //   val = val.slice(0, 8);
                       
-                        handleChange({
-                          ...e,
-                          target: {
-                            ...e.target,
-                            value: val,
-                            name: "orderNumber"
-                          }
-                        });
-                      }}
+                      //   handleChange({
+                      //     ...e,
+                      //     target: {
+                      //       ...e.target,
+                      //       value: val,
+                      //       name: "orderNumber"
+                      //     }
+                      //   });
+                      // }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="e.g., E1234567 or M1234567"
                     />
