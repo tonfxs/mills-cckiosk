@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface FloatingDoxyProps {
     doxyUrl?: string;
@@ -10,131 +11,97 @@ export default function FloatingDoxy({
     doxyUrl = process.env.NEXT_PUBLIC_DOXY_URL,
     autoResetMinutes = 10,
 }: FloatingDoxyProps) {
+
+    const router = useRouter();
+
     const [started, setStarted] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
     const [minimized, setMinimized] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
 
-    //
-    // 🔥 1. Restore state on mount so Doxy stays open across navigation
-    //
+    // ❌ REMOVE restoring "started"
+    // BUT keep minimized state
     useEffect(() => {
-        const saved = localStorage.getItem("doxy-started");
-        if (saved === "true") setStarted(true);
-
-        const savedMin = localStorage.getItem("doxy-minimized");
-        if (savedMin === "true") setMinimized(true);
+        const savedMini = localStorage.getItem("doxy-minimized");
+        if (savedMini === "true") setMinimized(true);
     }, []);
 
-    //
-    // 🔥 2. Persist state so it does NOT reset on re-render or page navigation
-    //
-    useEffect(() => {
-        localStorage.setItem("doxy-started", started ? "true" : "false");
-    }, [started]);
-
+    // Persist minimize only
     useEffect(() => {
         localStorage.setItem("doxy-minimized", minimized ? "true" : "false");
     }, [minimized]);
 
-    //
-    // 🔥 3. Global event so any page can open Doxy
-    //
+    // Only Touch-to-Start event triggers FloatingDoxy
     useEffect(() => {
-        const handleOpen = () => setStarted(true);
-        window.addEventListener("open-doxy", handleOpen);
-        return () => window.removeEventListener("open-doxy", handleOpen);
+        const handler = () => setStarted(true);
+        window.addEventListener("open-doxy", handler);
+        return () => window.removeEventListener("open-doxy", handler);
     }, []);
 
-    //
-    // 🔥 4. Auto-reset (optional)
-    //
+    // Auto reset after timeout
     useEffect(() => {
         if (!started) return;
         const timer = setTimeout(() => {
-            localStorage.removeItem("doxy-started");
             localStorage.removeItem("doxy-minimized");
             window.location.reload();
         }, autoResetMinutes * 60 * 1000);
         return () => clearTimeout(timer);
     }, [started, autoResetMinutes]);
 
-    //
-    // If not started, don't show the widget
-    //
+    // ⛔ If not started → render nothing
     if (!started) return null;
-
-    const width = minimized ? 200 : 320;
-    const height = minimized ? 150 : 260;
 
     return (
         <div
-            className="fixed z-[9999] pointer-events-auto transition-all duration-300"
-            style={{
-                top: "10px",
-                right: "10px",
-                width: `${width}px`,
-                height: `${height}px`,
-            }}
+            className={`fixed z-[99999] transition-all duration-300 ${minimized
+                    ? "top-4 right-4 w-[360px] h-[300px] shadow-2xl rounded-xl overflow-hidden"
+                    : "inset-0 bg-black"
+                }`}
         >
-            <div className="relative w-full h-full bg-white shadow-xl border border-gray-300 rounded-xl overflow-hidden">
-
-                {/* Header */}
-                <div
-                    className="absolute top-0 left-0 right-0 h-10 
-                    bg-gradient-to-r from-blue-600 to-blue-700 
-                    flex items-center justify-between px-3 
-                    z-50"
-                >
-                    <span className="text-white font-semibold text-sm">
-                        Video Call
-                    </span>
-
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setMinimized(!minimized)}
-                            className="bg-yellow-500 hover:bg-yellow-600 
-                            rounded-full w-6 h-6 flex items-center 
-                            justify-center text-white text-xs font-bold"
-                        >
-                            {minimized ? "□" : "−"}
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setStarted(false);
-                                localStorage.removeItem("doxy-started");
-                                localStorage.removeItem("doxy-minimized");
-                            }}
-                            className="bg-red-500 hover:bg-red-600 
-                            rounded-full w-6 h-6 flex items-center 
-                            justify-center text-white text-xs font-bold"
-                        >
-                            ✕
-                        </button>
-                    </div>
+            {/* Loading Overlay */}
+            {!isLoaded && !minimized && (
+                <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white z-50">
+                    <p className="text-3xl font-semibold mb-3 animate-pulse">Connecting…</p>
+                    <p className="text-lg opacity-70">Please allow camera & microphone</p>
                 </div>
+            )}
 
-                {/* Loading Overlay */}
-                {!isLoaded && !minimized && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-white z-40 mt-10">
-                        <p className="text-lg mb-2 animate-pulse">Connecting…</p>
-                        <p className="text-xs text-gray-300">Please allow camera & mic</p>
-                    </div>
-                )}
+            {/* Attention Banner */}
+            {!minimized && (
+                <div className="absolute top-0 left-0 w-full bg-yellow-400 text-black text-center py-4 text-3xl font-bold z-50">
+                    ⚠️ Please CHECK IN first before continuing
+                </div>
+            )}
 
-                {/* Iframe */}
-                {!minimized && (
-                    <div className="w-full h-full pt-10">
-                        <iframe
-                            src={doxyUrl}
-                            title="Doxy Video Call"
-                            allow="camera; microphone; fullscreen; display-capture"
-                            className="w-full h-full border-none"
-                            onLoad={() => setIsLoaded(true)}
-                        ></iframe>
-                    </div>
-                )}
-            </div>
+            {/* DOXY iframe */}
+            <iframe
+                src={doxyUrl}
+                className="w-full h-full border-none"
+                allow="camera; microphone; fullscreen; display-capture"
+                onLoad={() => setIsLoaded(true)}
+            ></iframe>
+
+            {!minimized && (
+                <button
+                    className="absolute bottom-0 w-full py-6 text-4xl font-bold bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition"
+                    onClick={() => {
+                        setMinimized(true);
+                        router.push("/choose-service");
+                    }}
+                >
+                    CONTINUE
+                </button>
+            )}
+
+            <button
+                className="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
+                onClick={() => {
+                    setStarted(false);
+                    setMinimized(false);
+                    localStorage.removeItem("doxy-minimized");
+                }}
+            >
+                ✕
+            </button>
         </div>
     );
 }
