@@ -248,7 +248,7 @@ export default function PickupKiosk() {
 
       // Redirect after 3 seconds
       setTimeout(() => {
-        window.location.href = "/choose-service";
+        window.location.href = "/";
       }, 3000);
 
     } catch (error) {
