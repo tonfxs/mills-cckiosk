@@ -11,48 +11,43 @@ export default function FloatingDoxy({
     doxyUrl = process.env.NEXT_PUBLIC_DOXY_URL,
     autoResetMinutes = 10,
 }: FloatingDoxyProps) {
+
     const router = useRouter();
 
     const [started, setStarted] = useState(false);
     const [minimized, setMinimized] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Restore state
+    // ❌ REMOVE restoring "started"
+    // BUT keep minimized state
     useEffect(() => {
-        const saved = localStorage.getItem("doxy-started");
         const savedMini = localStorage.getItem("doxy-minimized");
-
-        if (saved === "true") setStarted(true);
         if (savedMini === "true") setMinimized(true);
     }, []);
 
-    // Persist states
-    useEffect(() => {
-        localStorage.setItem("doxy-started", started ? "true" : "false");
-    }, [started]);
-
+    // Persist minimize only
     useEffect(() => {
         localStorage.setItem("doxy-minimized", minimized ? "true" : "false");
     }, [minimized]);
 
-    // Allow global open event
+    // Only Touch-to-Start event triggers FloatingDoxy
     useEffect(() => {
-        const handleOpen = () => setStarted(true);
-        window.addEventListener("open-doxy", handleOpen);
-        return () => window.removeEventListener("open-doxy", handleOpen);
+        const handler = () => setStarted(true);
+        window.addEventListener("open-doxy", handler);
+        return () => window.removeEventListener("open-doxy", handler);
     }, []);
 
-    // Auto-reset
+    // Auto reset after timeout
     useEffect(() => {
         if (!started) return;
         const timer = setTimeout(() => {
-            localStorage.removeItem("doxy-started");
             localStorage.removeItem("doxy-minimized");
             window.location.reload();
         }, autoResetMinutes * 60 * 1000);
         return () => clearTimeout(timer);
     }, [started, autoResetMinutes]);
 
+    // ⛔ If not started → render nothing
     if (!started) return null;
 
     return (
@@ -62,7 +57,6 @@ export default function FloatingDoxy({
                     : "inset-0 bg-black"
                 }`}
         >
-
             {/* Loading Overlay */}
             {!isLoaded && !minimized && (
                 <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white z-50">
@@ -71,7 +65,14 @@ export default function FloatingDoxy({
                 </div>
             )}
 
-            {/* DOXY EMBED */}
+            {/* Attention Banner */}
+            {!minimized && (
+                <div className="absolute top-0 left-0 w-full bg-yellow-400 text-black text-center py-4 text-3xl font-bold z-50">
+                    ⚠️ Please CHECK IN first before continuing
+                </div>
+            )}
+
+            {/* DOXY iframe */}
             <iframe
                 src={doxyUrl}
                 className="w-full h-full border-none"
@@ -79,10 +80,9 @@ export default function FloatingDoxy({
                 onLoad={() => setIsLoaded(true)}
             ></iframe>
 
-            {/* CONTROLS (only in full mode) */}
             {!minimized && (
                 <button
-                    className="absolute bottom-0 w-full py-6 text-4xl font-bold bg-green-600 text-white"
+                    className="absolute bottom-0 w-full py-6 text-4xl font-bold bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition"
                     onClick={() => {
                         setMinimized(true);
                         router.push("/choose-service");
@@ -92,13 +92,11 @@ export default function FloatingDoxy({
                 </button>
             )}
 
-            {/* Close/X Button */}
             <button
                 className="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
                 onClick={() => {
                     setStarted(false);
                     setMinimized(false);
-                    localStorage.removeItem("doxy-started");
                     localStorage.removeItem("doxy-minimized");
                 }}
             >
