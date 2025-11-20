@@ -2,6 +2,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import QRScanner from '@/app/components/QrCodeScanner';
+
 
 export default function ChooseService() {
   const router = useRouter();
@@ -78,9 +80,13 @@ export default function ChooseService() {
           Return a Product
         </button>
 
-        {/* <button onClick={handleConnectToAgent} className={baseButton} type="button">
-          Connect to a Live Agent
-        </button> */}
+
+
+        <QRScanner>
+
+        </QRScanner>
+
+
       </section>
     </main>
   );
