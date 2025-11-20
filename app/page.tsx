@@ -27,7 +27,7 @@
 //       </div>
 
 //       {/* Touch to Start Button */}
-      
+
 //       <div className="w-full bg-gradient-to-r from-[#0070C9] to-[#004E9A] py-6 flex justify-center items-center text-white gap-3">
 //         <Image
 //           src="/images/hand.png"
@@ -122,7 +122,6 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 const images = [
   "/images/click_collect.svg",
@@ -131,13 +130,12 @@ const images = [
 ];
 
 export default function Home() {
-  const router = useRouter();
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
-    }, 4000); // change slide every 4 seconds
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -155,7 +153,7 @@ export default function Home() {
         />
       </header>
 
-      {/* Center Slideshow */}
+      {/* Slideshow */}
       <section className="relative flex items-center justify-center flex-1 w-full overflow-hidden px-4">
         {images.map((src, index) => (
           <Image
@@ -164,9 +162,8 @@ export default function Home() {
             alt={`Slide ${index + 1}`}
             width={800}
             height={600}
-            className={`absolute transition-opacity duration-1000 ease-in-out ${
-              index === current ? "opacity-100" : "opacity-0"
-            } h-auto w-[80vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] xl:w-[40vw]`}
+            className={`absolute transition-opacity duration-1000 ease-in-out ${index === current ? "opacity-100" : "opacity-0"
+              } h-auto w-[80vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] xl:w-[40vw]`}
           />
         ))}
       </section>
@@ -177,7 +174,10 @@ export default function Home() {
         role="button"
         tabIndex={0}
         aria-label="Touch to start"
-        onClick={() => router.push("/choose-service")}
+        onClick={() => {
+          // 👉 Open the Floating Doxy
+          window.dispatchEvent(new Event("open-doxy"));
+        }}
       >
         <Image
           src="/images/hand.png"
