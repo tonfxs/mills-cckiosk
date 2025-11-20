@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
             message: "Order saved",
         });
     } catch (err: any) {
-        console.error("❌ ERROR:", err);
+        console.error(" ERROR:", err);
         return NextResponse.json(
             { success: false, error: err.message },
             { status: 500 }
