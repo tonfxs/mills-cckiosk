@@ -89,6 +89,7 @@ export default function ChooseService() {
         {/* <button onClick={handleConnectToAgent} className={baseButton} type="button">
           Connect to a Live Agent
         </button> */}
+
       </section>
     </main>
   );

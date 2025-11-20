@@ -9,7 +9,6 @@ interface ReturnData {
     phone: string;
     rmaID: string;
     carParkBay: string;
-    itemIsHeavy: boolean;
     confirmed: boolean;
 }
 
@@ -74,7 +73,6 @@ async function saveToSheet(returnData: ReturnData) {
                     returnData.phone,
                     returnData.rmaID,
                     returnData.carParkBay,
-                    returnData.itemIsHeavy ? "Yes" : "No",
                     returnData.confirmed ? "Yes" : "No",
                     "Pending Pickup",
                 ],
@@ -96,7 +94,6 @@ export async function POST(request: NextRequest) {
             phone: (formData.get("phone") || "").toString().trim(),
             rmaID: (formData.get("rmaID") || "").toString().trim(),
             carParkBay: (formData.get("carParkBay") || "").toString().trim(),
-            itemIsHeavy: formData.get("itemIsHeavy") === "true",
             confirmed: formData.get("confirmed") === "true",
         };
 
@@ -173,7 +170,6 @@ export async function GET(request: NextRequest) {
                 phone: match[2],
                 rmaID: match[3],
                 carParkBay: match[4],
-                itemIsHeavy: match[5] === "Yes",
                 confirmed: match[6] === "Yes",
                 status: match[7],
             },
