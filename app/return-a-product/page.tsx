@@ -9,7 +9,6 @@ interface FormData {
   phone: string;
   rmaID: string;
   carParkBay: string;
-  itemIsHeavy: boolean;
   confirmed: boolean;
 }
 
@@ -25,7 +24,6 @@ export default function ReturnAProductForm() {
     phone: "",
     rmaID: "",
     carParkBay: "",
-    itemIsHeavy: false,
     confirmed: false,
   });
 
@@ -64,9 +62,9 @@ export default function ReturnAProductForm() {
     };
 
     // Clear car park bay if heavy item checkbox is unticked
-    if (fieldName === "itemIsHeavy" && !checked) {
-      updated.carParkBay = "";
-    }
+    // if (fieldName === "itemIsHeavy" && !checked) {
+    //   updated.carParkBay = "";
+    // }
 
     return updated;
   });
@@ -86,7 +84,7 @@ export default function ReturnAProductForm() {
     switch (step) {
       case 1: return formData.rmaID;
       case 2: return formData.fullName;
-      case 3: return formData.confirmed && (!formData.itemIsHeavy || formData.carParkBay);
+      case 3: return formData.confirmed && formData.carParkBay;
       default: return false;
     }
   };
@@ -100,7 +98,7 @@ export default function ReturnAProductForm() {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
 
-    if (formData.itemIsHeavy && !formData.carParkBay.trim()) {
+    if (!formData.carParkBay.trim()) {
       newErrors.carParkBay = "Car park bay is required for heavy items";
     }    
     
@@ -353,7 +351,7 @@ export default function ReturnAProductForm() {
                   {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
                 </div> */}
 
-                {formData.itemIsHeavy && (
+
                   <div className="mb-8">
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
                     <input
@@ -366,24 +364,10 @@ export default function ReturnAProductForm() {
                     />
                     {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
                   </div>
-                )}
 
 
                 <div className="mb-8 flex flex-col gap-4">
-                  <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="itemIsHeavy"
-                      checked={formData.itemIsHeavy}
-                      onChange={handleChange}
-                      className="w-12 h-12 mt-1"
-                    />
-                    <span className="text-3xl font-semibold text-gray-800">
-                      My item is heavy and I need assistance/forklift assistance.
-                    </span>
-                  </label>
-                  {errors.itemIsHeavy && <p className="text-red-600 text-xl mt-2">{errors.itemIsHeavy}</p>}
-
+                  
                   <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                     <input
                       type="checkbox"

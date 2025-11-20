@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { ChevronRight, Package, CreditCard, Car } from 'lucide-react';
+import { ChevronRight, Package, CreditCard, Car, CardSimIcon } from 'lucide-react';
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
 
@@ -126,12 +126,14 @@ export default function PickupKiosk() {
         if (!formData.orderNumber.trim()) {
           stepErrors.push("Order number is required");
         }
-        if (!formData.creditCard.trim()) {
-          stepErrors.push("Last 4 digits of credit card are required");
-        } else if (formData.creditCard.length !== 4) {
-          stepErrors.push("Credit card must be exactly 4 digits");
-        } else if (!/^\d{4}$/.test(formData.creditCard)) {
-          stepErrors.push("Credit card must contain only numbers");
+        if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
+          if (!formData.creditCard.trim()) {
+            stepErrors.push("Last 4 digits of credit card are required");
+          } else if (formData.creditCard.length !== 4) {
+            stepErrors.push("Credit card must be exactly 4 digits");
+          } else if (!/^\d{4}$/.test(formData.creditCard)) {
+            stepErrors.push("Credit card must contain only numbers");
+          }
         }
         break;
       case 2:
@@ -184,16 +186,30 @@ export default function PickupKiosk() {
   };
 
   const handleSubmit = async () => {
-    // Final validation before submission
-    const allErrors: string[] = [];
+  setIsSubmitting(true);
+  setErrors({});
 
-    if (!formData.fullName.trim()) allErrors.push("Full name is required");
-    if (!formData.phone.trim()) {
-      allErrors.push("Phone number is required");
-    } else if (formData.phone.replace(/\s/g, '').length < 9) {
-      allErrors.push("Phone number must be at least 10 digits");
-    }
-    if (!formData.orderNumber.trim()) allErrors.push("Order number is required");
+  const allErrors: string[] = [];
+
+  // Full Name
+  if (!formData.fullName.trim()) {
+    allErrors.push("Full name is required");
+  }
+
+  // Phone Number
+  if (!formData.phone.trim()) {
+    allErrors.push("Phone number is required");
+  } else if (formData.phone.replace(/\s/g, "").length < 10) {
+    allErrors.push("Phone number must be at least 10 digits");
+  }
+
+  // Order Number
+  if (!formData.orderNumber.trim()) {
+    allErrors.push("Order number is required");
+  }
+
+  // Credit Card (only validate if credit/debit is selected)
+  if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
     if (!formData.creditCard.trim()) {
       allErrors.push("Last 4 digits of credit card are required");
     } else if (formData.creditCard.length !== 4) {
@@ -201,62 +217,68 @@ export default function PickupKiosk() {
     } else if (!/^\d{4}$/.test(formData.creditCard)) {
       allErrors.push("Credit card must contain only numbers");
     }
-    if (!formData.validId) allErrors.push("Please select a valid ID");
-    if (!formData.paymentMethod) allErrors.push("Please select a payment method");
-    if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
-    if (!formData.confirmed) allErrors.push("You must confirm the data");
+  }
 
-    if (allErrors.length > 0) {
-      setStepValidationErrors(allErrors);
-      alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
+  // Other required fields
+  if (!formData.validId) allErrors.push("Please select a valid ID");
+  if (!formData.paymentMethod) allErrors.push("Please select a payment method");
+  if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
+  if (!formData.confirmed) allErrors.push("You must confirm the data");
+
+  // Stop here if errors exist
+  if (allErrors.length > 0) {
+    setStepValidationErrors(allErrors);
+    alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
+    setIsSubmitting(false);
+    return;
+  }
+
+  // No errors → continue submitting
+  setStepValidationErrors([]);
+
+  try {
+    const formDataToSend = new FormData();
+
+    Object.keys(formData).forEach((key) => {
+      const k = key as keyof FormData;
+      formDataToSend.append(k, formData[k].toString());
+    });
+
+    const response = await fetch("/api/pickup-order", {
+      method: "POST",
+      body: formDataToSend,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      if (result.errors) {
+        setErrors(result.errors);
+        const msgs = Object.values(result.errors).join("\n• ");
+        alert("Submission failed:\n\n• " + msgs);
+      } else {
+        alert(result.error || "Submission failed");
+      }
       setIsSubmitting(false);
       return;
     }
 
-    setIsSubmitting(true);
-    setErrors({});
-    setStepValidationErrors([]);
+    // Success screen
+    setShowSuccess(true);
 
-    try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        const fieldKey = key as keyof FormData;
-        formDataToSend.append(key, formData[fieldKey].toString());
-      });
+    // Redirect in 3 seconds
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 3000);
 
-      const response = await fetch("/api/pickup-order", {
-        method: "POST",
-        body: formDataToSend,
-      });
+  } catch (error) {
+    console.error("Submission error:", error);
+    alert("An error occurred. Please try again.");
+  }
 
-      const result = await response.json();
+  setIsSubmitting(false);
+};
 
-      if (!response.ok) {
-        if (result.errors) {
-          setErrors(result.errors);
-          const errorMessages = Object.values(result.errors).join("\n• ");
-          alert("Submission failed:\n\n• " + errorMessages);
-        } else {
-          alert(result.error || "Submission failed");
-        }
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Show success screen
-      setShowSuccess(true);
-
-      // Redirect after 3 seconds
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 3000);
-
-    } catch (error) {
-      console.error("Submission error:", error);
-      alert("An error occurred. Please try again.");
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
@@ -289,7 +311,7 @@ export default function PickupKiosk() {
           {[
             { num: 1, label: 'Verify Order', icon: Package },
             { num: 2, label: 'Contact Info', icon: CreditCard },
-            { num: 3, label: 'ID & Payment', icon: CreditCard },
+            { num: 3, label: 'Verify ID', icon: CardSimIcon },
             { num: 4, label: 'Confirm', icon: Car }
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
@@ -373,20 +395,67 @@ export default function PickupKiosk() {
                   </div>
 
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Last 4 Digits of Credit Card</label>
-                    <NumberPad
-                      value={formData.creditCard}
-                      onChange={(value: string) => {
-                        setFormData(prev => ({ ...prev, creditCard: value }));
-                        if (stepValidationErrors.length > 0) {
-                          setStepValidationErrors([]);
-                        }
-                      }}
-                      maxLength={4}
-                    />
-                    {errors.creditCard && <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>}
-                    <p className="text-gray-500 text-2xl mt-2">Must be exactly 4 digits</p>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      Payment Method
+                    </label>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { value: "credit-card", label: "Credit Card" },
+                        { value: "debit-card", label: "Debit Card" },
+                        { value: "cash", label: "Cash" },
+                        { value: "others", label: "Others" }
+                      ].map(({ value, label }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, paymentMethod: value }));
+                            if (stepValidationErrors.length > 0) {
+                              setStepValidationErrors([]);
+                            }
+                          }}
+                          className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${
+                            formData.paymentMethod === value
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {errors.paymentMethod && (
+                      <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>
+                    )}
                   </div>
+                  
+                  {/* ✅ Show NumberPad ONLY when credit or debit card is selected */}
+                  {["credit-card", "debit-card"].includes(formData.paymentMethod) && (
+                    <div className="mt-10">
+                      <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                        Last 4 Digits of Credit Card
+                      </label>
+                  
+                      <NumberPad
+                        value={formData.creditCard}
+                        onChange={(value: string) => {
+                          setFormData((prev) => ({ ...prev, creditCard: value }));
+                          if (stepValidationErrors.length > 0) {
+                            setStepValidationErrors([]);
+                          }
+                        }}
+                        maxLength={4}
+                      />
+
+                      {errors.creditCard && (
+                        <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>
+                      )}
+
+                      <p className="text-gray-500 text-2xl mt-2">Must be exactly 4 digits</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -466,65 +535,8 @@ export default function PickupKiosk() {
             </div>
           )}
 
-          {/* Step 3: ID & Payment */}
+          {/* Step 3: ID */}
           {step === 3 && (
-            // <div className="space-y-6">
-            //   <div className="bg-white rounded-3xl shadow-xl p-10">
-            //     <h2 className="text-5xl font-bold mb-8 text-gray-800">Identification & Payment</h2>
-
-            //     <div className="space-y-12">
-            //       <div>
-            //         <label className="block text-4xl font-semibold mb-4 text-gray-700">Select Valid ID</label>
-            //         <div className="grid grid-cols-2 gap-4">
-            //           {[
-            //             { value: 'drivers-license', label: "Driver's License" },
-            //             { value: 'passport', label: 'Passport' },
-            //             { value: 'medicare-card', label: 'Medicare Card' },
-            //             { value: 'immicard', label: 'ImmiCard' }
-            //           ].map(({ value, label }) => (
-            //             <button
-            //               key={value}
-            //               type="button"
-            //               onClick={() => setFormData(prev => ({ ...prev, validId: value }))}
-            //               className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.validId === value
-            //                 ? 'bg-blue-600 text-white border-blue-600'
-            //                 : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-            //                 }`}
-            //             >
-            //               {label}
-            //             </button>
-            //           ))}
-            //         </div>
-            //         {errors.validId && <p className="text-red-600 text-xl mt-2">{errors.validId}</p>}
-            //       </div>
-
-            //       <div>
-            //         <label className="block text-4xl font-semibold mb-4 text-gray-700">Payment Method</label>
-            //         <div className="grid grid-cols-2 gap-4">
-            //           {[
-            //             { value: 'credit-card', label: 'Credit Card' },
-            //             { value: 'debit-card', label: 'Debit Card' },
-            //             { value: 'cash', label: 'Cash' },
-            //             { value: 'others', label: 'Others' }
-            //           ].map(({ value, label }) => (
-            //             <button
-            //               key={value}
-            //               type="button"
-            //               onClick={() => setFormData(prev => ({ ...prev, paymentMethod: value }))}
-            //               className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
-            //                 ? 'bg-blue-600 text-white border-blue-600'
-            //                 : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-            //                 }`}
-            //             >
-            //               {label}
-            //             </button>
-            //           ))}
-            //         </div>
-            //         {errors.paymentMethod && <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>}
-            //       </div>
-            //     </div>
-            //   </div>
-            // </div>
 
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
@@ -569,39 +581,6 @@ export default function PickupKiosk() {
                       <p className="text-red-600 text-xl mt-2">{errors.validId}</p>
                     )}
                   </div>
-
-                  {/* PAYMENT METHOD SECTION */}
-                  <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                      Payment Method
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { value: 'credit-card', label: 'Credit Card' },
-                        { value: 'debit-card', label: 'Debit Card' },
-                        { value: 'cash', label: 'Cash' },
-                        { value: 'others', label: 'Others' }
-                      ].map(({ value, label }) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, paymentMethod: value }));
-                            if (stepValidationErrors.length > 0) {
-                              setStepValidationErrors([]);
-                            }
-                          }}
-                          className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                            }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    {errors.paymentMethod && <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>}
-                  </div>
                 </div>
               </div>
             </div>
@@ -610,6 +589,7 @@ export default function PickupKiosk() {
 
           {/* Step 4: Confirm */}
           {step === 4 && (
+
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
                 <h2 className="text-6xl font-bold mb-8 text-gray-800">Review & Confirm</h2>
@@ -619,26 +599,45 @@ export default function PickupKiosk() {
                     <span className="font-semibold text-gray-600">Order Number:</span>
                     <span className="font-bold text-black">{formData.orderNumber}</span>
                   </div>
+
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
                     <span className="font-bold text-black">{formData.fullName}</span>
                   </div>
+
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Phone:</span>
                     <span className="font-bold text-black">{formData.phone}</span>
                   </div>
+
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">ID Type:</span>
-                    <span className="font-bold capitalize text-black">{formData.validId.replace('-', ' ')}</span>
+                    <span className="font-bold capitalize text-black">
+                      {formData.validId.replace("-", " ")}
+                    </span>
                   </div>
+
                   <div className="flex justify-between text-4xl">
                     <span className="font-semibold text-gray-600">Payment:</span>
-                    <span className="font-bold capitalize text-black">{formData.paymentMethod.replace('-', ' ')}</span>
+                    <span className="font-bold capitalize text-black">
+                      {formData.paymentMethod.replace("-", " ")}
+                    </span>
                   </div>
-                </div>
 
+                  {/* ✅ CASH DISCLAIMER */}
+                  {formData.paymentMethod === "cash" && (
+                    <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                      <p className="text-3xl font-semibold text-yellow-800">
+                        Please proceed to the window reception to pay in cash.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="mb-8">
-                  <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
+                  <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                    Car Park Bay Number
+                  </label>
                   <input
                     type="text"
                     name="carParkBay"
@@ -647,9 +646,11 @@ export default function PickupKiosk() {
                     className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                     placeholder="e.g., Bay 15"
                   />
-                  {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
+                  {errors.carParkBay && (
+                    <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>
+                  )}
                 </div>
-
+                
                 <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                   <input
                     type="checkbox"
@@ -662,9 +663,13 @@ export default function PickupKiosk() {
                     I confirm that all provided information is accurate and valid
                   </span>
                 </label>
-                {errors.confirmed && <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>}
+                
+                {errors.confirmed && (
+                  <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>
+                )}
               </div>
             </div>
+
           )}
 
         </div>
