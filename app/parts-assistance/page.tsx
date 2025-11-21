@@ -163,9 +163,17 @@ export default function PartsAssistance() {
   };
 
   const canProceed = () => {
+    if (step === 3) {
+      const hasCarBay = formData.carParkBay.trim().length > 0;
+      const hasConfirmed = formData.confirmed === true;
+      return hasCarBay && hasConfirmed;
+    }
+
+    // Other steps keep normal validation
     const stepErrors = validateStep(step);
     return stepErrors.length === 0;
   };
+
 
   const handleContinue = () => {
     const stepErrors = validateStep(step);
@@ -181,97 +189,97 @@ export default function PartsAssistance() {
   };
 
   const handleSubmit = async () => {
-  setIsSubmitting(true);
-  setErrors({});
+    setIsSubmitting(true);
+    setErrors({});
 
-  const allErrors: string[] = [];
+    const allErrors: string[] = [];
 
-  // Full Name
-  if (!formData.fullName.trim()) {
-    allErrors.push("Full name is required");
-  }
-
-  // Phone Number
-  if (!formData.phone.trim()) {
-    allErrors.push("Phone number is required");
-  } else if (formData.phone.replace(/\s/g, "").length < 10) {
-    allErrors.push("Phone number must be at least 10 digits");
-  }
-
-  // Order Number
-  if (!formData.orderNumber.trim()) {
-    allErrors.push("Order number is required");
-  }
-
-  // Credit Card (only validate if credit/debit is selected)
-  if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
-    if (!formData.creditCard.trim()) {
-      allErrors.push("Last 4 digits of credit card are required");
-    } else if (formData.creditCard.length !== 4) {
-      allErrors.push("Credit card must be exactly 4 digits");
-    } else if (!/^\d{4}$/.test(formData.creditCard)) {
-      allErrors.push("Credit card must contain only numbers");
+    // Full Name
+    if (!formData.fullName.trim()) {
+      allErrors.push("Full name is required");
     }
-  }
 
-  // Other required fields
-  if (!formData.paymentMethod) allErrors.push("Please select a payment method");
-  if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
-  if (!formData.confirmed) allErrors.push("You must confirm the data");
+    // Phone Number
+    if (!formData.phone.trim()) {
+      allErrors.push("Phone number is required");
+    } else if (formData.phone.replace(/\s/g, "").length < 10) {
+      allErrors.push("Phone number must be at least 10 digits");
+    }
 
-  // Stop here if errors exist
-  if (allErrors.length > 0) {
-    setStepValidationErrors(allErrors);
-    alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
-    setIsSubmitting(false);
-    return;
-  }
+    // Order Number
+    if (!formData.orderNumber.trim()) {
+      allErrors.push("Order number is required");
+    }
 
-  // No errors → continue submitting
-  setStepValidationErrors([]);
-
-  try {
-    const formDataToSend = new FormData();
-
-    Object.keys(formData).forEach((key) => {
-      const k = key as keyof FormData;
-      formDataToSend.append(k, formData[k].toString());
-    });
-
-    const response = await fetch("/api/", {
-      method: "POST",
-      body: formDataToSend,
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      if (result.errors) {
-        setErrors(result.errors);
-        const msgs = Object.values(result.errors).join("\n• ");
-        alert("Submission failed:\n\n• " + msgs);
-      } else {
-        alert(result.error || "Submission failed");
+    // Credit Card (only validate if credit/debit is selected)
+    if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
+      if (!formData.creditCard.trim()) {
+        allErrors.push("Last 4 digits of credit card are required");
+      } else if (formData.creditCard.length !== 4) {
+        allErrors.push("Credit card must be exactly 4 digits");
+      } else if (!/^\d{4}$/.test(formData.creditCard)) {
+        allErrors.push("Credit card must contain only numbers");
       }
+    }
+
+    // Other required fields
+    if (!formData.paymentMethod) allErrors.push("Please select a payment method");
+    if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
+    if (!formData.confirmed) allErrors.push("You must confirm the data");
+
+    // Stop here if errors exist
+    if (allErrors.length > 0) {
+      setStepValidationErrors(allErrors);
+      alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
       setIsSubmitting(false);
       return;
     }
 
-    // Success screen
-    setShowSuccess(true);
+    // No errors → continue submitting
+    setStepValidationErrors([]);
 
-    // Redirect in 3 seconds
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 3000);
+    try {
+      const formDataToSend = new FormData();
 
-  } catch (error) {
-    console.error("Submission error:", error);
-    alert("An error occurred. Please try again.");
-  }
+      Object.keys(formData).forEach((key) => {
+        const k = key as keyof FormData;
+        formDataToSend.append(k, formData[k].toString());
+      });
 
-  setIsSubmitting(false);
-};
+      const response = await fetch("/api/parts-assistance", {
+        method: "POST",
+        body: formDataToSend,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.errors) {
+          setErrors(result.errors);
+          const msgs = Object.values(result.errors).join("\n• ");
+          alert("Submission failed:\n\n• " + msgs);
+        } else {
+          alert(result.error || "Submission failed");
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Success screen
+      setShowSuccess(true);
+
+      // Redirect in 3 seconds
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3000);
+
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("An error occurred. Please try again.");
+    }
+
+    setIsSubmitting(false);
+  };
 
 
   return (
@@ -363,15 +371,15 @@ export default function PartsAssistance() {
                       //   if (val.length === 1) {
                       //     val = val.replace(/[^A-Z]/g, ""); 
                       //   }
-                      
+
                       //   // Enforce: second → eighth chars = digits only
                       //   if (val.length > 1) {
                       //     val = val[0] + val.slice(1).replace(/\D/g, ""); 
                       //   }
-                      
+
                       //   // Limit to 1 letter + 7 digits = 8 characters total
                       //   val = val.slice(0, 8);
-                      
+
                       //   handleChange({
                       //     ...e,
                       //     target: {
@@ -408,29 +416,28 @@ export default function PartsAssistance() {
                               setStepValidationErrors([]);
                             }
                           }}
-                          className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${
-                            formData.paymentMethod === value
+                          className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
                               ? "bg-blue-600 text-white border-blue-600"
                               : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-                          }`}
+                            }`}
                         >
                           {label}
                         </button>
                       ))}
                     </div>
-                    
+
                     {errors.paymentMethod && (
                       <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>
                     )}
                   </div>
-                  
+
                   {/* ✅ Show NumberPad ONLY when credit or debit card is selected */}
                   {["credit-card", "debit-card"].includes(formData.paymentMethod) && (
                     <div className="mt-10">
                       <label className="block text-4xl font-semibold mb-4 text-gray-700">
                         Last 4 Digits of Credit Card
                       </label>
-                  
+
                       <NumberPad
                         value={formData.creditCard}
                         onChange={(value: string) => {
@@ -487,10 +494,10 @@ export default function PartsAssistance() {
                         onChange={(e) => {
                           // Keep digits only
                           let digits = e.target.value.replace(/\D/g, "");
-                        
+
                           // Limit to 10 digits
                           if (digits.length > 10) digits = digits.slice(0, 10);
-                        
+
                           // Apply formatting: 4-3-3 (AU mobile format)
                           let formatted = digits;
                           if (digits.length > 4 && digits.length <= 7) {
@@ -503,7 +510,7 @@ export default function PartsAssistance() {
                               " " +
                               digits.slice(7);
                           }
-                        
+
                           // Push cleaned digits to state (your handleChange)
                           handleChange({
                             ...e,
@@ -568,7 +575,7 @@ export default function PartsAssistance() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mb-8">
                   <label className="block text-4xl font-semibold mb-4 text-gray-700">
                     Car Park Bay Number
@@ -585,7 +592,7 @@ export default function PartsAssistance() {
                     <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>
                   )}
                 </div>
-                
+
                 <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                   <input
                     type="checkbox"
@@ -598,7 +605,7 @@ export default function PartsAssistance() {
                     I confirm that all provided information is accurate and valid
                   </span>
                 </label>
-                
+
                 {errors.confirmed && (
                   <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>
                 )}
@@ -614,21 +621,21 @@ export default function PartsAssistance() {
       <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto flex gap-6">
 
-            {/* MAIN MENU BUTTON (visible only on step 1) */}
-        {step === 1 && (
-          <Link
-            href="/choose-service"
-            className="flex-1 text-4xl font-bold py-8 px-10 
+          {/* MAIN MENU BUTTON (visible only on step 1) */}
+          {step === 1 && (
+            <Link
+              href="/choose-service"
+              className="flex-1 text-4xl font-bold py-8 px-10 
                        bg-yellow-200 text-yellow-700 
                        rounded-2xl hover:bg-yellow-300 transition-all
                        flex items-center justify-center"
-          >
-            ⬑ Main Menu
-          </Link>
-        )}
+            >
+              ⬑ Main Menu
+            </Link>
+          )}
 
           {step > 1 && (
-            
+
             <button
               onClick={() => setStep(step - 1)}
               className="flex-1 text-4xl font-bold py-8 px-10 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all"
@@ -637,7 +644,7 @@ export default function PartsAssistance() {
             </button>
           )}
 
-          {step < 4 ? (
+          {step < 3 ? (
             <button
               onClick={handleContinue}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
