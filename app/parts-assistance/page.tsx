@@ -8,8 +8,6 @@ interface FormData {
   fullName: string;
   phone: string;
   orderNumber: string;
-  creditCard: string;
-  paymentMethod: string;
   carParkBay: string;
   confirmed: boolean;
 }
@@ -81,8 +79,6 @@ export default function PartsAssistance() {
     fullName: "",
     phone: "",
     orderNumber: "",
-    creditCard: "",
-    paymentMethod: "",
     carParkBay: "",
     confirmed: false,
   });
@@ -124,15 +120,15 @@ export default function PartsAssistance() {
         if (!formData.orderNumber.trim()) {
           stepErrors.push("Order number is required");
         }
-        if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
-          if (!formData.creditCard.trim()) {
-            stepErrors.push("Last 4 digits of credit card are required");
-          } else if (formData.creditCard.length !== 4) {
-            stepErrors.push("Credit card must be exactly 4 digits");
-          } else if (!/^\d{4}$/.test(formData.creditCard)) {
-            stepErrors.push("Credit card must contain only numbers");
-          }
-        }
+        // if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
+        //   if (!formData.creditCard.trim()) {
+        //     stepErrors.push("Last 4 digits of credit card are required");
+        //   } else if (formData.creditCard.length !== 4) {
+        //     stepErrors.push("Credit card must be exactly 4 digits");
+        //   } else if (!/^\d{4}$/.test(formData.creditCard)) {
+        //     stepErrors.push("Credit card must contain only numbers");
+        //   }
+        // }
         break;
       case 2:
         if (!formData.fullName.trim()) {
@@ -145,11 +141,6 @@ export default function PartsAssistance() {
         }
         break;
       case 3:
-        if (!formData.paymentMethod) {
-          stepErrors.push("Please select a payment method");
-        }
-        break;
-      case 4:
         if (!formData.carParkBay.trim()) {
           stepErrors.push("Car park bay number is required");
         }
@@ -211,19 +202,7 @@ export default function PartsAssistance() {
       allErrors.push("Order number is required");
     }
 
-    // Credit Card (only validate if credit/debit is selected)
-    if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
-      if (!formData.creditCard.trim()) {
-        allErrors.push("Last 4 digits of credit card are required");
-      } else if (formData.creditCard.length !== 4) {
-        allErrors.push("Credit card must be exactly 4 digits");
-      } else if (!/^\d{4}$/.test(formData.creditCard)) {
-        allErrors.push("Credit card must contain only numbers");
-      }
-    }
-
     // Other required fields
-    if (!formData.paymentMethod) allErrors.push("Please select a payment method");
     if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
     if (!formData.confirmed) allErrors.push("You must confirm the data");
 
@@ -394,68 +373,6 @@ export default function PartsAssistance() {
                     />
                     {errors.orderNumber && <p className="text-red-600 text-xl mt-2">{errors.orderNumber}</p>}
                   </div>
-
-                  <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                      Payment Method
-                    </label>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { value: "credit-card", label: "Credit Card" },
-                        { value: "debit-card", label: "Debit Card" },
-                        { value: "cash", label: "Cash" },
-                        { value: "others", label: "Others" }
-                      ].map(({ value, label }) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({ ...prev, paymentMethod: value }));
-                            if (stepValidationErrors.length > 0) {
-                              setStepValidationErrors([]);
-                            }
-                          }}
-                          className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-                            }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {errors.paymentMethod && (
-                      <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>
-                    )}
-                  </div>
-
-                  {/* ✅ Show NumberPad ONLY when credit or debit card is selected */}
-                  {["credit-card", "debit-card"].includes(formData.paymentMethod) && (
-                    <div className="mt-10">
-                      <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                        Last 4 Digits of Credit Card
-                      </label>
-
-                      <NumberPad
-                        value={formData.creditCard}
-                        onChange={(value: string) => {
-                          setFormData((prev) => ({ ...prev, creditCard: value }));
-                          if (stepValidationErrors.length > 0) {
-                            setStepValidationErrors([]);
-                          }
-                        }}
-                        maxLength={4}
-                      />
-
-                      {errors.creditCard && (
-                        <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>
-                      )}
-
-                      <p className="text-gray-500 text-2xl mt-2">Must be exactly 4 digits</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -559,21 +476,11 @@ export default function PartsAssistance() {
                     <span className="font-bold text-black">{formData.phone}</span>
                   </div>
 
-                  <div className="flex justify-between text-4xl">
-                    <span className="font-semibold text-gray-600">Payment:</span>
-                    <span className="font-bold capitalize text-black">
-                      {formData.paymentMethod.replace("-", " ")}
-                    </span>
-                  </div>
-
-                  {/* ✅ CASH DISCLAIMER */}
-                  {formData.paymentMethod === "cash" && (
                     <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
                       <p className="text-3xl font-semibold text-yellow-800">
-                        Please proceed to the window reception to pay in cash.
+                        Please proceed to the window reception for further assistance. Thank you!
                       </p>
                     </div>
-                  )}
                 </div>
 
                 <div className="mb-8">
