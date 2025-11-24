@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 interface FloatingDoxyProps {
     doxyUrl?: string;
     autoResetMinutes?: number;
+    stopSignal?: boolean; // <-- NEW
 }
 
 export default function FloatingDoxy({
     doxyUrl = process.env.NEXT_PUBLIC_DOXY_URL,
     autoResetMinutes = 10,
+    stopSignal = false, // <-- NEW
 }: FloatingDoxyProps) {
 
     const router = useRouter();
@@ -18,19 +20,18 @@ export default function FloatingDoxy({
     const [minimized, setMinimized] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // ❌ REMOVE restoring "started"
-    // BUT keep minimized state
+    // Restore only minimized state
     useEffect(() => {
         const savedMini = localStorage.getItem("doxy-minimized");
         if (savedMini === "true") setMinimized(true);
     }, []);
 
-    // Persist minimize only
+    // Persist minimize state
     useEffect(() => {
         localStorage.setItem("doxy-minimized", minimized ? "true" : "false");
     }, [minimized]);
 
-    // Only Touch-to-Start event triggers FloatingDoxy
+    // Touch-to-start event
     useEffect(() => {
         const handler = () => setStarted(true);
         window.addEventListener("open-doxy", handler);
@@ -47,7 +48,17 @@ export default function FloatingDoxy({
         return () => clearTimeout(timer);
     }, [started, autoResetMinutes]);
 
-    // ⛔ If not started → render nothing
+    // 🔥 FULL STOP when stopSignal is triggered
+    useEffect(() => {
+        if (stopSignal) {
+            setStarted(false);
+            setMinimized(false);
+            setIsLoaded(false);
+            localStorage.removeItem("doxy-minimized");
+        }
+    }, [stopSignal]);
+
+    // Not started → render nothing
     if (!started) return null;
 
     return (
@@ -63,17 +74,16 @@ export default function FloatingDoxy({
                     <p className="text-3xl font-semibold mb-3 animate-pulse">Connecting…</p>
                     <p className="text-lg opacity-70">Please allow camera & microphone</p>
                 </div>
-
             )}
 
             {/* Attention Banner */}
             {!minimized && (
                 <div className="flex items-center justify-center z-50">
                     <div className="bg-yellow-300 text-black text-center py-6 px-8">
-                        <p className="text-3xl text-black font-bold">
-                        NOTE:
+                        <p className="text-3xl text-black font-bold">NOTE:</p>
+                        <p className="text-2xl text-black font-bold">
+                            Check in with your name to connect to a Live Agent and consent to a live video call for assistance.
                         </p>
-                        <p className="text-2xl text-black font-bold">Check in with your name to connect to a Live Agent and consent to a live video call for assistance.</p>
                     </div>
                 </div>
             )}

@@ -31,6 +31,8 @@ export default function ReturnAProductForm() {
 
   const handleCloseFloating = () => {
     setShowSuccess(false);
+    localStorage.removeItem("doxy-minimized");
+
     window.location.href = "/";
   };
 

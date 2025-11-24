@@ -8,8 +8,6 @@ interface OrderData {
     fullName: string;
     phone: string;
     orderNumber: string;
-    creditCard: string;
-    paymentMethod: string;
     carParkBay: string;
     confirmed: boolean;
 }
@@ -73,8 +71,6 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.fullName,
                     orderData.phone,
                     orderData.orderNumber,
-                    "'" + orderData.creditCard, // <-- FIX HERE
-                    orderData.paymentMethod,
                     orderData.carParkBay,
                     "Pending Verification",
                 ],
@@ -96,8 +92,6 @@ export async function POST(request: NextRequest) {
             fullName: String(form.get("fullName") || ""),
             phone: String(form.get("phone") || ""),
             orderNumber: String(form.get("orderNumber") || ""),
-            creditCard: String(form.get("creditCard") || ""),
-            paymentMethod: String(form.get("paymentMethod") || ""),
             carParkBay: String(form.get("carParkBay") || ""),
             confirmed: form.get("confirmed") === "true",
         };

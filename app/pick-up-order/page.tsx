@@ -91,6 +91,8 @@ export default function PickupKiosk() {
 
   const handleCloseFloating = () => {
     setShowSuccess(false);
+    localStorage.removeItem("doxy-minimized");
+
     window.location.href = "/";
   };
 
@@ -422,8 +424,8 @@ export default function PickupKiosk() {
                             }
                           }}
                           className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
                             }`}
                         >
                           {label}
