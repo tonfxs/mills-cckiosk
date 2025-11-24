@@ -146,10 +146,10 @@ export default function Home() {
         <Image
           src="/images/Mills Brand/Mills Brand_logo (registered)-01.png"
           alt="Mills Brands logo"
-          width={550}
-          height={200}
+          width={650}
+          height={300}
           priority
-          className="mx-auto h-auto w-[200px] sm:w-[300px] md:w-[400px] lg:w-[500px]"
+          className="mx-auto h-auto w-[300px] sm:w-[400px] md:w-[500px] lg:w-[600px]"
         />
       </header>
 
@@ -160,10 +160,10 @@ export default function Home() {
             key={index}
             src={src}
             alt={`Slide ${index + 1}`}
-            width={800}
-            height={600}
+            width={1000}
+            height={900}
             className={`absolute transition-opacity duration-1000 ease-in-out ${index === current ? "opacity-100" : "opacity-0"
-              } h-auto w-[80vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] xl:w-[40vw]`}
+              } h-auto w-[100vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw]`}
           />
         ))}
       </section>
@@ -175,7 +175,7 @@ export default function Home() {
         tabIndex={0}
         aria-label="Touch to start"
         onClick={() => {
-          // 👉 Open the Floating Doxy
+          //  Open the Floating Doxy
           window.dispatchEvent(new Event("open-doxy"));
         }}
       >
@@ -186,7 +186,7 @@ export default function Home() {
           height={80}
           className="object-contain w-[60px] sm:w-[80px] md:w-[100px]"
         />
-        <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wide text-center">
+        <span className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-semibold tracking-wide text-center">
           TOUCH TO START
         </span>
       </footer>
