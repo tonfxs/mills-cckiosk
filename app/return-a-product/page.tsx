@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
 import Link from 'next/link';
+import SuccessScreen from '../components/SuccessScreen';
 
 
 interface FormData {
@@ -27,6 +28,12 @@ export default function ReturnAProductForm() {
     confirmed: false,
   });
 
+
+  const handleCloseFloating = () => {
+    setShowSuccess(false);
+    window.location.href = "/";
+  };
+
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,33 +58,33 @@ export default function ReturnAProductForm() {
   // };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const { name, value, type } = e.target;
-  const checked = (e.target as HTMLInputElement).checked;
-  const fieldName = name as keyof FormData;
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    const fieldName = name as keyof FormData;
 
-  setFormData((prev) => {
-    const updated = {
-      ...prev,
-      [fieldName]: type === "checkbox" ? checked : value,
-    };
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [fieldName]: type === "checkbox" ? checked : value,
+      };
 
-    // Clear car park bay if heavy item checkbox is unticked
-    // if (fieldName === "itemIsHeavy" && !checked) {
-    //   updated.carParkBay = "";
-    // }
+      // Clear car park bay if heavy item checkbox is unticked
+      // if (fieldName === "itemIsHeavy" && !checked) {
+      //   updated.carParkBay = "";
+      // }
 
-    return updated;
-  });
-
-  // Clear errors for the field when typing
-  if (errors[fieldName]) {
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[fieldName];
-      return newErrors;
+      return updated;
     });
-  }
-};
+
+    // Clear errors for the field when typing
+    if (errors[fieldName]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+  };
 
 
   const canProceed = () => {
@@ -100,8 +107,8 @@ export default function ReturnAProductForm() {
 
     if (!formData.carParkBay.trim()) {
       newErrors.carParkBay = "Car park bay is required for heavy items";
-    }    
-    
+    }
+
     if (!formData.confirmed) newErrors.confirmed = "You must confirm the data";
 
     if (Object.keys(newErrors).length > 0) {
@@ -153,25 +160,18 @@ export default function ReturnAProductForm() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {/* Success Screen */}
       {showSuccess && (
-        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-          <div className="text-center px-8 max-w-2xl">
-            <div className="mb-8 animate-bounce">
-              <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-2xl">
-                <svg className="w-20 h-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <h1 className="text-6xl font-bold text-gray-800 mb-4">Success!</h1>
-            <p className="text-3xl text-gray-600 mb-8">Your order return request has been submitted</p>
-            <div className="bg-blue-50 rounded-3xl p-8 border-4 border-blue-200">
-              <p className="text-2xl text-gray-700 mb-2">RMA ID:</p>
-              <p className="text-5xl font-bold text-blue-600">{formData.rmaID}</p>
-            </div>
-            <p className="text-2xl text-gray-500 mt-8">Redirecting to main menu...</p>
-          </div>
-        </div>
-      )}
+        <SuccessScreen
+          title="Success!"
+          message="Your order pickup request has been submitted"
+          identifierLabel="Order Number"
+          identifierValue={formData.rmaID}
+          redirectMessage="Redirecting to main menu..."
+          onDone={handleCloseFloating}   // <-- NEW
+
+        />
+
+      )
+      }
 
       {/* Header */}
       <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
@@ -352,22 +352,22 @@ export default function ReturnAProductForm() {
                 </div> */}
 
 
-                  <div className="mb-8">
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
-                    <input
-                      type="number"
-                      name="carParkBay"
-                      value={formData.carParkBay}
-                      onChange={handleChange}
-                      className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., Bay 15"
-                    />
-                    {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
-                  </div>
+                <div className="mb-8">
+                  <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
+                  <input
+                    type="number"
+                    name="carParkBay"
+                    value={formData.carParkBay}
+                    onChange={handleChange}
+                    className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                    placeholder="e.g., Bay 15"
+                  />
+                  {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
+                </div>
 
 
                 <div className="mb-8 flex flex-col gap-4">
-                  
+
                   <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                     <input
                       type="checkbox"
@@ -441,6 +441,6 @@ export default function ReturnAProductForm() {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

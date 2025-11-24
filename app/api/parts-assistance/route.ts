@@ -64,7 +64,7 @@ async function saveToSheet(orderData: OrderData) {
 
     await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: "PartsOrders!A:I",
+        range: "PartsOrders!A:F",
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [

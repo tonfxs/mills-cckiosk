@@ -83,6 +83,11 @@ export default function PartsAssistance() {
     confirmed: false,
   });
 
+  const handleCloseFloating = () => {
+    setShowSuccess(false);
+    window.location.href = "/";
+  };
+
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);
@@ -271,6 +276,8 @@ export default function PartsAssistance() {
           identifierLabel="Order Number"
           identifierValue={formData.orderNumber}
           redirectMessage="Redirecting to main menu..."
+          onDone={handleCloseFloating}   // <-- NEW
+
         />
       )}
 
@@ -476,11 +483,11 @@ export default function PartsAssistance() {
                     <span className="font-bold text-black">{formData.phone}</span>
                   </div>
 
-                    <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
-                      <p className="text-3xl font-semibold text-yellow-800">
-                        Please proceed to the window reception for further assistance. Thank you!
-                      </p>
-                    </div>
+                  <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                    <p className="text-3xl font-semibold text-yellow-800">
+                      Please proceed to the window reception for further assistance. Thank you!
+                    </p>
+                  </div>
                 </div>
 
                 <div className="mb-8">
