@@ -182,10 +182,10 @@ export default function ReturnAProductForm() {
         <div className="max-w-4xl mx-auto relative">
           <h1 className="text-7xl font-bold mb-2">Return a Product</h1>
           <p className="text-3xl text-blue-100 font-bold">
-            NOTE:
+          Mills Brands Click & Collect Kiosk
           </p>
-          <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
-          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p>
+          {/* <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
+          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p> */}
         </div>
       </div>
 
@@ -398,7 +398,7 @@ export default function ReturnAProductForm() {
           {/* MAIN MENU BUTTON (visible only on step 1) */}
           {step === 1 && (
             <Link
-              href="/"
+              href="/choose-service"
               className="flex-1 text-4xl font-bold py-8 px-10 
                        bg-yellow-200 text-yellow-700 
                        rounded-2xl hover:bg-yellow-300 transition-all

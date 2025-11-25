@@ -287,10 +287,10 @@ export default function PartsAssistance() {
       <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-7xl font-bold mb-2">Parts Assistance</h1>
-          {/* <p className="text-3xl text-blue-100 font-bold">
-            NOTE:
+          <p className="text-3xl text-blue-100 font-bold">
+            Mills Brands Click & Collect Kiosk
           </p>
-          <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
+          {/* <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
           <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p> */}
         </div>
       </div>
