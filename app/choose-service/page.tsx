@@ -33,7 +33,7 @@ export default function ChooseService() {
           alt="Mills Brands logo"
           width={550}
           height={200}
-          className="w-[200px] sm:w-[350px] md:w-[450px] lg:w-[550px] h-auto cursor-pointer"
+          className="w-[300px] sm:w-[450px] md:w-[550px] lg:w-[650px] h-auto cursor-pointer"
           priority
           onClick={() => router.push("/")}
         />
