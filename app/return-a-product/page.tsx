@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef } from 'react';
-import { ChevronRight, Package, CreditCard, FileText, Car, Camera } from 'lucide-react';
+import { ChevronRight, Package, CreditCard, FileText, Car, Camera, UserRoundPen, PackageCheckIcon } from 'lucide-react';
 import Link from 'next/link';
 import SuccessScreen from '../components/SuccessScreen';
 
@@ -181,7 +181,7 @@ export default function ReturnAProductForm() {
 
         <div className="max-w-4xl mx-auto relative">
           <h1 className="text-7xl font-bold mb-2">Return a Product</h1>
-          <p className="text-3xl text-blue-100 font-bold">
+          <p className="text-3xl text-white font-bold">
           Mills Brands Click & Collect Kiosk
           </p>
           {/* <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
@@ -194,13 +194,13 @@ export default function ReturnAProductForm() {
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           {[
             { num: 1, label: 'Verify RMA ID', icon: Package },
-            { num: 2, label: 'Information', icon: CreditCard },
-            { num: 3, label: 'Confirm', icon: FileText }
+            { num: 2, label: 'Information', icon: UserRoundPen },
+            { num: 3, label: 'Confirm', icon: PackageCheckIcon }
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                 }`}>
-                {step > num ? '✓' : <Icon size={32} />}
+                {step > num ? '✓' : <Icon size={36} />}
               </div>
               <span className={`text-sm font-medium ${step >= num ? 'text-blue-600' : 'text-gray-400'}`}>
                 {label}

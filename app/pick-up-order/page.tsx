@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { ChevronRight, Package, CreditCard, Car, CardSimIcon } from 'lucide-react';
+import { ChevronRight, Package, CreditCard, Car, CardSimIcon, User2Icon, BadgeCheckIcon, BadgeCheck, UserRoundPen, PackageCheck } from 'lucide-react';
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
 
@@ -305,7 +305,7 @@ export default function PickupKiosk() {
       <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-7xl font-bold mb-2">Pick Up Order</h1>
-          <p className="text-3xl text-blue-100 font-bold">
+          <p className="text-3xl text-white font-bold">
             Mills Brands Click & Collect Kiosk
           </p>
           {/* <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
@@ -315,17 +315,17 @@ export default function PickupKiosk() {
 
       {/* Progress Steps */}
       <div className="bg-white shadow-sm border-b border-gray-200 p-6">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
           {[
             { num: 1, label: 'Verify Order', icon: Package },
-            { num: 2, label: 'Contact Info', icon: CreditCard },
-            { num: 3, label: 'Verify ID', icon: CardSimIcon },
-            { num: 4, label: 'Confirm', icon: Car }
+            { num: 2, label: 'Contact Info', icon: UserRoundPen },
+            { num: 3, label: 'Verify ID', icon: BadgeCheck },
+            { num: 4, label: 'Confirm', icon: PackageCheck }
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                 }`}>
-                {step > num ? '✓' : <Icon size={32} />}
+                {step > num ? '✓' : <Icon size={36} />}
               </div>
               <span className={`text-sm font-medium ${step >= num ? 'text-blue-600' : 'text-gray-400'}`}>
                 {label}
@@ -423,9 +423,9 @@ export default function PickupKiosk() {
                               setStepValidationErrors([]);
                             }
                           }}
-                          className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
                             }`}
                         >
                           {label}
@@ -574,7 +574,7 @@ export default function PickupKiosk() {
                               setStepValidationErrors([]);
                             }
                           }}
-                          className={`text-2xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.validId === value
+                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.validId === value
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                             }`}
