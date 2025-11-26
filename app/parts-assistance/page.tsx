@@ -85,6 +85,8 @@ export default function PartsAssistance() {
 
   const handleCloseFloating = () => {
     setShowSuccess(false);
+    localStorage.removeItem("doxy-minimized");
+
     window.location.href = "/";
   };
 
