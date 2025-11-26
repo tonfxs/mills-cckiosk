@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { ChevronRight, Package, CreditCard, Car, CardSimIcon, User2Icon, BadgeCheckIcon, BadgeCheck, UserRoundPen, PackageCheck } from 'lucide-react';
+import { ChevronRight, Package, CreditCard, Car, CardSimIcon, User2Icon, BadgeCheckIcon, BadgeCheck, UserRoundPen, PackageCheck, IdCard } from 'lucide-react';
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
 
@@ -317,7 +317,7 @@ export default function PickupKiosk() {
           {[
             { num: 1, label: 'Verify Order', icon: Package },
             { num: 2, label: 'Contact Info', icon: UserRoundPen },
-            { num: 3, label: 'Verify ID', icon: BadgeCheck },
+            { num: 3, label: 'Select ID', icon: IdCard },
             { num: 4, label: 'Confirm', icon: PackageCheck }
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
