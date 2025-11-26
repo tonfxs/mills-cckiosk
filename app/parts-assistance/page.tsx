@@ -307,7 +307,7 @@ export default function PartsAssistance() {
             <div key={num} className="flex flex-col items-center flex-1">
               <div className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                 }`}>
-                {step > num ? '✓' : <Icon size={36} />}
+                {step > num ? '✓' : <Icon size={40} />}
               </div>
               <span className={`text-sm font-medium ${step >= num ? 'text-blue-600' : 'text-gray-400'}`}>
                 {label}
