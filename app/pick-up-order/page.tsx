@@ -91,6 +91,8 @@ export default function PickupKiosk() {
 
   const handleCloseFloating = () => {
     setShowSuccess(false);
+    localStorage.removeItem("doxy-minimized");
+
     window.location.href = "/";
   };
 
