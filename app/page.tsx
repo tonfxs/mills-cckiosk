@@ -175,8 +175,12 @@ export default function Home() {
         tabIndex={0}
         aria-label="Touch to start"
         onClick={() => {
-          //  Open the Floating Doxy
-          window.dispatchEvent(new Event("open-doxy"));
+          // //  Open the Floating Doxy
+          // window.(new Event("open-doxy"));
+
+
+          // Navigate to choose-service
+          window.location.href = "/choose-service";
         }}
       >
         <Image
