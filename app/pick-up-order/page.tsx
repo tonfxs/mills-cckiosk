@@ -144,9 +144,13 @@ export default function PickupKiosk() {
         }
         break;
       case 2:
-        if (!formData.fullName.trim()) {
-          stepErrors.push("Full name is required");
-        }
+      if (!formData.fullName.trim()) {
+        stepErrors.push("Full name is required");
+      } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+        stepErrors.push(
+          "Full name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+        );
+      }
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
         } else if (formData.phone.replace(/\s/g, '').length < 9) {
@@ -184,7 +188,7 @@ export default function PickupKiosk() {
 
     if (stepErrors.length > 0) {
       setStepValidationErrors(stepErrors);
-      alert("Please correct the following before continuing:\n\n• " + stepErrors.join("\n• "));
+      // alert("Please correct the following before continuing:\n\n• " + stepErrors.join("\n• "));
       return;
     }
 
@@ -201,6 +205,8 @@ export default function PickupKiosk() {
     // Full Name
     if (!formData.fullName.trim()) {
       allErrors.push("Full name is required");
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+      allErrors.push("Full name may only contain letters, spaces, hyphens (-), and apostrophes (').");
     }
 
     // Phone Number
@@ -482,6 +488,7 @@ export default function PickupKiosk() {
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
+                      pattern="^[A-Za-z\s'-]+$"
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="John Smith"
                     />
