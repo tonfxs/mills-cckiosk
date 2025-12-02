@@ -138,9 +138,13 @@ export default function PartsAssistance() {
         // }
         break;
       case 2:
-        if (!formData.fullName.trim()) {
-          stepErrors.push("Full name is required");
-        }
+      if (!formData.fullName.trim()) {
+        stepErrors.push("Full name is required");
+      } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+        stepErrors.push(
+          "Full name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+        );
+      }
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
         } else if (formData.phone.replace(/\s/g, '').length < 9) {
@@ -178,7 +182,7 @@ export default function PartsAssistance() {
 
     if (stepErrors.length > 0) {
       setStepValidationErrors(stepErrors);
-      alert("Please correct the following before continuing:\n\n• " + stepErrors.join("\n• "));
+      // alert("Please correct the following before continuing:\n\n• " + stepErrors.join("\n• "));
       return;
     }
 

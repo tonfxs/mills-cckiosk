@@ -1,6 +1,6 @@
 "use client";
-import { useState, useRef } from 'react';
-import { ChevronRight, Package, CreditCard, FileText, Car, Camera, UserRoundPen, PackageCheckIcon } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronRight, Package, UserRoundPen, PackageCheckIcon } from 'lucide-react';
 import Link from 'next/link';
 import SuccessScreen from '../components/SuccessScreen';
 
@@ -89,22 +89,76 @@ export default function ReturnAProductForm() {
   };
 
 
-  const canProceed = () => {
-    switch (step) {
-      case 1: return formData.rmaID;
-      case 2: return formData.fullName;
-      case 3: return formData.confirmed && formData.carParkBay;
-      default: return false;
+
+const canProceed = () => {
+  // allow letters, spaces, hyphens, apostrophes
+  const nameRegex = /^[A-Za-z\s'-]+$/;
+  
+
+  switch (step) {
+    case 1:
+      return !!formData.rmaID?.trim();
+
+    case 2:
+      return (
+        !!formData.fullName?.trim() &&
+        nameRegex.test(formData.fullName)
+      );
+
+    case 3:
+      return !!formData.carParkBay?.trim() && formData.confirmed;
+
+    default:
+      return false;
+
+
+  }
+};
+const [stepErrors, setStepErrors] = useState<string[]>([]);
+
+const validateStep = (currentStep: number) => {
+  const errors: string[] = [];
+  const nameRegex = /^[A-Za-z\s'-]+$/;
+
+  if (currentStep === 2) {
+    if (!formData.fullName.trim()) {
+      errors.push("Full name is required.");
+    } else if (!nameRegex.test(formData.fullName)) {
+      errors.push("Full name may contain only letters, spaces, hyphens (–) and apostrophes (’).");
     }
-  };
+  }
+
+  return errors;
+};
+
+
+const handleContinue = () => {
+  const errors = validateStep(step);
+
+  if (errors.length > 0) {
+    setStepErrors(errors);
+    return;
+  }
+
+  setStepErrors([]);
+  setStep(step + 1);
+};
+
+
+
+
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setErrors({});
 
     const newErrors: Errors = {};
-    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+      newErrors.fullName =
+        "Full name may only contain letters, spaces, hyphens (-), and apostrophes (').";
+    }    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
 
     if (!formData.carParkBay.trim()) {
@@ -214,6 +268,20 @@ export default function ReturnAProductForm() {
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
 
+          {/* Validation Errors Alert */}
+          {stepErrors.length > 0 && (
+            <div className="mb-6 bg-red-50 border-4 border-red-500 rounded-2xl p-8">
+              <h3 className="text-3xl font-bold text-red-700 mb-4">REQUIRED FIELDS CANNOT BE BLANK:</h3>
+              <ul className="list-disc list-inside space-y-2">
+                {stepErrors.map((error, index) => (
+                  <li key={index} className="text-2xl text-red-600 font-semibold">
+                    {error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Step 1: Verify RMA ID */}
           {step === 1 && (
             <div className="space-y-6">
@@ -257,6 +325,7 @@ export default function ReturnAProductForm() {
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
+                      pattern="^[A-Za-z\s'-]+$"
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="John Smith"
                     />
@@ -419,8 +488,9 @@ export default function ReturnAProductForm() {
 
           {step < 3 ? (
             <button
-              onClick={() => setStep(step + 1)}
-              disabled={!canProceed()}
+              // onClick={() => setStep(step + 1)}
+              onClick={handleContinue}
+              // disabled={!canProceed()}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
                 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
