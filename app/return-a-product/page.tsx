@@ -39,54 +39,29 @@ export default function ReturnAProductForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  //   const { name, value, type } = e.target;
-  //   const checked = (e.target as HTMLInputElement).checked;
-  //   const fieldName = name as keyof FormData;
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value, type } = e.target;
+  const checked = (e.target as HTMLInputElement).checked;
+  const fieldName = name as keyof FormData;
 
-  //   setFormData((prev) => ({
+  setFormData((prev) => ({
+    ...prev,
+    [fieldName]: type === "checkbox" ? checked : value,
+  }));
 
-  //     ...prev,
-  //     [fieldName]: type === "checkbox" ? checked : value,
-
-  //   }));
-  //   if (errors[fieldName]) {
-  //     setErrors((prev) => {
-  //       const newErrors = { ...prev };
-  //       delete newErrors[fieldName];
-  //       return newErrors;
-  //     });
-  //   }
-  // };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    const fieldName = name as keyof FormData;
-
-    setFormData((prev) => {
-      const updated = {
-        ...prev,
-        [fieldName]: type === "checkbox" ? checked : value,
-      };
-
-      // Clear car park bay if heavy item checkbox is unticked
-      // if (fieldName === "itemIsHeavy" && !checked) {
-      //   updated.carParkBay = "";
-      // }
-
-      return updated;
+  // Clear individual field error
+  if (errors[fieldName]) {
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[fieldName];
+      return newErrors;
     });
+  }
 
-    // Clear errors for the field when typing
-    if (errors[fieldName]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldName];
-        return newErrors;
-      });
-    }
-  };
+  // **Clear all stepErrors immediately**
+  if (stepErrors.length > 0) setStepErrors([]);
+};
+
 
 
 
