@@ -169,8 +169,8 @@ export default function Home() {
       </section>
 
       {/* Touch to Start Button */}
-      <footer
-        className="flex flex-col sm:flex-row items-center justify-center w-full gap-3 sm:gap-6 py-6 sm:py-8 px-4 text-white bg-gradient-to-r from-[#0070C9] to-[#004E9A] cursor-pointer transition active:opacity-80"
+      {/* <footer
+        className="flex flex-col sm:flex-row items-center justify-center w-full gap-3 sm:gap-6 py-10 sm:py-8 px-4 text-white bg-gradient-to-r from-[#0070C9] to-[#004E9A] cursor-pointer transition active:opacity-80"
         role="button"
         tabIndex={0}
         aria-label="Touch to start"
@@ -187,13 +187,37 @@ export default function Home() {
           src="/images/hand.png"
           alt="Touch icon"
           width={80}
-          height={80}
-          className="object-contain w-[60px] sm:w-[80px] md:w-[100px]"
+          height={100}
+          className="object-contain w-[90px] sm:w-[100px] md:w-[130px]"
         />
-        <span className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-semibold tracking-wide text-center">
+        <span className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-semibold tracking-wide text-center">
+          TOUCH TO START
+        </span>
+      </footer> */}
+
+      <footer
+        className="flex items-center justify-center w-full h-[250px] 
+                   gap-6 px-4 
+                   bg-gradient-to-r from-[#0070C9] to-[#004E9A] 
+                   text-white cursor-pointer transition active:opacity-80"
+        role="button"
+        tabIndex={0}
+        aria-label="Touch to start"
+        onClick={() => (window.location.href = '/choose-service')}
+      >
+        <Image
+          src="/images/hand.png"
+          alt="Touch icon"
+          width={80}
+          height={100}
+          className="object-contain max-h-[100px] mb-10"
+        />
+
+        <span className="text-5xl sm:text-6xl md:text-7xl font-semibold tracking-wide text-center mb-10">
           TOUCH TO START
         </span>
       </footer>
+
     </main>
   );
 }
