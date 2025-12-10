@@ -638,6 +638,21 @@ export default function PickupKiosk() {
                     </span>
                   </div>
 
+
+                  {/* Payment Disclaimers */}
+                  {(
+                    formData.paymentMethod === "credit-card" ||
+                    formData.paymentMethod === "debit-card" ||
+                    formData.paymentMethod === "others"
+                  ) && (
+                    <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                      <p className="text-3xl font-semibold text-yellow-800">
+                        <span className="font-bold">DISCLAIMER:</span> Your payment and valid ID will undergo verification to ensure the payment details match the name on the order.
+                      </p>
+                    </div>
+                  )}
+
+
                   {/* ✅ CASH DISCLAIMER */}
                   {formData.paymentMethod === "cash" && (
                     <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
