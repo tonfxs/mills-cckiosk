@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronRight, Package, CreditCard, Car, CardSimIcon, User2Icon, BadgeCheckIcon, BadgeCheck, UserRoundPen, PackageCheck, IdCard, IdCardIcon } from 'lucide-react';
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
@@ -292,6 +292,18 @@ export default function PickupKiosk() {
     setIsSubmitting(false);
   };
 
+  const [showCardPopup, setShowCardPopup] = useState(false);
+
+// When payment method changes:
+useEffect(() => {
+  if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
+    setShowCardPopup(true);
+  } else {
+    setShowCardPopup(false);
+  }
+}, [formData.paymentMethod]);
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
@@ -413,7 +425,7 @@ export default function PickupKiosk() {
                       Payment Method
                     </label>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* <div className="grid grid-cols-2 gap-4">
                       {[
                         { value: "credit-card", label: "Credit Card" },
                         { value: "debit-card", label: "Debit Card" },
@@ -437,7 +449,47 @@ export default function PickupKiosk() {
                           {label}
                         </button>
                       ))}
-                    </div>
+                    </div> */}
+
+                    <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { value: "credit-card", label: "Credit Card" },
+                      { value: "debit-card", label: "Debit Card" },
+                      { value: "cash", label: "Cash" },
+                      { value: "others", label: "Others" }
+                    ].map(({ value, label }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, paymentMethod: value }));
+                        
+                          if (value === "credit-card" || value === "debit-card") {
+                            setShowCardPopup(true);
+                          }
+                        
+                          if (value === "cash" || value === "others") {
+                            setShowCardPopup(false);
+                          }
+                        
+                          // Clear validation errors
+                          if (stepValidationErrors.length > 0) {
+                            setStepValidationErrors([]);
+                          }
+                        }}
+                        className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${
+                          formData.paymentMethod === value
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+
+                    
 
                     {errors.paymentMethod && (
                       <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>
@@ -445,7 +497,7 @@ export default function PickupKiosk() {
                   </div>
 
                   {/* ✅ Show NumberPad ONLY when credit or debit card is selected */}
-                  {["credit-card", "debit-card"].includes(formData.paymentMethod) && (
+                  {/* {["credit-card", "debit-card"].includes(formData.paymentMethod) && (
                     <div className="mt-10">
                       <label className="block text-4xl font-semibold mb-4 text-gray-700">
                         Last 4 Digits of Credit Card
@@ -468,7 +520,52 @@ export default function PickupKiosk() {
 
                       <p className="text-gray-500 text-2xl mt-2">Must be exactly 4 digits</p>
                     </div>
-                  )}
+                  )} */}
+
+                  {showCardPopup && (
+                     <div className="fixed inset-0 bg-white/40 backdrop-blur-md flex items-center justify-center z-50">
+                      <div className="relative bg-white p-10 rounded-2xl w-[90%] max-w-xl shadow-2xl border-4 border-blue-600">
+
+                        <button
+                          onClick={() => setShowCardPopup(false)}
+                          className="absolute top-4 right-4 text-gray-600 hover:text-black text-4xl leading-none"
+                        >
+                          &times;
+                        </button>
+
+                        <h2 className="text-4xl font-semibold mb-6 text-gray-800 text-center pt-10">
+                          Enter Last 4 Digits of Your Card
+                        </h2>                 
+
+                        <NumberPad
+                          value={formData.creditCard}
+                          onChange={(value: string) => {
+                            setFormData((prev) => ({ ...prev, creditCard: value }));
+                            if (stepValidationErrors.length > 0) {
+                              setStepValidationErrors([]);
+                            }
+                          }}
+                          maxLength={4}
+                        />                  
+
+                        {errors.creditCard && (
+                          <p className="text-red-600 text-2xl mt-4 text-center">{errors.creditCard}</p>
+                        )}                  
+
+                        <p className="text-gray-500 text-2xl mt-2 text-center">
+                          Must be exactly 4 digits
+                        </p>                  
+
+                        <button
+                          onClick={() => setShowCardPopup(false)}
+                          className="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-3xl font-bold"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                    )}
+
                 </div>
               </div>
             </div>
