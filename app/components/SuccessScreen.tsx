@@ -53,7 +53,7 @@ export default function SuccessScreen({
         </div>
 
         <h1 className="text-6xl font-bold text-gray-800 mb-4">{title}</h1>
-        <p className="text-3xl text-gray-600 mb-8">{message}</p>
+        <p className="text-3xl text-gray-600 mb-8 font-bold">{message}</p>
 
         <div className="bg-blue-50 rounded-3xl p-8 border-4 border-blue-200">
           <p className="text-2xl text-gray-700 mb-2">{identifierLabel}:</p>
