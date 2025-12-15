@@ -278,11 +278,11 @@ export default function PartsAssistance() {
       {showSuccess && (
         <SuccessScreen
           title="Success!"
-          message="Your order pickup request has been submitted"
+          message="Your request has been submitted. Thank you."
           identifierLabel="Order Number"
           identifierValue={formData.orderNumber}
           redirectMessage="Redirecting to main menu..."
-          onDone={handleCloseFloating}   // <-- NEW
+          onDone={handleCloseFloating}   
 
         />
       )}
@@ -407,7 +407,7 @@ export default function PartsAssistance() {
                       value={formData.fullName}
                       onChange={handleChange}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="John Smith"
+                      placeholder="Enter Full Name Here"
                     />
                     {errors.fullName && <p className="text-red-600 text-xl mt-2">{errors.fullName}</p>}
                   </div>
@@ -497,7 +497,7 @@ export default function PartsAssistance() {
                   </div>
                 </div>
 
-                <div className="mb-8">
+                {/* <div className="mb-8">
                   <label className="block text-4xl font-semibold mb-4 text-gray-700">
                     Car Park Bay Number
                   </label>
@@ -512,7 +512,65 @@ export default function PartsAssistance() {
                   {errors.carParkBay && (
                     <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>
                   )}
+                </div> */}
+
+                <div className="mb-8">
+                <label className="block text-4xl font-semibold mb-4 text-gray-700 text-center">
+                  Select Car Park Bay
+                </label>
+
+                <div className="grid grid-cols-11 gap-4">
+                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
+                    const isSelected = formData.carParkBay === String(num);
+                  
+                    return (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() =>
+                          handleChange({
+                            target: {
+                              name: "carParkBay",
+                              value: String(num),
+                              type: "select-one",
+                            },
+                          } as React.ChangeEvent<HTMLSelectElement>)
+                        }
+                        className={`
+                          h-14 rounded-3xl text-3xl font-bold
+                          transition-all duration-200
+                          ${
+                            isSelected
+                              ? "bg-blue-600 text-white scale-105 shadow-xl"
+                              : "bg-white/70 backdrop-blur-md text-gray-800 shadow-lg hover:scale-105 active:scale-95"
+                          }
+                        `}
+                      >
+                        {num}
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* <select
+                  name="carParkBay"
+                  value={formData.carParkBay}
+                  onChange={handleChange}
+                  className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black bg-white"
+                >
+                  <option value="">Select bay number</option>
+                  {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
+                    <option key={num} value={num}>
+                      {num}
+                    </option>
+                  ))}
+                </select> */}
+
+
+                {errors.carParkBay && (
+                  <p className="text-red-600 text-xl mt-4">{errors.carParkBay}</p>
+                )}
+              </div>
 
                 <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                   <input
