@@ -101,6 +101,16 @@ const validateStep = (currentStep: number) => {
     } else if (!nameRegex.test(formData.fullName)) {
       errors.push("Full name may contain only letters, spaces, hyphens (–) and apostrophes (’).");
     }
+
+    // Phone validation
+    const phoneDigits = formData.phone.replace(/\D/g, "");
+
+    if (!phoneDigits) {
+      errors.push("Phone number is required.");
+    } else if (phoneDigits.length < 10) {
+      errors.push("Phone number must be at least 10 digits.");
+    }
+    
   }
 
   return errors;
@@ -133,7 +143,12 @@ const handleContinue = () => {
     } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
       newErrors.fullName =
         "Full name may only contain letters, spaces, hyphens (-), and apostrophes (').";
-    }    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    } 
+    //  if (!formData.phone.trim()) {
+    //       stepErrors.push("Phone number is required");
+    //     } else if (formData.phone.replace(/\s/g, '').length < 9) {
+    //       stepErrors.push("Phone number must be at least 10 digits");
+    //     }
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
 
     if (!formData.carParkBay.trim()) {
