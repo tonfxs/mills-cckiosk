@@ -97,6 +97,12 @@ const validateStep = (currentStep: number) => {
   const errors: string[] = [];
   const nameRegex = /^[A-Za-z\s'-]+$/;
 
+  if (currentStep === 1) {
+    if (!formData.rmaID.trim()) {
+      errors.push("RMA ID is required.");
+    }
+  }
+
   if (currentStep === 2) {
     if (!formData.fullName.trim()) {
       errors.push("Full name is required.");
@@ -152,6 +158,9 @@ const handleContinue = () => {
     //     } else if (formData.phone.replace(/\s/g, '').length < 9) {
     //       stepErrors.push("Phone number must be at least 10 digits");
     //     }
+
+    if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
+
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
 
     if (!formData.carParkBay.trim()) {

@@ -246,7 +246,7 @@ export default function PickupKiosk() {
     // Stop here if errors exist
     if (allErrors.length > 0) {
       setStepValidationErrors(allErrors);
-      alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
+      // alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
       setIsSubmitting(false);
       return;
     }
@@ -298,6 +298,25 @@ export default function PickupKiosk() {
   };
 
   const [showCardPopup, setShowCardPopup] = useState(false);
+
+  const validateStep1 = () => {
+  const newErrors: Record<string, string> = {};
+
+  if (!formData.orderNumber.trim()) {
+    newErrors.orderNumber = "Order number is required";
+  }
+
+  if (
+    ["credit-card", "debit-card"].includes(formData.paymentMethod) &&
+    formData.creditCard.length !== 4
+  ) {
+    newErrors.creditCard = "Last 4 digit is required";
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
 
 // When payment method changes:
 useEffect(() => {
@@ -556,40 +575,68 @@ useEffect(() => {
 
                         <p className="text-gray-500 text-2xl mt-2 text-center">
                           Must be exactly 4 digits
-                        </p>                  
+                        </p>    
 
                         <button
-                          // onClick={() => setShowCardPopup(false)}
-                          // onClick={() => setStep(2)}
                           onClick={() => {
-                          // Validate last 4 digits for card payments
-                          if (
-                            ["credit-card", "debit-card"].includes(formData.paymentMethod) &&
-                            formData.creditCard.length !== 4
-                          ) {
-                            setErrors((prev) => ({
-                              ...prev,
-                              creditCard: "Last 4 digit is required",
-                            }));
-                            return;
-                          }
-                        
-                          // Clear error and proceed
-                          setErrors((prev) => {
-                            const newErrors = { ...prev };
-                            delete newErrors.creditCard;
-                            return newErrors;
-                          });
-                        
-                          setShowCardPopup(false);
-                          setStep(2);
-                        }}
-
-
+                            const stepErrors: string[] = [];
+                          
+                            // 🛑 Order Number required
+                            if (!formData.orderNumber.trim()) {
+                              stepErrors.push("Order number is required");
+                            
+                              // ✅ Auto-clear card digits
+                              setFormData((prev) => ({
+                                ...prev,
+                                creditCard: "",
+                              }));
+                            
+                              // ✅ Clear inline card error
+                              setErrors((prev) => {
+                                const copy = { ...prev };
+                                delete copy.creditCard;
+                                return copy;
+                              });
+                            
+                              // ✅ Show banner
+                              setStepValidationErrors(stepErrors);
+                            
+                              // ✅ Close numpad
+                              setShowCardPopup(false);
+                            
+                              // 🚫 Stop here
+                              return;
+                            }
+                          
+                            // 🛑 Validate card digits
+                            if (
+                              ["credit-card", "debit-card"].includes(formData.paymentMethod) &&
+                              formData.creditCard.length !== 4
+                            ) {
+                              setErrors((prev) => ({
+                                ...prev,
+                                creditCard: "Last 4 digit is required",
+                              }));
+                              return;
+                            }
+                          
+                            // ✅ Clear errors
+                            setStepValidationErrors([]);
+                            setErrors((prev) => {
+                              const copy = { ...prev };
+                              delete copy.creditCard;
+                              return copy;
+                            });
+                          
+                            // ✅ Proceed
+                            setShowCardPopup(false);
+                            setStep(2);
+                          }}
                           className="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-3xl font-bold"
                         >
                           Done
                         </button>
+
                       </div>
                     </div>
                     )}
