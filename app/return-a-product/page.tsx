@@ -355,12 +355,12 @@ const handleContinue = () => {
                       value={formData.rmaID}
                       onChange={(e) => {
                         const cleaned = e.target.value.replace(/[^a-zA-Z0-9-]/g, "");
-                        if (cleaned.length <= 10) {
+                        if (cleaned.length <= 9) {
                           setFormData({ ...formData, rmaID: cleaned });
                         }
                       }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., ABC-123456"
+                      placeholder="e.g., RFI123456"
                     />
                     {errors.rmaID && <p className="text-red-600 text-xl mt-2">{errors.rmaID}</p>}
                   </div>
