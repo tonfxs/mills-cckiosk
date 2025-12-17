@@ -9,6 +9,7 @@ interface FormData {
   fullName: string;
   phone: string;
   rmaID: string;
+  returnReason: string;
   carParkBay: string;
   confirmed: boolean;
 }
@@ -24,6 +25,7 @@ export default function ReturnAProductForm() {
     fullName: "",
     phone: "",
     rmaID: "",
+    returnReason: "",
     carParkBay: "",
     confirmed: false,
   });
@@ -133,6 +135,7 @@ const handleContinue = () => {
 
 
 
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setErrors({});
@@ -201,6 +204,14 @@ const handleContinue = () => {
       setIsSubmitting(false);
     }
   };
+
+//   const RETURN_REASONS = [
+//   { value: "RFI", label: "Return for Inspection", description: "Item needs assessment" },
+//   { value: "CM", label: "Change of Mind", description: "No longer required" },
+//   { value: "IO", label: "Immediate Outcome", description: "Quick resolution required" },
+//   { value: "DS", label: "Disaster Returns", description: "Damaged due to unforeseen events" },
+// ];
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
@@ -276,9 +287,66 @@ const handleContinue = () => {
           {step === 1 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
-                <h2 className="text-5xl font-bold mb-8 text-gray-800">Enter Your RMA ID</h2>
+                <h2 className="text-5xl font-bold mb-8 text-gray-800">Enter Your Details</h2>
 
                 <div className="space-y-10">
+
+                  {/* <div className="space-y-6">
+                    <label className="block text-4xl font-semibold text-gray-700">
+                      Return Reason
+                    </label>
+                            
+                    <div className="grid grid-cols-2 gap-6">
+                      {RETURN_REASONS.map((reason) => {
+                        const isSelected = formData.returnReason === reason.value;
+                      
+                        return (
+                          <button
+                            key={reason.value}
+                            type="button"
+                            onClick={() =>
+                              handleChange({
+                                target: {
+                                  name: "returnReason",
+                                  value: reason.value,
+                                  type: "select-one",
+                                },
+                              } as React.ChangeEvent<HTMLSelectElement>)
+                            }
+                            className={`
+                              p-8 rounded-3xl border-4 text-left
+                              transition-all duration-200
+                              ${
+                                isSelected
+                                  ? "border-blue-600 bg-blue-50 shadow-xl scale-105"
+                                  : "border-gray-300 bg-white shadow-md hover:scale-105"
+                              }
+                            `}
+                            aria-pressed={isSelected}
+                          >
+                            <div className="text-3xl font-bold text-gray-900">
+                              {reason.value}
+                            </div>
+                            <div className="text-2xl font-semibold text-gray-700 mt-2">
+                              {reason.label}
+                            </div>
+                            <div className="text-xl text-gray-500 mt-1">
+                              {reason.description}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {errors.returnReason && (
+                      <p className="text-red-600 text-2xl font-semibold mt-4">
+                        {errors.returnReason}
+                      </p>
+                    )}
+                  </div> */}
+
+
+
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">RMA ID</label>
                     <input
@@ -292,7 +360,7 @@ const handleContinue = () => {
                         }
                       }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., 123456"
+                      placeholder="e.g., ABC-123456"
                     />
                     {errors.rmaID && <p className="text-red-600 text-xl mt-2">{errors.rmaID}</p>}
                   </div>
