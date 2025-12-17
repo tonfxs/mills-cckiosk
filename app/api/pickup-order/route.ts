@@ -36,7 +36,7 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Save to Google Sheets
+// Save to Google Sheets (Insert at Top)
 // ----------------------------
 async function saveToSheet(orderData: OrderData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -63,9 +63,45 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    await sheets.spreadsheets.values.append({
+    // Step 1: Get the sheet ID
+    const sheetMetadata = await sheets.spreadsheets.get({
         spreadsheetId,
-        range: "Pickupsv1!A:I",
+    });
+
+    const pickupsSheet = sheetMetadata.data.sheets?.find(
+        (sheet) => sheet.properties?.title === "Pickupsv1"
+    );
+
+    if (!pickupsSheet || !pickupsSheet.properties?.sheetId) {
+        throw new Error("Pickupsv1 sheet not found");
+    }
+
+    const sheetId = pickupsSheet.properties.sheetId;
+
+    // Step 2: Insert a new row at position 1 (right after header)
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+            requests: [
+                {
+                    insertDimension: {
+                        range: {
+                            sheetId: sheetId,
+                            dimension: "ROWS",
+                            startIndex: 1, // Row 2 (index 1, after header)
+                            endIndex: 2,   // Insert 1 row
+                        },
+                        inheritFromBefore: false,
+                    },
+                },
+            ],
+        },
+    });
+
+    // Step 3: Write data to the newly inserted row
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: "Pickupsv1!A2:J2", // Row 2 (first data row after header)
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -74,11 +110,12 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.fullName,
                     orderData.phone,
                     orderData.orderNumber,
-                    "'" + orderData.creditCard, // <-- FIX HERE
+                    "'" + orderData.creditCard,
                     orderData.validId,
                     orderData.paymentMethod,
                     orderData.carParkBay,
                     "Pending Verification",
+                    "", // Column J (Agent - empty, to be filled manually)
                 ],
             ],
         },
@@ -112,7 +149,7 @@ export async function POST(request: NextRequest) {
             message: "Order saved",
         });
     } catch (err: any) {
-        console.error(" ERROR:", err);
+        console.error("❌ ERROR:", err);
         return NextResponse.json(
             { success: false, error: err.message },
             { status: 500 }
@@ -140,7 +177,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Pickupsv1A:I",
+            range: "Pickupsv1!A:J", // Extended to include Agent column
         });
 
         const rows = resp.data.values || [];
@@ -164,8 +201,8 @@ export async function GET(request: NextRequest) {
                 validId: match[5],
                 paymentMethod: match[6],
                 carParkBay: match[7],
-                confirmed: match[8],
-                status: match[9],
+                status: match[8],
+                agent: match[9] || "", // Column J - Agent
             },
         });
     } catch (err: any) {

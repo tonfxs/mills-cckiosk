@@ -33,7 +33,7 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Save to Google Sheets
+// Save to Google Sheets (Insert at Top)
 // ----------------------------
 async function saveToSheet(returnData: ReturnData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -61,9 +61,45 @@ async function saveToSheet(returnData: ReturnData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    await sheets.spreadsheets.values.append({
+    // Step 1: Get the sheet ID
+    const sheetMetadata = await sheets.spreadsheets.get({
         spreadsheetId,
-        range: "Returns!A:H",
+    });
+
+    const returnsSheet = sheetMetadata.data.sheets?.find(
+        (sheet) => sheet.properties?.title === "Returns"
+    );
+
+    if (!returnsSheet || !returnsSheet.properties?.sheetId) {
+        throw new Error("Returns sheet not found");
+    }
+
+    const sheetId = returnsSheet.properties.sheetId;
+
+    // Step 2: Insert a new row at position 1 (right after header)
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+            requests: [
+                {
+                    insertDimension: {
+                        range: {
+                            sheetId: sheetId,
+                            dimension: "ROWS",
+                            startIndex: 1, // Row 2 (index 1, after header)
+                            endIndex: 2,   // Insert 1 row
+                        },
+                        inheritFromBefore: false,
+                    },
+                },
+            ],
+        },
+    });
+
+    // Step 3: Write data to the newly inserted row
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: "Returns!A2:J2", // Row 2 (first data row after header)
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -75,6 +111,9 @@ async function saveToSheet(returnData: ReturnData) {
                     returnData.carParkBay,
                     returnData.confirmed ? "Yes" : "No",
                     "Pending Pickup",
+                    "", // Column H (empty)
+                    "", // Column I (empty)
+                    "", // Column J (Agent - empty, to be filled manually)
                 ],
             ],
         },
@@ -149,7 +188,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Returns!A:H",
+            range: "Returns!A:J", // Extended to include Agent column
         });
 
         const rows = resp.data.values || [];
@@ -170,8 +209,9 @@ export async function GET(request: NextRequest) {
                 phone: match[2],
                 rmaID: match[3],
                 carParkBay: match[4],
-                confirmed: match[6] === "Yes",
-                status: match[7],
+                confirmed: match[5] === "Yes",
+                status: match[6],
+                agent: match[9] || "", // Column J - Agent
             },
         });
     } catch (err: any) {

@@ -33,7 +33,7 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Save to Google Sheets
+// Save to Google Sheets (Insert at Top)
 // ----------------------------
 async function saveToSheet(orderData: OrderData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -60,9 +60,45 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    await sheets.spreadsheets.values.append({
+    // Step 1: Get the sheet ID
+    const sheetMetadata = await sheets.spreadsheets.get({
         spreadsheetId,
-        range: "PartsOrders!A:F",
+    });
+
+    const partsOrdersSheet = sheetMetadata.data.sheets?.find(
+        (sheet) => sheet.properties?.title === "PartsOrders"
+    );
+
+    if (!partsOrdersSheet || !partsOrdersSheet.properties?.sheetId) {
+        throw new Error("PartsOrders sheet not found");
+    }
+
+    const sheetId = partsOrdersSheet.properties.sheetId;
+
+    // Step 2: Insert a new row at position 1 (right after header)
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+            requests: [
+                {
+                    insertDimension: {
+                        range: {
+                            sheetId: sheetId,
+                            dimension: "ROWS",
+                            startIndex: 1, // Row 2 (index 1, after header)
+                            endIndex: 2,   // Insert 1 row
+                        },
+                        inheritFromBefore: false,
+                    },
+                },
+            ],
+        },
+    });
+
+    // Step 3: Write data to the newly inserted row
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: "PartsOrders!A2:G2", // Row 2 (first data row after header)
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -73,6 +109,7 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.orderNumber,
                     orderData.carParkBay,
                     "Pending Verification",
+                    "", // Column G (Agent - empty, to be filled manually)
                 ],
             ],
         },
@@ -103,7 +140,7 @@ export async function POST(request: NextRequest) {
             message: "Order saved",
         });
     } catch (err: any) {
-        console.error(" ERROR:", err);
+        console.error("❌ ERROR:", err);
         return NextResponse.json(
             { success: false, error: err.message },
             { status: 500 }
@@ -131,7 +168,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "PartsOrders!A:I",
+            range: "PartsOrders!A:G", // Extended to include Agent column
         });
 
         const rows = resp.data.values || [];
@@ -151,11 +188,9 @@ export async function GET(request: NextRequest) {
                 fullName: match[1],
                 phone: match[2],
                 orderNumber: match[3],
-                creditCard: match[4],
-                paymentMethod: match[5],
-                carParkBay: match[6],
-                confirmed: match[7],
-                status: match[8],
+                carParkBay: match[4],
+                status: match[5],
+                agent: match[6] || "", // Column G - Agent
             },
         });
     } catch (err: any) {
