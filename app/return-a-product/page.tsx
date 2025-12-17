@@ -286,10 +286,10 @@ const handleContinue = () => {
                       name="rmaID"
                       value={formData.rmaID}
                       onChange={(e) => {
-                        const cleaned = e.target.value.replace(/\D/g, "");
-                        if (cleaned.length <= 6) {
+                        const cleaned = e.target.value.replace(/[^a-zA-Z0-9-]/g, "");
+                        // if (cleaned.length <= 6) {
                           setFormData({ ...formData, rmaID: cleaned });
-                        }
+                        // }
                       }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="e.g., 123456"
