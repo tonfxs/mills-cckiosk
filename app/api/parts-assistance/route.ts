@@ -33,7 +33,7 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Save to Google Sheets (Insert at Top)
+// Save to Google Sheets (Append at Bottom)
 // ----------------------------
 async function saveToSheet(orderData: OrderData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -60,45 +60,19 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    // Step 1: Get the sheet ID
-    const sheetMetadata = await sheets.spreadsheets.get({
+    // Step 1: Get all current data to find the last row
+    const resp = await sheets.spreadsheets.values.get({
         spreadsheetId,
+        range: "PartsOrders!A:A", // Just check column A to find last row
     });
 
-    const partsOrdersSheet = sheetMetadata.data.sheets?.find(
-        (sheet) => sheet.properties?.title === "PartsOrders"
-    );
+    const rows = resp.data.values || [];
+    const lastRow = rows.length + 1; // +1 because rows.length includes header
 
-    if (!partsOrdersSheet || !partsOrdersSheet.properties?.sheetId) {
-        throw new Error("PartsOrders sheet not found");
-    }
-
-    const sheetId = partsOrdersSheet.properties.sheetId;
-
-    // Step 2: Insert a new row at position 1 (right after header)
-    await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-            requests: [
-                {
-                    insertDimension: {
-                        range: {
-                            sheetId: sheetId,
-                            dimension: "ROWS",
-                            startIndex: 1, // Row 2 (index 1, after header)
-                            endIndex: 2,   // Insert 1 row
-                        },
-                        inheritFromBefore: false,
-                    },
-                },
-            ],
-        },
-    });
-
-    // Step 3: Write data to the newly inserted row
+    // Step 2: Write to the specific row after the last entry
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: "PartsOrders!A2:G2", // Row 2 (first data row after header)
+        range: `PartsOrders!A${lastRow}:G${lastRow}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
