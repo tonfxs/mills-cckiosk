@@ -518,6 +518,10 @@ export default function PartsAssistance() {
                 <label className="block text-4xl font-semibold mb-4 text-gray-700 text-center">
                   Select Car Park Bay
                 </label>
+                <label className="block text-xl font-semibold mb-4 text-red-700 text-center">
+                  Note: Please be advise not to relocate or change bays after confirming location.
+                </label>
+
 
                 <div className="grid grid-cols-11 gap-4">
                   {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
