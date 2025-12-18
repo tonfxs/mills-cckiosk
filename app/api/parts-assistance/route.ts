@@ -33,7 +33,7 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Save to Google Sheets
+// Save to Google Sheets (Append at Bottom)
 // ----------------------------
 async function saveToSheet(orderData: OrderData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -60,9 +60,19 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    await sheets.spreadsheets.values.append({
+    // Step 1: Get all current data to find the last row
+    const resp = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "PartsOrders!A:F",
+        range: "PartsOrders!A:A", // Just check column A to find last row
+    });
+
+    const rows = resp.data.values || [];
+    const lastRow = rows.length + 1; // +1 because rows.length includes header
+
+    // Step 2: Write to the specific row after the last entry
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `PartsOrders!A${lastRow}:G${lastRow}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -73,6 +83,7 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.orderNumber,
                     orderData.carParkBay,
                     "Pending Verification",
+                    "", // Column G (Agent - empty, to be filled manually)
                 ],
             ],
         },
@@ -103,7 +114,7 @@ export async function POST(request: NextRequest) {
             message: "Order saved",
         });
     } catch (err: any) {
-        console.error(" ERROR:", err);
+        console.error("❌ ERROR:", err);
         return NextResponse.json(
             { success: false, error: err.message },
             { status: 500 }
@@ -131,7 +142,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "PartsOrders!A:I",
+            range: "PartsOrders!A:G", // Extended to include Agent column
         });
 
         const rows = resp.data.values || [];
@@ -151,11 +162,9 @@ export async function GET(request: NextRequest) {
                 fullName: match[1],
                 phone: match[2],
                 orderNumber: match[3],
-                creditCard: match[4],
-                paymentMethod: match[5],
-                carParkBay: match[6],
-                confirmed: match[7],
-                status: match[8],
+                carParkBay: match[4],
+                status: match[5],
+                agent: match[6] || "", // Column G - Agent
             },
         });
     } catch (err: any) {

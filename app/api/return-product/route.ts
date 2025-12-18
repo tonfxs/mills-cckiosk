@@ -33,7 +33,7 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Save to Google Sheets
+// Save to Google Sheets (Append at Bottom)
 // ----------------------------
 async function saveToSheet(returnData: ReturnData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -61,9 +61,19 @@ async function saveToSheet(returnData: ReturnData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    await sheets.spreadsheets.values.append({
+    // Step 1: Get all current data to find the last row
+    const resp = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "Returns!A:H",
+        range: "Returns!A:A", // Just check column A to find last row
+    });
+
+    const rows = resp.data.values || [];
+    const lastRow = rows.length + 1; // +1 because rows.length includes header
+
+    // Step 2: Write to the specific row after the last entry
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Returns!A${lastRow}:J${lastRow}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -75,6 +85,9 @@ async function saveToSheet(returnData: ReturnData) {
                     returnData.carParkBay,
                     returnData.confirmed ? "Yes" : "No",
                     "Pending Pickup",
+                    "", // Column H (empty)
+                    "", // Column I (empty)
+                    "", // Column J (Agent - empty, to be filled manually)
                 ],
             ],
         },
@@ -149,7 +162,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Returns!A:H",
+            range: "Returns!A:J", // Extended to include Agent column
         });
 
         const rows = resp.data.values || [];
@@ -170,8 +183,9 @@ export async function GET(request: NextRequest) {
                 phone: match[2],
                 rmaID: match[3],
                 carParkBay: match[4],
-                confirmed: match[6] === "Yes",
-                status: match[7],
+                confirmed: match[5] === "Yes",
+                status: match[6],
+                agent: match[9] || "", // Column J - Agent
             },
         });
     } catch (err: any) {

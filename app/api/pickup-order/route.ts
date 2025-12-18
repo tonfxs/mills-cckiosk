@@ -36,7 +36,7 @@ async function getGoogleAuth() {
 }
 
 // ----------------------------
-// Save to Google Sheets
+// Save to Google Sheets (Append at Bottom)
 // ----------------------------
 async function saveToSheet(orderData: OrderData) {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -63,9 +63,19 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    await sheets.spreadsheets.values.append({
+    // Step 1: Get all current data to find the last row
+    const resp = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "Pickupsv1!A:I",
+        range: "Pickupsv1!A:A", // Just check column A to find last row
+    });
+
+    const rows = resp.data.values || [];
+    const lastRow = rows.length + 1; // +1 because rows.length includes header
+
+    // Step 2: Write to the specific row after the last entry
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Pickupsv1!A${lastRow}:J${lastRow}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -74,11 +84,12 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.fullName,
                     orderData.phone,
                     orderData.orderNumber,
-                    "'" + orderData.creditCard, // <-- FIX HERE
+                    "'" + orderData.creditCard,
                     orderData.validId,
                     orderData.paymentMethod,
                     orderData.carParkBay,
                     "Pending Verification",
+                    "", // Column J (Agent - empty, to be filled manually)
                 ],
             ],
         },
@@ -112,7 +123,7 @@ export async function POST(request: NextRequest) {
             message: "Order saved",
         });
     } catch (err: any) {
-        console.error(" ERROR:", err);
+        console.error("❌ ERROR:", err);
         return NextResponse.json(
             { success: false, error: err.message },
             { status: 500 }
@@ -140,7 +151,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Pickupsv1A:I",
+            range: "Pickupsv1!A:J", // Extended to include Agent column
         });
 
         const rows = resp.data.values || [];
@@ -164,8 +175,8 @@ export async function GET(request: NextRequest) {
                 validId: match[5],
                 paymentMethod: match[6],
                 carParkBay: match[7],
-                confirmed: match[8],
-                status: match[9],
+                status: match[8],
+                agent: match[9] || "", // Column J - Agent
             },
         });
     } catch (err: any) {
