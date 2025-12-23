@@ -61,19 +61,18 @@ async function saveToSheet(returnData: ReturnData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    // Step 1: Get all current data to find the last row
-    const resp = await sheets.spreadsheets.values.get({
+    // Save to Returns sheet
+    const respReturns = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: "Returns!A:A",
     });
 
-    const rows = resp.data.values || [];
-    const lastRow = rows.length + 1;
+    const rowsReturns = respReturns.data.values || [];
+    const lastRowReturns = rowsReturns.length + 1;
 
-    // Step 2: Write to the specific row after the last entry
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Returns!A${lastRow}:J${lastRow}`,
+        range: `Returns!A${lastRowReturns}:J${lastRowReturns}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -92,8 +91,39 @@ async function saveToSheet(returnData: ReturnData) {
             ],
         },
     });
-}
 
+    // Save to MASTER LIST sheet
+    const respMaster = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "MASTER LIST!A:A",
+    });
+
+    const rowsMaster = respMaster.data.values || [];
+    const lastRowMaster = rowsMaster.length + 1;
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `MASTER LIST!A${lastRowMaster}:K${lastRowMaster}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+            values: [
+                [
+                    timestamp,
+                    returnData.fullName,
+                    returnData.phone,
+                    returnData.rmaID,
+                    "",
+                    "",
+                    "",
+                    returnData.carParkBay,
+                    "Pending Pickup",
+                    "",
+                    "Return Product", // Transaction Type
+                ],
+            ],
+        },
+    });
+}
 
 // ----------------------------
 // POST — Handle Multiple Return Form Submit

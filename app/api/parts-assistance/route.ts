@@ -60,19 +60,18 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    // Step 1: Get all current data to find the last row
-    const resp = await sheets.spreadsheets.values.get({
+    // Save to PartsOrders sheet
+    const respParts = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: "PartsOrders!A:A",
     });
 
-    const rows = resp.data.values || [];
-    const lastRow = rows.length + 1;
+    const rowsParts = respParts.data.values || [];
+    const lastRowParts = rowsParts.length + 1;
 
-    // Step 2: Write to the specific row after the last entry
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `PartsOrders!A${lastRow}:G${lastRow}`,
+        range: `PartsOrders!A${lastRowParts}:G${lastRowParts}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -84,6 +83,38 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.carParkBay,
                     "Pending Verification",
                     "",
+                ],
+            ],
+        },
+    });
+
+    // Save to MASTER LIST sheet
+    const respMaster = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "MASTER LIST!A:A",
+    });
+
+    const rowsMaster = respMaster.data.values || [];
+    const lastRowMaster = rowsMaster.length + 1;
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `MASTER LIST!A${lastRowMaster}:K${lastRowMaster}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+            values: [
+                [
+                    timestamp,
+                    orderData.fullName,
+                    orderData.phone,
+                    orderData.orderNumber,
+                    "", // Credit Card (blank for Parts)
+                    "", // Valid ID Type (blank for Parts)
+                    "", // Payment Method (blank for Parts)
+                    orderData.carParkBay,
+                    "Pending Verification",
+                    "",
+                    "Parts Assistance", // Transaction Type
                 ],
             ],
         },
