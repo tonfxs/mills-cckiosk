@@ -355,7 +355,7 @@ export default function ReturnAProductForm() {
 
                 {/* CARPARK */}
                 <div className="mb-8">
-                  <label className="block text-4xl font-semibold mb-2 text-gray-700 text-center">Select Car Park Bay</label>
+                  <label className="block text-3xl font-semibold mb-2 text-gray-700 text-center">Select Car Park Bay</label>
                   <label className="block text-xl font-semibold mb-6 text-red-700 text-center">
                     Note: Please do not relocate after confirming your bay.
                   </label>

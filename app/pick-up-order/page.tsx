@@ -817,7 +817,7 @@ useEffect(() => {
 
                 {/* CARPARK */}
                 <div className="mb-8">
-                  <label className="block text-4xl font-semibold mb-2 text-gray-700 text-center">
+                  <label className="block text-3xl font-semibold mb-2 text-gray-700 text-center">
                     Select Car Park Bay
                   </label>
 
