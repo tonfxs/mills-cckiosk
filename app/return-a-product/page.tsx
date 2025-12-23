@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChevronRight, Package, UserRoundPen, PackageCheckIcon } from "lucide-react";
 import Link from "next/link";
 import SuccessScreen from "../components/SuccessScreen";
-import CarParkBayPopup from "../components/CarParkPopUp"; // make sure filename/case matches exactly
+import CarParkBayPopup from "../components/CarParkPopUp";
 
 interface FormData {
   fullName: string;
@@ -22,8 +22,8 @@ export default function ReturnAProductForm() {
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [showBayPopup, setShowBayPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
@@ -73,7 +73,7 @@ export default function ReturnAProductForm() {
       case 1:
         return !!formData.rmaID?.trim();
       case 2:
-        return !!formData.fullName?.trim() && nameRegex.test(formData.fullName);
+        return !!formData.fullName?.trim() && nameRegex.test(formData.fullName) && formData.phone.replace(/\D/g, "").length >= 10;
       case 3:
         return !!formData.carParkBay?.trim() && formData.confirmed;
       default:
@@ -93,7 +93,7 @@ export default function ReturnAProductForm() {
       if (!formData.fullName.trim()) {
         list.push("Full name is required.");
       } else if (!nameRegex.test(formData.fullName)) {
-        list.push("Full name may contain only letters, spaces, hyphens (–) and apostrophes (’).");
+        list.push("Full name may contain only letters, spaces, hyphens (–) and apostrophes (').");
       }
 
       const phoneDigits = formData.phone.replace(/\D/g, "");
@@ -165,6 +165,13 @@ export default function ReturnAProductForm() {
         return;
       }
 
+      // Success with dynamic message
+      const rmaCount = formData.rmaID.split(',').filter(r => r.trim()).length;
+      const message = rmaCount > 1
+        ? `Your ${rmaCount} return requests have been submitted. Please wait by your car.`
+        : "Your return request has been submitted. Please wait by your car.";
+
+      setSuccessMessage(message);
       setShowSuccess(true);
 
       setTimeout(() => {
@@ -182,8 +189,8 @@ export default function ReturnAProductForm() {
       {showSuccess && (
         <SuccessScreen
           title="Success!"
-          message="Your item return request has been submitted. Please wait by your car."
-          identifierLabel="Order Number"
+          message={successMessage || "Your return request has been submitted. Please wait by your car."}
+          identifierLabel="RMA ID(s)"
           identifierValue={formData.rmaID}
           redirectMessage="Redirecting to main menu..."
           onDone={handleCloseFloating}
@@ -208,9 +215,8 @@ export default function ReturnAProductForm() {
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
               <div
-                className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${
-                  step >= num ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
-                }`}
+                className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+                  }`}
               >
                 {step > num ? "✓" : <Icon size={40} />}
               </div>
@@ -250,13 +256,11 @@ export default function ReturnAProductForm() {
                     type="text"
                     name="rmaID"
                     value={formData.rmaID}
-                    onChange={(e) => {
-                      const cleaned = e.target.value.replace(/[^a-zA-Z0-9-]/g, "");
-                      if (cleaned.length <= 9) setFormData({ ...formData, rmaID: cleaned });
-                    }}
+                    onChange={handleChange}
                     className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                    placeholder="e.g., RFI123456"
+                    placeholder="e.g., RMA12345, RMA67890, RMA99999"
                   />
+
                   {errors.rmaID && <p className="text-red-600 text-xl mt-2">{errors.rmaID}</p>}
                 </div>
               </div>
@@ -328,9 +332,17 @@ export default function ReturnAProductForm() {
 
                 <div className="space-y-4 mb-8 bg-gray-50 p-8 rounded-2xl">
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
-                    <span className="font-semibold text-gray-600">Order Number:</span>
+                    <span className="font-semibold text-gray-600">RMA ID{formData.rmaID.includes(',') ? 's' : ''}:</span>
                     <span className="font-bold text-black">{formData.rmaID}</span>
                   </div>
+                  {formData.rmaID.includes(',') && (
+                    <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
+                      <p className="text-2xl text-blue-700 font-semibold">
+                        📦 Processing {formData.rmaID.split(',').filter(r => r.trim()).length} returns
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
                     <span className="font-bold text-black">{formData.fullName}</span>
@@ -422,9 +434,8 @@ export default function ReturnAProductForm() {
           {step < 3 ? (
             <button
               onClick={handleContinue}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${
-                canProceed() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
               Continue
               <ChevronRight size={36} />
@@ -433,9 +444,8 @@ export default function ReturnAProductForm() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
-                canProceed() && !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT RETURN REQUEST"}
             </button>

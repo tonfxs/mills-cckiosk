@@ -1,9 +1,8 @@
 "use client";
 import { useState } from 'react';
-import { ChevronRight, Package, CreditCard, Car, CardSimIcon, UserRoundCheck, UserRoundPen, PackageCheck } from 'lucide-react';
+import { ChevronRight, Package, UserRoundPen, PackageCheck } from 'lucide-react';
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
-import CarParkSelector from '../components/CarParkSelector';
 import CarParkBayPopup from '../components/CarParkPopUp';
 
 interface FormData {
@@ -18,65 +17,10 @@ interface Errors {
   [key: string]: string;
 }
 
-// NumberPad Component
-const NumberPad = ({ value, onChange, maxLength }: { value: string; onChange: (value: string) => void; maxLength: number }) => {
-  const handleNumberClick = (num: string) => {
-    if (value.length < maxLength) {
-      onChange(value + num);
-    }
-  };
-
-  const handleBackspace = () => {
-    onChange(value.slice(0, -1));
-  };
-
-  const handleClear = () => {
-    onChange('');
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="text-5xl font-bold text-center p-6 bg-gray-100 rounded-2xl border-4 border-gray-300 min-h-[100px] flex items-center justify-center text-black">
-        {value.length > 0 ? '*'.repeat(value.length) : '----'}
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-          <button
-            key={num}
-            onClick={() => handleNumberClick(num.toString())}
-            className="text-4xl font-bold p-8 bg-white border-4 border-gray-300 rounded-2xl hover:bg-blue-50 hover:border-blue-400 transition-all"
-          >
-            {num}
-          </button>
-        ))}
-        <button
-          onClick={handleClear}
-          className="text-3xl font-bold p-8 bg-red-100 border-4 border-red-300 rounded-2xl hover:bg-red-200 transition-all"
-        >
-          Clear
-        </button>
-        <button
-          onClick={() => handleNumberClick('0')}
-          className="text-4xl font-bold p-8 bg-white border-4 border-gray-300 rounded-2xl hover:bg-blue-50 hover:border-blue-400 transition-all"
-        >
-          0
-        </button>
-        <button
-          onClick={handleBackspace}
-          className="text-3xl font-bold p-8 bg-yellow-100 border-4 border-yellow-300 rounded-2xl hover:bg-yellow-200 transition-all"
-        >
-          ←
-        </button>
-      </div>
-    </div>
-  );
-};
-
-
 export default function PartsAssistance() {
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     phone: "",
@@ -88,7 +32,6 @@ export default function PartsAssistance() {
   const handleCloseFloating = () => {
     setShowSuccess(false);
     localStorage.removeItem("doxy-minimized");
-
     window.location.href = "/";
   };
 
@@ -96,7 +39,6 @@ export default function PartsAssistance() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);
   const [showBayPopup, setShowBayPopup] = useState(false);
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -131,27 +73,16 @@ export default function PartsAssistance() {
         if (!formData.orderNumber.trim()) {
           stepErrors.push("Order number is required");
         }
-        // if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
-        //   if (!formData.creditCard.trim()) {
-        //     stepErrors.push("Last 4 digits of credit card are required");
-        //   } else if (formData.creditCard.length !== 4) {
-        //     stepErrors.push("Credit card must be exactly 4 digits");
-        //   } else if (!/^\d{4}$/.test(formData.creditCard)) {
-        //     stepErrors.push("Credit card must contain only numbers");
-        //   }
-        // }
         break;
       case 2:
-      if (!formData.fullName.trim()) {
-        stepErrors.push("Full name is required");
-      } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
-        stepErrors.push(
-          "Full name may contain only letters, spaces, hyphens (-) and apostrophes (')."
-        );
-      }
+        if (!formData.fullName.trim()) {
+          stepErrors.push("Full name is required");
+        } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+          stepErrors.push("Full name may contain only letters, spaces, hyphens (-) and apostrophes (').");
+        }
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
-        } else if (formData.phone.replace(/\s/g, '').length < 9) {
+        } else if (formData.phone.replace(/\s/g, '').length < 10) {
           stepErrors.push("Phone number must be at least 10 digits");
         }
         break;
@@ -175,18 +106,15 @@ export default function PartsAssistance() {
       return hasCarBay && hasConfirmed;
     }
 
-    // Other steps keep normal validation
     const stepErrors = validateStep(step);
     return stepErrors.length === 0;
   };
-
 
   const handleContinue = () => {
     const stepErrors = validateStep(step);
 
     if (stepErrors.length > 0) {
       setStepValidationErrors(stepErrors);
-      // alert("Please correct the following before continuing:\n\n• " + stepErrors.join("\n• "));
       return;
     }
 
@@ -200,28 +128,25 @@ export default function PartsAssistance() {
 
     const allErrors: string[] = [];
 
-    // Full Name
     if (!formData.fullName.trim()) {
       allErrors.push("Full name is required");
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+      allErrors.push("Full name may only contain letters, spaces, hyphens (-), and apostrophes (').");
     }
 
-    // Phone Number
     if (!formData.phone.trim()) {
       allErrors.push("Phone number is required");
     } else if (formData.phone.replace(/\s/g, "").length < 10) {
       allErrors.push("Phone number must be at least 10 digits");
     }
 
-    // Order Number
     if (!formData.orderNumber.trim()) {
       allErrors.push("Order number is required");
     }
 
-    // Other required fields
     if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
     if (!formData.confirmed) allErrors.push("You must confirm the data");
 
-    // Stop here if errors exist
     if (allErrors.length > 0) {
       setStepValidationErrors(allErrors);
       alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
@@ -229,7 +154,6 @@ export default function PartsAssistance() {
       return;
     }
 
-    // No errors → continue submitting
     setStepValidationErrors([]);
 
     try {
@@ -259,10 +183,15 @@ export default function PartsAssistance() {
         return;
       }
 
-      // Success screen
+      // Success with dynamic message
+      const orderCount = formData.orderNumber.split(',').filter(o => o.trim()).length;
+      const message = orderCount > 1
+        ? `Your ${orderCount} parts assistance requests have been submitted. Thank you.`
+        : "Your parts assistance request has been submitted. Thank you.";
+
+      setSuccessMessage(message);
       setShowSuccess(true);
 
-      // Redirect in 3 seconds
       setTimeout(() => {
         window.location.href = "/";
       }, 3000);
@@ -275,19 +204,16 @@ export default function PartsAssistance() {
     setIsSubmitting(false);
   };
 
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
-      {/* Success Screen */}
       {showSuccess && (
         <SuccessScreen
           title="Success!"
-          message="Your request has been submitted. Thank you."
-          identifierLabel="Order Number"
+          message={successMessage || "Your request has been submitted. Thank you."}
+          identifierLabel="Order Number(s)"
           identifierValue={formData.orderNumber}
           redirectMessage="Redirecting to main menu..."
-          onDone={handleCloseFloating}   
-
+          onDone={handleCloseFloating}
         />
       )}
 
@@ -298,18 +224,15 @@ export default function PartsAssistance() {
           <p className="text-3xl text-white font-bold">
             Mills Brands Click & Collect Kiosk
           </p>
-          {/* <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
-          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p> */}
         </div>
       </div>
-
 
       {/* Progress Steps */}
       <div className="bg-white shadow-sm border-b border-gray-200 p-6">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           {[
             { num: 1, label: 'Verify Order', icon: Package },
-            { num: 2, label: 'Contact Info', icon: UserRoundPen   },
+            { num: 2, label: 'Contact Info', icon: UserRoundPen },
             { num: 3, label: 'Confirm', icon: PackageCheck }
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
@@ -357,38 +280,10 @@ export default function PartsAssistance() {
                       name="orderNumber"
                       value={formData.orderNumber}
                       onChange={handleChange}
-
-                      // onChange={(e) => {
-                      //   let val = e.target.value.toUpperCase();
-
-                      //   // Remove all non-alphanumeric characters
-                      //   val = val.replace(/[^A-Z0-9]/g, "");
-
-                      //   // Enforce: first char = letter only
-                      //   if (val.length === 1) {
-                      //     val = val.replace(/[^A-Z]/g, ""); 
-                      //   }
-
-                      //   // Enforce: second → eighth chars = digits only
-                      //   if (val.length > 1) {
-                      //     val = val[0] + val.slice(1).replace(/\D/g, ""); 
-                      //   }
-
-                      //   // Limit to 1 letter + 7 digits = 8 characters total
-                      //   val = val.slice(0, 8);
-
-                      //   handleChange({
-                      //     ...e,
-                      //     target: {
-                      //       ...e.target,
-                      //       value: val,
-                      //       name: "orderNumber"
-                      //     }
-                      //   });
-                      // }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., E1234567 or M1234567"
+                      placeholder="e.g., E1234567, M7654321, E9999999"
                     />
+
                     {errors.orderNumber && <p className="text-red-600 text-xl mt-2">{errors.orderNumber}</p>}
                   </div>
                 </div>
@@ -419,49 +314,31 @@ export default function PartsAssistance() {
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                     <div className="flex gap-4">
-                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
-                        AU
-                      </div>
+                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
                       <input
                         type="text"
                         name="phone"
                         value={formData.phone}
                         onChange={(e) => {
-                          // Keep digits only
                           let digits = e.target.value.replace(/\D/g, "");
-
-                          // Limit to 10 digits
                           if (digits.length > 10) digits = digits.slice(0, 10);
 
-                          // Apply formatting: 4-3-3 (AU mobile format)
                           let formatted = digits;
                           if (digits.length > 4 && digits.length <= 7) {
                             formatted = digits.slice(0, 4) + " " + digits.slice(4);
                           } else if (digits.length > 7) {
-                            formatted =
-                              digits.slice(0, 4) +
-                              " " +
-                              digits.slice(4, 7) +
-                              " " +
-                              digits.slice(7);
+                            formatted = digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
                           }
 
-                          // Push cleaned digits to state (your handleChange)
                           handleChange({
                             ...e,
-                            target: {
-                              ...e.target,
-                              value: formatted, // store formatted value
-                              name: "phone"
-                            }
+                            target: { ...e.target, value: formatted, name: "phone" }
                           });
                         }}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl
-                                   focus:border-blue-500 focus:outline-none text-black"
+                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                         placeholder="04XX XXX XXX"
                         required
                       />
-
                     </div>
                     {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
                   </div>
@@ -470,19 +347,24 @@ export default function PartsAssistance() {
             </div>
           )}
 
-
           {/* Step 3: Confirm */}
           {step === 3 && (
-
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
                 <h2 className="text-6xl font-bold mb-8 text-gray-800">Review & Confirm</h2>
 
                 <div className="space-y-4 mb-8 bg-gray-50 p-8 rounded-2xl">
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
-                    <span className="font-semibold text-gray-600">Order Number:</span>
+                    <span className="font-semibold text-gray-600">Order Number{formData.orderNumber.includes(',') ? 's' : ''}:</span>
                     <span className="font-bold text-black">{formData.orderNumber}</span>
                   </div>
+                  {formData.orderNumber.includes(',') && (
+                    <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
+                      <p className="text-2xl text-blue-700 font-semibold">
+                        📦 Processing {formData.orderNumber.split(',').filter(o => o.trim()).length} orders
+                      </p>
+                    </div>
+                  )}
 
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
@@ -501,52 +383,44 @@ export default function PartsAssistance() {
                   </div>
                 </div>
 
-                
                 <div className="mb-8">
                   <label className="block text-4xl font-semibold mb-2 text-gray-700 text-center">
                     Select Car Park Bay
                   </label>
-
                   <label className="block text-xl font-semibold mb-6 text-red-700 text-center">
                     Note: Please do not relocate after confirming your bay.
                   </label>
 
-                    <div className="mt-6 flex items-center justify-between rounded-2xl border bg-white p-6">
-                        <div>
-                          <div className="text-xl font-extrabold text-gray-900">Car Park Bay</div>
-                          <div className="text-4xl font-bold text-gray-600 mt-1">
-                            {formData.carParkBay ? formData.carParkBay : "Not selected"}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowBayPopup(true)}
-                          className="px-10 py-5 rounded-2xl bg-blue-600 text-white text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
-                        >
-                          {formData.carParkBay ? "Change" : "Select Bay"}
-                        </button>
+                  <div className="mt-6 flex items-center justify-between rounded-2xl border bg-white p-6">
+                    <div>
+                      <div className="text-xl font-extrabold text-gray-900">Car Park Bay</div>
+                      <div className="text-4xl font-bold text-gray-600 mt-1">
+                        {formData.carParkBay ? formData.carParkBay : "Not selected"}
                       </div>
+                    </div>
 
-                      <CarParkBayPopup
-                        open={showBayPopup}
-                        onClose={() => setShowBayPopup(false)}
-                        value={formData.carParkBay}
-                        onConfirm={(v) => setFormData((p) => ({ ...p, carParkBay: v }))}
-                      />
-     
-                      {errors.carParkBay && (
-                        <p className="text-red-600 text-xl mt-4 text-center">
-                          {errors.carParkBay}
-                        </p>
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => setShowBayPopup(true)}
+                      className="px-10 py-5 rounded-2xl bg-blue-600 text-white text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
+                    >
+                      {formData.carParkBay ? "Change" : "Select Bay"}
+                    </button>
                   </div>
 
-                {errors.carParkBay && (
-                  <p className="text-red-600 text-xl mt-4">{errors.carParkBay}</p>
-                )}
-              </div>
+                  <CarParkBayPopup
+                    open={showBayPopup}
+                    onClose={() => setShowBayPopup(false)}
+                    value={formData.carParkBay}
+                    onConfirm={(v) => setFormData((p) => ({ ...p, carParkBay: v }))}
+                  />
 
+                  {errors.carParkBay && (
+                    <p className="text-red-600 text-xl mt-4 text-center">
+                      {errors.carParkBay}
+                    </p>
+                  )}
+                </div>
 
                 <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                   <input
@@ -565,31 +439,24 @@ export default function PartsAssistance() {
                   <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>
                 )}
               </div>
-
+            </div>
           )}
-
         </div>
       </div>
 
       {/* Bottom Navigation */}
       <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto flex gap-6">
-
-          {/* MAIN MENU BUTTON (visible only on step 1) */}
           {step === 1 && (
             <Link
               href="/choose-service"
-              className="flex-1 text-4xl font-bold py-8 px-10 
-                       bg-yellow-200 text-yellow-700 
-                       rounded-2xl hover:bg-yellow-300 transition-all
-                       flex items-center justify-center"
+              className="flex-1 text-4xl font-bold py-8 px-10 bg-yellow-200 text-yellow-700 rounded-2xl hover:bg-yellow-300 transition-all flex items-center justify-center"
             >
               ⬑ Main Menu
             </Link>
           )}
 
           {step > 1 && (
-
             <button
               onClick={() => setStep(step - 1)}
               className="flex-1 text-4xl font-bold py-8 px-10 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all"
@@ -601,9 +468,7 @@ export default function PartsAssistance() {
           {step < 3 ? (
             <button
               onClick={handleContinue}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed() ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               Continue
@@ -613,9 +478,7 @@ export default function PartsAssistance() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting
-                ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
@@ -626,5 +489,3 @@ export default function PartsAssistance() {
     </div>
   );
 }
-
-

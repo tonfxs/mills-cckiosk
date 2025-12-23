@@ -63,19 +63,18 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    // Step 1: Get all current data to find the last row
-    const resp = await sheets.spreadsheets.values.get({
+    // Save to Pickupsv1 sheet
+    const respPickups = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "Pickupsv1!A:A", // Just check column A to find last row
+        range: "Pickupsv1!A:A",
     });
 
-    const rows = resp.data.values || [];
-    const lastRow = rows.length + 1; // +1 because rows.length includes header
+    const rowsPickups = respPickups.data.values || [];
+    const lastRowPickups = rowsPickups.length + 1;
 
-    // Step 2: Write to the specific row after the last entry
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Pickupsv1!A${lastRow}:J${lastRow}`,
+        range: `Pickupsv1!A${lastRowPickups}:J${lastRowPickups}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -89,17 +88,47 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.paymentMethod,
                     orderData.carParkBay,
                     "Pending Verification",
-                    "", // Column J (Agent - empty, to be filled manually)
+                    "",
+                ],
+            ],
+        },
+    });
+
+    // Save to MASTERLIST sheet
+    const respMaster = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "MASTER LIST!A:A",
+    });
+
+    const rowsMaster = respMaster.data.values || [];
+    const lastRowMaster = rowsMaster.length + 1;
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `MASTER LIST!A${lastRowMaster}:K${lastRowMaster}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+            values: [
+                [
+                    timestamp,
+                    orderData.fullName,
+                    orderData.phone,
+                    orderData.orderNumber,
+                    "'" + orderData.creditCard,
+                    orderData.validId,
+                    orderData.paymentMethod,
+                    orderData.carParkBay,
+                    "Pending Verification",
+                    "",
+                    "Order Pickup", // Transaction Type
                 ],
             ],
         },
     });
 }
 
-
-
 // ----------------------------
-// POST — Save Order
+// POST — Save Multiple Orders
 // ----------------------------
 export async function POST(request: NextRequest) {
     try {
@@ -116,11 +145,26 @@ export async function POST(request: NextRequest) {
             confirmed: form.get("confirmed") === "true",
         };
 
-        await saveToSheet(orderData);
+        // Split order numbers by comma and trim whitespace
+        const orderNumbers = orderData.orderNumber
+            .split(",")
+            .map(num => num.trim())
+            .filter(num => num.length > 0);
+
+        // Save each order separately with the same customer info
+        for (const orderNum of orderNumbers) {
+            const singleOrderData = {
+                ...orderData,
+                orderNumber: orderNum
+            };
+            await saveToSheet(singleOrderData);
+        }
 
         return NextResponse.json({
             success: true,
-            message: "Order saved",
+            message: `${orderNumbers.length} order${orderNumbers.length > 1 ? 's' : ''} saved successfully`,
+            orderCount: orderNumbers.length,
+            orders: orderNumbers
         });
     } catch (err: any) {
         console.error("❌ ERROR:", err);
@@ -151,7 +195,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Pickupsv1!A:J", // Extended to include Agent column
+            range: "Pickupsv1!A:J",
         });
 
         const rows = resp.data.values || [];
@@ -176,7 +220,7 @@ export async function GET(request: NextRequest) {
                 paymentMethod: match[6],
                 carParkBay: match[7],
                 status: match[8],
-                agent: match[9] || "", // Column J - Agent
+                agent: match[9] || "",
             },
         });
     } catch (err: any) {
