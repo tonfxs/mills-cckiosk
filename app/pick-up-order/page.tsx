@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, Package, UserRoundPen, PackageCheck, IdCardIcon } from 'lucide-react';
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
+import CarParkSelector from '../components/CarParkSelector';
+import CarParkMap from '../components/CarParkMap';
+import CarParkBayPopup from '../components/CarParkPopUp';
 
 
 
@@ -104,6 +107,8 @@ export default function PickupKiosk() {
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);  
+  const [showBayPopup, setShowBayPopup] = useState(false);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -517,32 +522,6 @@ useEffect(() => {
                     )}
                   </div>
 
-                  {/* ✅ Show NumberPad ONLY when credit or debit card is selected */}
-                  {/* {["credit-card", "debit-card"].includes(formData.paymentMethod) && (
-                    <div className="mt-10">
-                      <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                        Last 4 Digits of Credit Card
-                      </label>
-
-                      <NumberPad
-                        value={formData.creditCard}
-                        onChange={(value: string) => {
-                          setFormData((prev) => ({ ...prev, creditCard: value }));
-                          if (stepValidationErrors.length > 0) {
-                            setStepValidationErrors([]);
-                          }
-                        }}
-                        maxLength={4}
-                      />
-
-                      {errors.creditCard && (
-                        <p className="text-red-600 text-xl mt-2">{errors.creditCard}</p>
-                      )}
-
-                      <p className="text-gray-500 text-2xl mt-2">Must be exactly 4 digits</p>
-                    </div>
-                  )} */}
-
                   {showCardPopup && (
                      <div className="fixed inset-0 bg-white/40 backdrop-blur-md flex items-center justify-center z-50">
                       <div className="relative bg-white p-10 rounded-2xl w-[90%] max-w-xl shadow-2xl border-4 border-blue-600">
@@ -829,86 +808,53 @@ useEffect(() => {
                   {/* ✅ CASH DISCLAIMER */}
                   {formData.paymentMethod === "cash" && (
                     <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
-                      <p className="text-3xl font-semibold text-yellow-800">
+                      <p className="text-2xl font-semibold text-yellow-800">
                         Please proceed to the window reception to pay in cash.
                       </p>
                     </div>
                   )}
                 </div>
 
-                {/* <div className="mb-8">
-                  <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                    Car Park Bay Number
-                  </label>
-                  <input
-                    type="text"
-                    name="carParkBay"
-                    value={formData.carParkBay}
-                    onChange={handleChange}
-                    className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                    placeholder="e.g., 15"
-                  />
-                  {errors.carParkBay && (
-                    <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>
-                  )}
-                </div> */}
-
+                {/* CARPARK */}
                 <div className="mb-8">
-                <label className="block text-4xl font-semibold mb-4 text-gray-700 text-center">
-                  Select Car Park Bay
-                </label>
-                <label className="block text-xl font-semibold mb-4 text-red-700 text-center">
-                  Note: Please be advise not to relocate or change bays after confirming location.
-                </label>
+                  <label className="block text-3xl font-semibold mb-2 text-gray-700 text-center">
+                    Select Car Park Bay
+                  </label>
 
+                  <label className="block text-xl font-semibold mb-6 text-red-700 text-center">
+                    Note: Please do not relocate after confirming your bay.
+                  </label>
 
-                <div className="grid grid-cols-11 gap-4">
-                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
-                    const isSelected = formData.carParkBay === String(num);
-                  
-                    return (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() =>
-                          handleChange({
-                            target: {
-                              name: "carParkBay",
-                              value: String(num),
-                              type: "select-one",
-                            },
-                          } as React.ChangeEvent<HTMLSelectElement>)
-                        }
-                        className={`
-                          h-14 rounded-3xl text-3xl font-bold
-                          transition-all duration-200
-                          ${
-                            isSelected
-                              ? "bg-blue-600 text-white scale-105 shadow-xl"
-                              : "bg-white/70 backdrop-blur-md text-gray-800 shadow-lg hover:scale-105 active:scale-95"
-                          }
-                        `}
-                      >
-                        {num}
-                      </button>
-                    );
-                  })}
-                </div>
+                    <div className="mt-6 flex items-center justify-between rounded-2xl border bg-white p-6">
+                        <div>
+                          <div className="text-xl font-extrabold text-gray-900">Car Park Bay</div>
+                          <div className="text-4xl font-bold text-gray-600 mt-1">
+                            {formData.carParkBay ? formData.carParkBay : "Not selected"}
+                          </div>
+                        </div>
 
-                {/* <select
-                  name="carParkBay"
-                  value={formData.carParkBay}
-                  onChange={handleChange}
-                  className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black bg-white"
-                >
-                  <option value="">Select bay number</option>
-                  {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
-                    <option key={num} value={num}>
-                      {num}
-                    </option>
-                  ))}
-                </select> */}
+                        <button
+                          type="button"
+                          onClick={() => setShowBayPopup(true)}
+                          className="px-10 py-5 rounded-2xl bg-blue-600 text-white text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
+                        >
+                          {formData.carParkBay ? "Change" : "Select Bay"}
+                        </button>
+                      </div>
 
+                      <CarParkBayPopup
+                        open={showBayPopup}
+                        onClose={() => setShowBayPopup(false)}
+                        value={formData.carParkBay}
+                        onConfirm={(v) => setFormData((p) => ({ ...p, carParkBay: v }))}
+                      />
+     
+                      {errors.carParkBay && (
+                        <p className="text-red-600 text-xl mt-4 text-center">
+                          {errors.carParkBay}
+                        </p>
+                      )}
+                  </div>
 
                 {errors.carParkBay && (
                   <p className="text-red-600 text-xl mt-4">{errors.carParkBay}</p>
@@ -933,7 +879,7 @@ useEffect(() => {
                   <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>
                 )}
               </div>
-            </div>
+            // </div>
 
           )}
 

@@ -1,9 +1,9 @@
 "use client";
-import { useState } from 'react';
-import { ChevronRight, Package, UserRoundPen, PackageCheckIcon } from 'lucide-react';
-import Link from 'next/link';
-import SuccessScreen from '../components/SuccessScreen';
-
+import { useState } from "react";
+import { ChevronRight, Package, UserRoundPen, PackageCheckIcon } from "lucide-react";
+import Link from "next/link";
+import SuccessScreen from "../components/SuccessScreen";
+import CarParkBayPopup from "../components/CarParkPopUp";
 
 interface FormData {
   fullName: string;
@@ -21,6 +21,10 @@ interface Errors {
 export default function ReturnAProductForm() {
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBayPopup, setShowBayPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     phone: "",
@@ -30,136 +34,101 @@ export default function ReturnAProductForm() {
     confirmed: false,
   });
 
+  const [errors, setErrors] = useState<Errors>({});
+  const [stepErrors, setStepErrors] = useState<string[]>([]);
 
   const handleCloseFloating = () => {
     setShowSuccess(false);
     localStorage.removeItem("doxy-minimized");
-
     window.location.href = "/";
   };
 
-  const [errors, setErrors] = useState<Errors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    const fieldName = name as keyof FormData;
 
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const { name, value, type } = e.target;
-  const checked = (e.target as HTMLInputElement).checked;
-  const fieldName = name as keyof FormData;
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: type === "checkbox" ? checked : value,
+    }));
 
-  setFormData((prev) => ({
-    ...prev,
-    [fieldName]: type === "checkbox" ? checked : value,
-  }));
-
-  // Clear individual field error
-  if (errors[fieldName]) {
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[fieldName];
-      return newErrors;
-    });
-  }
-
-  // **Clear all stepErrors immediately**
-  if (stepErrors.length > 0) setStepErrors([]);
-};
-
-
-
-
-const canProceed = () => {
-  // allow letters, spaces, hyphens, apostrophes
-  const nameRegex = /^[A-Za-z\s'-]+$/;
-  
-
-  switch (step) {
-    case 1:
-      return !!formData.rmaID?.trim();
-
-    case 2:
-      return (
-        !!formData.fullName?.trim() &&
-        nameRegex.test(formData.fullName)
-      );
-
-    case 3:
-      return !!formData.carParkBay?.trim() && formData.confirmed;
-
-    default:
-      return false;
-
-
-  }
-};
-const [stepErrors, setStepErrors] = useState<string[]>([]);
-
-const validateStep = (currentStep: number) => {
-  const errors: string[] = [];
-  const nameRegex = /^[A-Za-z\s'-]+$/;
-
-  if (currentStep === 1) {
-    if (!formData.rmaID.trim()) {
-      errors.push("RMA ID is required.");
-    }
-  }
-
-  if (currentStep === 2) {
-    if (!formData.fullName.trim()) {
-      errors.push("Full name is required.");
-    } else if (!nameRegex.test(formData.fullName)) {
-      errors.push("Full name may contain only letters, spaces, hyphens (–) and apostrophes (’).");
+    // Clear individual field error
+    if (errors[fieldName]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
     }
 
-    // Phone validation
-    const phoneDigits = formData.phone.replace(/\D/g, "");
+    // Clear step errors immediately once user edits anything
+    if (stepErrors.length > 0) setStepErrors([]);
+  };
 
-    if (!phoneDigits) {
-      errors.push("Phone number is required.");
-    } else if (phoneDigits.length < 10) {
-      errors.push("Phone number must be at least 10 digits.");
+  const canProceed = () => {
+    const nameRegex = /^[A-Za-z\s'-]+$/;
+
+    switch (step) {
+      case 1:
+        return !!formData.rmaID?.trim();
+      case 2:
+        return !!formData.fullName?.trim() && nameRegex.test(formData.fullName) && formData.phone.replace(/\D/g, "").length >= 10;
+      case 3:
+        return !!formData.carParkBay?.trim() && formData.confirmed;
+      default:
+        return false;
     }
-    
-  }
+  };
 
-  return errors;
-};
+  const validateStep = (currentStep: number) => {
+    const list: string[] = [];
+    const nameRegex = /^[A-Za-z\s'-]+$/;
 
+    if (currentStep === 1) {
+      if (!formData.rmaID.trim()) list.push("RMA ID is required.");
+    }
 
-const handleContinue = () => {
-  const errors = validateStep(step);
+    if (currentStep === 2) {
+      if (!formData.fullName.trim()) {
+        list.push("Full name is required.");
+      } else if (!nameRegex.test(formData.fullName)) {
+        list.push("Full name may contain only letters, spaces, hyphens (–) and apostrophes (').");
+      }
 
-  if (errors.length > 0) {
-    setStepErrors(errors);
-    return;
-  }
+      const phoneDigits = formData.phone.replace(/\D/g, "");
+      if (!phoneDigits) {
+        list.push("Phone number is required.");
+      } else if (phoneDigits.length < 10) {
+        list.push("Phone number must be at least 10 digits.");
+      }
+    }
 
-  setStepErrors([]);
-  setStep(step + 1);
-};
+    return list;
+  };
 
+  const handleContinue = () => {
+    const list = validateStep(step);
+    if (list.length > 0) {
+      setStepErrors(list);
+      return;
+    }
 
-
-
-
+    setStepErrors([]);
+    setStep(step + 1);
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setErrors({});
 
     const newErrors: Errors = {};
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = "Full name is required";
     } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
-      newErrors.fullName =
-        "Full name may only contain letters, spaces, hyphens (-), and apostrophes (').";
-    } 
-    //  if (!formData.phone.trim()) {
-    //       stepErrors.push("Phone number is required");
-    //     } else if (formData.phone.replace(/\s/g, '').length < 9) {
-    //       stepErrors.push("Phone number must be at least 10 digits");
-    //     }
-
-    if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
+      newErrors.fullName = "Full name may only contain letters, spaces, hyphens (-), and apostrophes (').";
+    }
 
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
 
@@ -177,7 +146,7 @@ const handleContinue = () => {
 
     try {
       const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
+      Object.keys(formData).forEach((key) => {
         const fieldKey = key as keyof FormData;
         formDataToSend.append(key, formData[fieldKey].toString());
       });
@@ -190,23 +159,24 @@ const handleContinue = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        if (result.errors) {
-          setErrors(result.errors);
-        } else {
-          alert(result.error || "Submission failed");
-        }
+        if (result.errors) setErrors(result.errors);
+        else alert(result.error || "Submission failed");
         setIsSubmitting(false);
         return;
       }
 
-      // Show success screen
+      // Success with dynamic message
+      const rmaCount = formData.rmaID.split(',').filter(r => r.trim()).length;
+      const message = rmaCount > 1
+        ? `Your ${rmaCount} return requests have been submitted. Please wait by your car.`
+        : "Your return request has been submitted. Please wait by your car.";
+
+      setSuccessMessage(message);
       setShowSuccess(true);
 
-      // Redirect after 3 seconds
       setTimeout(() => {
         window.location.href = "/choose-service";
       }, 3000);
-
     } catch (error) {
       console.error("Submission error:", error);
       alert("An error occurred. Please try again.");
@@ -214,42 +184,24 @@ const handleContinue = () => {
     }
   };
 
-//   const RETURN_REASONS = [
-//   { value: "RFI", label: "Return for Inspection", description: "Item needs assessment" },
-//   { value: "CM", label: "Change of Mind", description: "No longer required" },
-//   { value: "IO", label: "Immediate Outcome", description: "Quick resolution required" },
-//   { value: "DS", label: "Disaster Returns", description: "Damaged due to unforeseen events" },
-// ];
-
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
-      {/* Success Screen */}
       {showSuccess && (
         <SuccessScreen
           title="Success!"
-          message="Your item return request has been submitted. Please wait by your car."
-          identifierLabel="Order Number"
+          message={successMessage || "Your return request has been submitted. Please wait by your car."}
+          identifierLabel="RMA ID(s)"
           identifierValue={formData.rmaID}
           redirectMessage="Redirecting to main menu..."
-          onDone={handleCloseFloating}   // <-- NEW
-
+          onDone={handleCloseFloating}
         />
-
-      )
-      }
+      )}
 
       {/* Header */}
       <div className="relative bg-blue-600 text-white p-8 shadow-lg px-10 py-20">
-
-
         <div className="max-w-4xl mx-auto relative">
           <h1 className="text-7xl font-bold mb-2">Return a Product</h1>
-          <p className="text-3xl text-white font-bold">
-          Mills Brands Click & Collect Kiosk
-          </p>
-          {/* <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
-          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p> */}
+          <p className="text-3xl text-white font-bold">Mills Brands Click & Collect Kiosk</p>
         </div>
       </div>
 
@@ -257,16 +209,18 @@ const handleContinue = () => {
       <div className="bg-white shadow-sm border-b border-gray-200 p-6">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           {[
-            { num: 1, label: 'Verify RMA ID', icon: Package },
-            { num: 2, label: 'Information', icon: UserRoundPen },
-            { num: 3, label: 'Confirm', icon: PackageCheckIcon }
+            { num: 1, label: "Verify RMA ID", icon: Package },
+            { num: 2, label: "Information", icon: UserRoundPen },
+            { num: 3, label: "Confirm", icon: PackageCheckIcon },
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
-              <div className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                }`}>
-                {step > num ? '✓' : <Icon size={40} />}
+              <div
+                className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+                  }`}
+              >
+                {step > num ? "✓" : <Icon size={40} />}
               </div>
-              <span className={`text-sm font-medium ${step >= num ? 'text-blue-600' : 'text-gray-400'}`}>
+              <span className={`text-sm font-medium ${step >= num ? "text-blue-600" : "text-gray-400"}`}>
                 {label}
               </span>
             </div>
@@ -277,8 +231,6 @@ const handleContinue = () => {
       {/* Main Content */}
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
-
-          {/* Validation Errors Alert */}
           {stepErrors.length > 0 && (
             <div className="mb-6 bg-red-50 border-4 border-red-500 rounded-2xl p-8">
               <h3 className="text-3xl font-bold text-red-700 mb-4">REQUIRED FIELDS CANNOT BE BLANK:</h3>
@@ -292,93 +244,30 @@ const handleContinue = () => {
             </div>
           )}
 
-          {/* Step 1: Verify RMA ID */}
+          {/* Step 1 */}
           {step === 1 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Enter Your Details</h2>
 
-                <div className="space-y-10">
+                <div>
+                  <label className="block text-4xl font-semibold mb-4 text-gray-700">RMA ID</label>
+                  <input
+                    type="text"
+                    name="rmaID"
+                    value={formData.rmaID}
+                    onChange={handleChange}
+                    className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                    placeholder="e.g., RMA12345, RMA67890, RMA99999"
+                  />
 
-                  {/* <div className="space-y-6">
-                    <label className="block text-4xl font-semibold text-gray-700">
-                      Return Reason
-                    </label>
-                            
-                    <div className="grid grid-cols-2 gap-6">
-                      {RETURN_REASONS.map((reason) => {
-                        const isSelected = formData.returnReason === reason.value;
-                      
-                        return (
-                          <button
-                            key={reason.value}
-                            type="button"
-                            onClick={() =>
-                              handleChange({
-                                target: {
-                                  name: "returnReason",
-                                  value: reason.value,
-                                  type: "select-one",
-                                },
-                              } as React.ChangeEvent<HTMLSelectElement>)
-                            }
-                            className={`
-                              p-8 rounded-3xl border-4 text-left
-                              transition-all duration-200
-                              ${
-                                isSelected
-                                  ? "border-blue-600 bg-blue-50 shadow-xl scale-105"
-                                  : "border-gray-300 bg-white shadow-md hover:scale-105"
-                              }
-                            `}
-                            aria-pressed={isSelected}
-                          >
-                            <div className="text-3xl font-bold text-gray-900">
-                              {reason.value}
-                            </div>
-                            <div className="text-2xl font-semibold text-gray-700 mt-2">
-                              {reason.label}
-                            </div>
-                            <div className="text-xl text-gray-500 mt-1">
-                              {reason.description}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    
-                    {errors.returnReason && (
-                      <p className="text-red-600 text-2xl font-semibold mt-4">
-                        {errors.returnReason}
-                      </p>
-                    )}
-                  </div> */}
-
-
-
-                  <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">RMA ID</label>
-                    <input
-                      type="text"
-                      name="rmaID"
-                      value={formData.rmaID}
-                      onChange={(e) => {
-                        const cleaned = e.target.value.replace(/[^a-zA-Z0-9-]/g, "");
-                        if (cleaned.length <= 9) {
-                          setFormData({ ...formData, rmaID: cleaned });
-                        }
-                      }}
-                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., RFI123456"
-                    />
-                    {errors.rmaID && <p className="text-red-600 text-xl mt-2">{errors.rmaID}</p>}
-                  </div>
+                  {errors.rmaID && <p className="text-red-600 text-xl mt-2">{errors.rmaID}</p>}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 2: Contact Info */}
+          {/* Step 2 */}
           {step === 2 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
@@ -402,60 +291,40 @@ const handleContinue = () => {
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                     <div className="flex gap-4">
-                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
-                        AU
-                      </div>
+                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
                       <input
                         type="text"
                         name="phone"
                         value={formData.phone}
                         onChange={(e) => {
-                          // Keep digits only
                           let digits = e.target.value.replace(/\D/g, "");
-
-                          // Limit to 10 digits
                           if (digits.length > 10) digits = digits.slice(0, 10);
 
-                          // Apply formatting: 4-3-3 (AU mobile format)
                           let formatted = digits;
                           if (digits.length > 4 && digits.length <= 7) {
                             formatted = digits.slice(0, 4) + " " + digits.slice(4);
                           } else if (digits.length > 7) {
-                            formatted =
-                              digits.slice(0, 4) +
-                              " " +
-                              digits.slice(4, 7) +
-                              " " +
-                              digits.slice(7);
+                            formatted = digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
                           }
 
-                          // Push cleaned digits to state (your handleChange)
                           handleChange({
                             ...e,
-                            target: {
-                              ...e.target,
-                              value: formatted, // store formatted value
-                              name: "phone"
-                            }
-                          });
+                            target: { ...e.target, value: formatted, name: "phone" },
+                          } as React.ChangeEvent<HTMLInputElement>);
                         }}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl
-                                   focus:border-blue-500 focus:outline-none text-black"
+                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                         placeholder="04XX XXX XXX"
                         required
                       />
-
                     </div>
                     {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
                   </div>
-
-
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 3: Confirm */}
+          {/* Step 3 */}
           {step === 3 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
@@ -463,9 +332,17 @@ const handleContinue = () => {
 
                 <div className="space-y-4 mb-8 bg-gray-50 p-8 rounded-2xl">
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
-                    <span className="font-semibold text-gray-600">Order Number:</span>
+                    <span className="font-semibold text-gray-600">RMA ID{formData.rmaID.includes(',') ? 's' : ''}:</span>
                     <span className="font-bold text-black">{formData.rmaID}</span>
                   </div>
+                  {formData.rmaID.includes(',') && (
+                    <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
+                      <p className="text-2xl text-blue-700 font-semibold">
+                        📦 Processing {formData.rmaID.split(',').filter(r => r.trim()).length} returns
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
                     <span className="font-bold text-black">{formData.fullName}</span>
@@ -476,98 +353,42 @@ const handleContinue = () => {
                   </div>
                 </div>
 
-                {/* <div className="mb-8">
-                  <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
-                  <input
-                    type="number"
-                    name="carParkBay"
-                    value={formData.carParkBay}
-                    onChange={handleChange}
-                    className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                    placeholder="e.g., Bay 15"
-                  />
-                  {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
-                </div> */}
-
-
-                {/* <div className="mb-8">
-                  <label className="block text-4xl font-semibold mb-4 text-gray-700">Car Park Bay Number</label>
-                  <input
-                    type="number"
-                    name="carParkBay"
-                    value={formData.carParkBay}
-                    onChange={handleChange}
-                    className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                    placeholder="e.g., Bay 15"
-                  />
-                  {errors.carParkBay && <p className="text-red-600 text-xl mt-2">{errors.carParkBay}</p>}
-                </div> */}
-
-
+                {/* CARPARK */}
                 <div className="mb-8">
-                <label className="block text-4xl font-semibold mb-4 text-gray-700 text-center">
-                  Select Car Park Bay
-                </label>
-                <label className="block text-xl font-semibold mb-4 text-red-700 text-center">
-                  Note: Please be advise not to relocate or change bays after confirming location.
-                </label>
+                  <label className="block text-3xl font-semibold mb-2 text-gray-700 text-center">Select Car Park Bay</label>
+                  <label className="block text-xl font-semibold mb-6 text-red-700 text-center">
+                    Note: Please do not relocate after confirming your bay.
+                  </label>
 
-                <div className="grid grid-cols-11 gap-4">
-                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
-                    const isSelected = formData.carParkBay === String(num);
-                  
-                    return (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() =>
-                          handleChange({
-                            target: {
-                              name: "carParkBay",
-                              value: String(num),
-                              type: "select-one",
-                            },
-                          } as React.ChangeEvent<HTMLSelectElement>)
-                        }
-                        className={`
-                          h-14 rounded-3xl text-3xl font-bold
-                          transition-all duration-200
-                          ${
-                            isSelected
-                              ? "bg-blue-600 text-white scale-105 shadow-xl"
-                              : "bg-white/70 backdrop-blur-md text-gray-800 shadow-lg hover:scale-105 active:scale-95"
-                          }
-                        `}
-                      >
-                        {num}
-                      </button>
-                    );
-                  })}
+                  <div className="mt-6 flex items-center justify-between rounded-2xl border bg-white p-6">
+                    <div>
+                      <div className="text-xl font-extrabold text-gray-900">Car Park Bay</div>
+                      <div className="text-4xl font-bold text-gray-600 mt-1">
+                        {formData.carParkBay ? formData.carParkBay : "Not selected"}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowBayPopup(true)}
+                      className="px-10 py-5 rounded-2xl bg-blue-600 text-white text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
+                    >
+                      {formData.carParkBay ? "Change" : "Select Bay"}
+                    </button>
+                  </div>
+
+                  <CarParkBayPopup
+                    open={showBayPopup}
+                    onClose={() => setShowBayPopup(false)}
+                    value={formData.carParkBay}
+                    onConfirm={(v: string) => setFormData((p) => ({ ...p, carParkBay: v }))}
+                  />
+
+                  {errors.carParkBay && <p className="text-red-600 text-xl mt-4 text-center">{errors.carParkBay}</p>}
                 </div>
 
-                {/* <select
-                  name="carParkBay"
-                  value={formData.carParkBay}
-                  onChange={handleChange}
-                  className="w-full text-4xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black bg-white"
-                >
-                  <option value="">Select bay number</option>
-                  {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
-                    <option key={num} value={num}>
-                      {num}
-                    </option>
-                  ))}
-                </select> */}
-
-
-                {errors.carParkBay && (
-                  <p className="text-red-600 text-xl mt-4">{errors.carParkBay}</p>
-                )}
-              </div>
-
-
+                {/* CONFIRM */}
                 <div className="mb-8 flex flex-col gap-4">
-
                   <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
                     <input
                       type="checkbox"
@@ -580,27 +401,22 @@ const handleContinue = () => {
                       I confirm that all provided information is accurate and valid
                     </span>
                   </label>
+
                   {errors.confirmed && <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>}
                 </div>
               </div>
             </div>
           )}
-
         </div>
       </div>
 
       {/* Bottom Navigation */}
       <div className="bg-white border-t-4 border-gray-200 p-8 shadow-lg px-10 py-20">
         <div className="max-w-4xl mx-auto flex gap-6">
-
-          {/* MAIN MENU BUTTON (visible only on step 1) */}
           {step === 1 && (
             <Link
               href="/choose-service"
-              className="flex-1 text-4xl font-bold py-8 px-10 
-                       bg-yellow-200 text-yellow-700 
-                       rounded-2xl hover:bg-yellow-300 transition-all
-                       flex items-center justify-center"
+              className="flex-1 text-4xl font-bold py-8 px-10 bg-yellow-200 text-yellow-700 rounded-2xl hover:bg-yellow-300 transition-all flex items-center justify-center"
             >
               ⬑ Main Menu
             </Link>
@@ -617,12 +433,8 @@ const handleContinue = () => {
 
           {step < 3 ? (
             <button
-              // onClick={() => setStep(step + 1)}
               onClick={handleContinue}
-              // disabled={!canProceed()}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed()
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
             >
               Continue
@@ -632,9 +444,7 @@ const handleContinue = () => {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting
-                ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT RETURN REQUEST"}
@@ -642,6 +452,6 @@ const handleContinue = () => {
           )}
         </div>
       </div>
-    </div >
+    </div>
   );
 }

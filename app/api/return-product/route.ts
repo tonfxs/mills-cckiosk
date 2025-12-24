@@ -61,19 +61,18 @@ async function saveToSheet(returnData: ReturnData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    // Step 1: Get all current data to find the last row
-    const resp = await sheets.spreadsheets.values.get({
+    // Save to Returns sheet
+    const respReturns = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "Returns!A:A", // Just check column A to find last row
+        range: "Returns!A:A",
     });
 
-    const rows = resp.data.values || [];
-    const lastRow = rows.length + 1; // +1 because rows.length includes header
+    const rowsReturns = respReturns.data.values || [];
+    const lastRowReturns = rowsReturns.length + 1;
 
-    // Step 2: Write to the specific row after the last entry
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Returns!A${lastRow}:J${lastRow}`,
+        range: `Returns!A${lastRowReturns}:J${lastRowReturns}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -85,18 +84,49 @@ async function saveToSheet(returnData: ReturnData) {
                     returnData.carParkBay,
                     returnData.confirmed ? "Yes" : "No",
                     "Pending Pickup",
-                    "", // Column H (empty)
-                    "", // Column I (empty)
-                    "", // Column J (Agent - empty, to be filled manually)
+                    "",
+                    "",
+                    "",
+                ],
+            ],
+        },
+    });
+
+    // Save to MASTER LIST sheet
+    const respMaster = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "MASTER LIST!A:A",
+    });
+
+    const rowsMaster = respMaster.data.values || [];
+    const lastRowMaster = rowsMaster.length + 1;
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `MASTER LIST!A${lastRowMaster}:K${lastRowMaster}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+            values: [
+                [
+                    timestamp,
+                    returnData.fullName,
+                    returnData.phone,
+                    returnData.rmaID,
+                    "",
+                    "",
+                    "",
+                    returnData.carParkBay,
+                    "Pending Pickup",
+                    "",
+                    "Return Product", // Transaction Type
                 ],
             ],
         },
     });
 }
 
-
 // ----------------------------
-// POST — Handle Return Form Submit
+// POST — Handle Multiple Return Form Submit
 // ----------------------------
 export async function POST(request: NextRequest) {
     try {
@@ -115,7 +145,6 @@ export async function POST(request: NextRequest) {
         if (!returnData.fullName) errors.fullName = "Full name is required";
         if (!returnData.phone) errors.phone = "Phone number is required";
         if (!returnData.rmaID) errors.rmaID = "RMA ID is required";
-        // if (!returnData.carParkBay) errors.carParkBay = "Car park bay is required";
         if (!returnData.confirmed) errors.confirmed = "You must confirm the data";
 
         if (Object.keys(errors).length > 0) {
@@ -125,13 +154,26 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Save to Google Sheets
-        await saveToSheet(returnData);
+        // Split RMA IDs by comma and trim whitespace
+        const rmaIDs = returnData.rmaID
+            .split(",")
+            .map(id => id.trim())
+            .filter(id => id.length > 0);
+
+        // Save each RMA ID separately with the same customer info
+        for (const rmaId of rmaIDs) {
+            const singleReturnData = {
+                ...returnData,
+                rmaID: rmaId
+            };
+            await saveToSheet(singleReturnData);
+        }
 
         return NextResponse.json({
             success: true,
-            message: "Return request submitted successfully",
-            rmaID: returnData.rmaID,
+            message: `${rmaIDs.length} return request${rmaIDs.length > 1 ? 's' : ''} submitted successfully`,
+            rmaCount: rmaIDs.length,
+            rmaIDs: rmaIDs
         });
     } catch (err: any) {
         console.error("❌ ERROR:", err);
@@ -162,7 +204,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Returns!A:J", // Extended to include Agent column
+            range: "Returns!A:J",
         });
 
         const rows = resp.data.values || [];
@@ -185,7 +227,7 @@ export async function GET(request: NextRequest) {
                 carParkBay: match[4],
                 confirmed: match[5] === "Yes",
                 status: match[6],
-                agent: match[9] || "", // Column J - Agent
+                agent: match[9] || "",
             },
         });
     } catch (err: any) {

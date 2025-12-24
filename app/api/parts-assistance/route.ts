@@ -60,19 +60,18 @@ async function saveToSheet(orderData: OrderData) {
 
     const timestamp = getAustraliaTimestamp();
 
-    // Step 1: Get all current data to find the last row
-    const resp = await sheets.spreadsheets.values.get({
+    // Save to PartsOrders sheet
+    const respParts = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "PartsOrders!A:A", // Just check column A to find last row
+        range: "PartsOrders!A:A",
     });
 
-    const rows = resp.data.values || [];
-    const lastRow = rows.length + 1; // +1 because rows.length includes header
+    const rowsParts = respParts.data.values || [];
+    const lastRowParts = rowsParts.length + 1;
 
-    // Step 2: Write to the specific row after the last entry
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `PartsOrders!A${lastRow}:G${lastRow}`,
+        range: `PartsOrders!A${lastRowParts}:G${lastRowParts}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -83,17 +82,47 @@ async function saveToSheet(orderData: OrderData) {
                     orderData.orderNumber,
                     orderData.carParkBay,
                     "Pending Verification",
-                    "", // Column G (Agent - empty, to be filled manually)
+                    "",
+                ],
+            ],
+        },
+    });
+
+    // Save to MASTER LIST sheet
+    const respMaster = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "MASTER LIST!A:A",
+    });
+
+    const rowsMaster = respMaster.data.values || [];
+    const lastRowMaster = rowsMaster.length + 1;
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `MASTER LIST!A${lastRowMaster}:K${lastRowMaster}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+            values: [
+                [
+                    timestamp,
+                    orderData.fullName,
+                    orderData.phone,
+                    orderData.orderNumber,
+                    "", // Credit Card (blank for Parts)
+                    "", // Valid ID Type (blank for Parts)
+                    "", // Payment Method (blank for Parts)
+                    orderData.carParkBay,
+                    "Pending Verification",
+                    "",
+                    "Parts Assistance", // Transaction Type
                 ],
             ],
         },
     });
 }
 
-
-
 // ----------------------------
-// POST — Save Order
+// POST — Save Multiple Orders
 // ----------------------------
 export async function POST(request: NextRequest) {
     try {
@@ -107,11 +136,26 @@ export async function POST(request: NextRequest) {
             confirmed: form.get("confirmed") === "true",
         };
 
-        await saveToSheet(orderData);
+        // Split order numbers by comma and trim whitespace
+        const orderNumbers = orderData.orderNumber
+            .split(",")
+            .map(num => num.trim())
+            .filter(num => num.length > 0);
+
+        // Save each order separately with the same customer info
+        for (const orderNum of orderNumbers) {
+            const singleOrderData = {
+                ...orderData,
+                orderNumber: orderNum
+            };
+            await saveToSheet(singleOrderData);
+        }
 
         return NextResponse.json({
             success: true,
-            message: "Order saved",
+            message: `${orderNumbers.length} order${orderNumbers.length > 1 ? 's' : ''} saved successfully`,
+            orderCount: orderNumbers.length,
+            orders: orderNumbers
         });
     } catch (err: any) {
         console.error("❌ ERROR:", err);
@@ -142,7 +186,7 @@ export async function GET(request: NextRequest) {
 
         const resp = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "PartsOrders!A:G", // Extended to include Agent column
+            range: "PartsOrders!A:G",
         });
 
         const rows = resp.data.values || [];
@@ -164,7 +208,7 @@ export async function GET(request: NextRequest) {
                 orderNumber: match[3],
                 carParkBay: match[4],
                 status: match[5],
-                agent: match[6] || "", // Column G - Agent
+                agent: match[6] || "",
             },
         });
     } catch (err: any) {
