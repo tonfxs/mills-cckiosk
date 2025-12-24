@@ -54,7 +54,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     };
 
     // Opposite Bays: 7–17 (display 17..7)
-    const oppositeNums = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7] as const;
+    const oppositeNums = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8] as const;
     // Bay: 1–17 (display 17..1)
     const bayNums = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1] as const;
 
@@ -140,11 +140,11 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     // Bay indices (bayNums = 17..1):
     // Bay-6 => index 11
     // Bay-1 => index 16
-    const idxBay6 = 11;
+    const idxBay7 = 10;
     const idxBay1 = 16;
 
     // xStart: "beside Opp-7" = the vertical line between Bay-7 and Bay-6
-    const xStart = bayX0 + idxBay6 * (bw + gap) - gap / 6; // slightly to the left edge of Bay-6 gap boundary
+    const xStart = bayX0 + idxBay7 * (bw + gap) - gap / 6; // slightly to the left edge of Bay-6 gap boundary
 
     // yStart: top of Bay-6 (use bayY), but lift a bit so it looks like it's on top
     const yTop = bayY - 6;

@@ -338,7 +338,7 @@ export default function ReturnAProductForm() {
                   {formData.rmaID.includes(',') && (
                     <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
                       <p className="text-2xl text-blue-700 font-semibold">
-                        📦 Processing {formData.rmaID.split(',').filter(r => r.trim()).length} returns
+                        Processing {formData.rmaID.split(',').filter(r => r.trim()).length} returns
                       </p>
                     </div>
                   )}
