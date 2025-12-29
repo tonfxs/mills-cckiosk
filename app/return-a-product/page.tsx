@@ -104,6 +104,11 @@ export default function ReturnAProductForm() {
       }
     }
 
+    if (currentStep === 3) {
+    if (!formData.carParkBay.trim()) list.push("Car park bay is required.");
+    if (!formData.confirmed) list.push("You must confirm the data.");
+  }
+
     return list;
   };
 
@@ -251,7 +256,7 @@ export default function ReturnAProductForm() {
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Enter Your Details</h2>
 
                 <div>
-                  <label className="block text-4xl font-semibold mb-4 text-gray-700">RMA ID</label>
+                  <label className="block text-4xl font-semibold mb-4 text-gray-700">RMA ID(s)</label>
                   <input
                     type="text"
                     name="rmaID"
@@ -381,8 +386,21 @@ export default function ReturnAProductForm() {
                     open={showBayPopup}
                     onClose={() => setShowBayPopup(false)}
                     value={formData.carParkBay}
-                    onConfirm={(v: string) => setFormData((p) => ({ ...p, carParkBay: v }))}
+                    onConfirm={(v: string) => {
+                      const cleaned = v.trim();
+                    
+                      setFormData((p) => ({ ...p, carParkBay: cleaned }));
+                    
+                      // clear banner + inline carpark error
+                      setStepErrors([]);
+                      setErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.carParkBay;
+                        return copy;
+                      });
+                    }}
                   />
+
 
                   {errors.carParkBay && <p className="text-red-600 text-xl mt-4 text-center">{errors.carParkBay}</p>}
                 </div>
@@ -442,12 +460,25 @@ export default function ReturnAProductForm() {
             </button>
           ) : (
             <button
-              onClick={handleSubmit}
-              disabled={!canProceed() || isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+              type="button"
+              onClick={() => {
+                const errs = validateStep(3);
+              
+                if (errs.length > 0) {
+                  setStepErrors(errs);
+                  return;
+                }
+              
+                handleSubmit();
+              }}
+              disabled={isSubmitting}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
+                !isSubmitting
+                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
-              {isSubmitting ? "SUBMITTING..." : "SUBMIT RETURN REQUEST"}
+              {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>
           )}
         </div>

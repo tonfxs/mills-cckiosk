@@ -149,7 +149,7 @@ export default function PartsAssistance() {
 
     if (allErrors.length > 0) {
       setStepValidationErrors(allErrors);
-      alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
+      // alert("Please correct the following errors:\n\n• " + allErrors.join("\n• "));
       setIsSubmitting(false);
       return;
     }
@@ -274,14 +274,14 @@ export default function PartsAssistance() {
 
                 <div className="space-y-10">
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Order Number</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Order Number(s)</label>
                     <input
                       type="text"
                       name="orderNumber"
                       value={formData.orderNumber}
                       onChange={handleChange}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="e.g., E1234567, M7654321, E9999999"
+                      placeholder="e.g., E1234567, M7654321, 100000123456"
                     />
 
                     {errors.orderNumber && <p className="text-red-600 text-xl mt-2">{errors.orderNumber}</p>}
@@ -412,7 +412,16 @@ export default function PartsAssistance() {
                     open={showBayPopup}
                     onClose={() => setShowBayPopup(false)}
                     value={formData.carParkBay}
-                    onConfirm={(v) => setFormData((p) => ({ ...p, carParkBay: v }))}
+
+                    onConfirm={(v) => {
+                        setFormData((p) => ({ ...p, carParkBay: v }));
+                        setStepValidationErrors([]);
+                        setErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.carParkBay;
+                          return copy;
+                        });
+                      }}
                   />
 
                   {errors.carParkBay && (
@@ -475,11 +484,24 @@ export default function PartsAssistance() {
               <ChevronRight size={36} />
             </button>
           ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={!canProceed() || isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+           <button
+              type="button"
+              onClick={() => {
+                const errs = validateStep(4);
+              
+                if (errs.length > 0) {
+                  setStepValidationErrors(errs);
+                  return;
+                }
+              
+                handleSubmit();
+              }}
+              disabled={isSubmitting}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
+                !isSubmitting
+                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>
