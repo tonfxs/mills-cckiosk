@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, Package, UserRoundPen, PackageCheck, IdCardIcon } from 'lucide-react';
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
-import CarParkSelector from '../components/CarParkSelector';
-import CarParkMap from '../components/CarParkMap';
 import CarParkBayPopup from '../components/CarParkPopUp';
 
 
@@ -355,8 +353,6 @@ useEffect(() => {
           <p className="text-3xl text-white font-bold">
             Mills Brands Click & Collect Kiosk
           </p>
-          {/* <p className="text-2xl text-blue-100 font-bold">Check in with your name to connect to a Live Agent </p>
-          <p className="text-2xl text-blue-100 font-bold">and consent to a live video call for assistance.</p> */}
         </div>
       </div>
 
@@ -414,35 +410,6 @@ useEffect(() => {
                       name="orderNumber"
                       value={formData.orderNumber}
                       onChange={handleChange}
-
-                      // onChange={(e) => {
-                      //   let val = e.target.value.toUpperCase();
-
-                      //   // Remove all non-alphanumeric characters
-                      //   val = val.replace(/[^A-Z0-9]/g, "");
-
-                      //   // Enforce: first char = letter only
-                      //   if (val.length === 1) {
-                      //     val = val.replace(/[^A-Z]/g, ""); 
-                      //   }
-
-                      //   // Enforce: second → eighth chars = digits only
-                      //   if (val.length > 1) {
-                      //     val = val[0] + val.slice(1).replace(/\D/g, ""); 
-                      //   }
-
-                      //   // Limit to 1 letter + 7 digits = 8 characters total
-                      //   val = val.slice(0, 8);
-
-                      //   handleChange({
-                      //     ...e,
-                      //     target: {
-                      //       ...e.target,
-                      //       value: val,
-                      //       name: "orderNumber"
-                      //     }
-                      //   });
-                      // }}
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                       placeholder="e.g., E1234567, M7654321, 100000123456"
                     />
@@ -453,32 +420,6 @@ useEffect(() => {
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
                       Payment Method
                     </label>
-
-                    {/* <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { value: "credit-card", label: "Credit Card" },
-                        { value: "debit-card", label: "Debit Card" },
-                        { value: "cash", label: "Cash" },
-                        { value: "others", label: "Others" }
-                      ].map(({ value, label }) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({ ...prev, paymentMethod: value }));
-                            if (stepValidationErrors.length > 0) {
-                              setStepValidationErrors([]);
-                            }
-                          }}
-                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-                            }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div> */}
 
                     <div className="grid grid-cols-2 gap-4">
                     {[
@@ -934,17 +875,6 @@ useEffect(() => {
               <ChevronRight size={36} />
             </button>
           ) : (
-            // <button
-            //   onClick={handleSubmit}
-            //   disabled={!canProceed() || isSubmitting}
-            //   className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${canProceed() && !isSubmitting
-            //     ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
-            //     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            //     }`}
-            // >
-            //   {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
-            // </button>
-
             <button
               type="button"
               onClick={() => {
