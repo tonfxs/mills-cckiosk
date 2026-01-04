@@ -5,6 +5,8 @@ import { ChevronRight, Package, UserRoundPen, PackageCheck, IdCardIcon } from 'l
 import SuccessScreen from '@/app/components/SuccessScreen';
 import Link from "next/link";
 import CarParkBayPopup from '../components/CarParkPopUp';
+import OtherPaymentPopup from "@/app/components/OtherPaymentPopup";
+
 
 
 
@@ -106,6 +108,8 @@ export default function PickupKiosk() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);  
   const [showBayPopup, setShowBayPopup] = useState(false);
+  const [showOtherPaymentPopup, setShowOtherPaymentPopup] = useState(false);
+
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -418,7 +422,8 @@ useEffect(() => {
 
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                      Payment Method
+                      Payment Method 
+                      <p className="text-red-600 text-lg my-4"> (Note: Only select the payment method used during purchase.)</p>
                     </label>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -438,8 +443,9 @@ useEffect(() => {
                             setShowCardPopup(true);
                           }
                         
-                          if (value === "cash" || value === "others") {
+                          if (value === "others") {
                             setShowCardPopup(false);
+                            setShowOtherPaymentPopup(true);
                           }
                         
                           // Clear validation errors
@@ -462,6 +468,24 @@ useEffect(() => {
                       <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>
                     )}
                   </div>
+
+                  <OtherPaymentPopup
+                    open={showOtherPaymentPopup}
+                    onClose={() => setShowOtherPaymentPopup(false)}
+                    onSelect={(method) => {
+                      setFormData((prev) => ({ ...prev, paymentMethod: method }));
+                      setShowOtherPaymentPopup(false);
+                    
+                      if (stepValidationErrors.length > 0) {
+                        setStepValidationErrors([]);
+                      }
+                    }}
+                    onAfterSelect={() => {
+                      // ✅ proceed to next step
+                      setStep((s) => s + 1); // or handleNext()
+                    }}
+                  />
+
 
                   {showCardPopup && (
                      <div className="fixed inset-0 bg-white/40 backdrop-blur-md flex items-center justify-center z-50">
@@ -501,7 +525,7 @@ useEffect(() => {
                           onClick={() => {
                             const stepErrors: string[] = [];
                           
-                            // 🛑 Order Number required
+                            // Order Number required
                             if (!formData.orderNumber.trim()) {
                               stepErrors.push("Order number is required");
                             
@@ -518,17 +542,17 @@ useEffect(() => {
                                 return copy;
                               });
                             
-                              // ✅ Show banner
+                              //  Show banner
                               setStepValidationErrors(stepErrors);
                             
-                              // ✅ Close numpad
+                              //  Close numpad
                               setShowCardPopup(false);
                             
-                              // 🚫 Stop here
+                              //  Stop here
                               return;
                             }
                           
-                            // 🛑 Validate card digits
+                            //  Validate card digits
                             if (
                               ["credit-card", "debit-card"].includes(formData.paymentMethod) &&
                               formData.creditCard.length !== 4
@@ -736,7 +760,8 @@ useEffect(() => {
                   {(
                     formData.paymentMethod === "credit-card" ||
                     formData.paymentMethod === "debit-card" ||
-                    formData.paymentMethod === "others"
+                    formData.paymentMethod === "others" ||
+                    ["paypal", "ebay", "zippay", "stripe", "storecredit", "electronictransfer", "afterpay", "overthephone", "cardatwindow"].includes(formData.paymentMethod)
                   ) && (
                     <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
                       <p className="text-xl font-semibold text-yellow-800">
@@ -744,6 +769,7 @@ useEffect(() => {
                       </p>
                     </div>
                   )}
+
 
 
                   {/* ✅ CASH DISCLAIMER */}
