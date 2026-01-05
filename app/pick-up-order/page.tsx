@@ -637,7 +637,7 @@ useEffect(() => {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
-                        pattern="^[A-Za-z\s'-]+$"
+                        pattern="^[A-Za-z\s'\-]+$"
                         className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                         placeholder="Enter First Name"
                       />
@@ -656,7 +656,7 @@ useEffect(() => {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
-                        pattern="^[A-Za-z\s'-]+$"
+                        pattern="^[A-Za-z\s'\-]+$"
                         className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                         placeholder="Enter Last Name"
                       />
