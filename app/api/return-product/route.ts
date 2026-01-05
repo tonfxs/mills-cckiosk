@@ -131,9 +131,11 @@ async function saveToSheet(returnData: ReturnData) {
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
+        const firstName = (formData.get("firstName") || "").toString().trim();
+        const lastName = (formData.get("lastName") || "").toString().trim();
 
         const returnData: ReturnData = {
-            fullName: (formData.get("fullName") || "").toString().trim(),
+            fullName: `${firstName} ${lastName}`.trim(),
             phone: (formData.get("phone") || "").toString().trim(),
             rmaID: (formData.get("rmaID") || "").toString().trim(),
             carParkBay: (formData.get("carParkBay") || "").toString().trim(),

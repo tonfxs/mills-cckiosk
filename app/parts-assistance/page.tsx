@@ -6,7 +6,8 @@ import Link from "next/link";
 import CarParkBayPopup from '../components/CarParkPopUp';
 
 interface FormData {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   orderNumber: string;
   carParkBay: string;
@@ -22,7 +23,8 @@ export default function PartsAssistance() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState<FormData>({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     phone: "",
     orderNumber: "",
     carParkBay: "",
@@ -75,11 +77,19 @@ export default function PartsAssistance() {
         }
         break;
       case 2:
-        if (!formData.fullName.trim()) {
-          stepErrors.push("Full name is required");
-        } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+        if (!formData.firstName.trim()) {
+          stepErrors.push("First name is required");
+        } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
           stepErrors.push("Full name may contain only letters, spaces, hyphens (-) and apostrophes (').");
         }
+
+        if (!formData.lastName.trim()) {
+          stepErrors.push("Last name is required");
+        } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
+          stepErrors.push("Last name may contain only letters, spaces, hyphens (-) and apostrophes (').");
+        }
+
+
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
         } else if (formData.phone.replace(/\s/g, '').length < 10) {
@@ -128,10 +138,16 @@ export default function PartsAssistance() {
 
     const allErrors: string[] = [];
 
-    if (!formData.fullName.trim()) {
+    if (!formData.firstName.trim()) {
       allErrors.push("Full name is required");
-    } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
       allErrors.push("Full name may only contain letters, spaces, hyphens (-), and apostrophes (').");
+    }
+
+    if (!formData.lastName.trim()) {
+      allErrors.push("Last name is required");
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
+      allErrors.push("Last name may only contain letters, spaces, hyphens (-), and apostrophes (').");
     }
 
     if (!formData.phone.trim()) {
@@ -298,53 +314,81 @@ export default function PartsAssistance() {
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
 
                 <div className="space-y-6">
+                  {/* First Name */}
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Full Name</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      First Name
+                    </label>
                     <input
                       type="text"
-                      name="fullName"
-                      value={formData.fullName}
+                      name="firstName"
+                      value={formData.firstName}
                       onChange={handleChange}
+                      pattern="^[A-Za-z\s'\-]+$"
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="Enter Full Name Here"
+                      placeholder="Enter First Name"
                     />
-                    {errors.fullName && <p className="text-red-600 text-xl mt-2">{errors.fullName}</p>}
+                    {errors.firstName && (
+                      <p className="text-red-600 text-xl mt-2">{errors.firstName}</p>
+                    )}
                   </div>
 
+                  {/* Last Name */}
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
-                    <div className="flex gap-4">
-                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
-                      <input
-                        type="text"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={(e) => {
-                          let digits = e.target.value.replace(/\D/g, "");
-                          if (digits.length > 10) digits = digits.slice(0, 10);
-
-                          let formatted = digits;
-                          if (digits.length > 4 && digits.length <= 7) {
-                            formatted = digits.slice(0, 4) + " " + digits.slice(4);
-                          } else if (digits.length > 7) {
-                            formatted = digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
-                          }
-
-                          handleChange({
-                            ...e,
-                            target: { ...e.target, value: formatted, name: "phone" }
-                          });
-                        }}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                        placeholder="04XX XXX XXX"
-                        required
-                      />
-                    </div>
-                    {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      pattern="^[A-Za-z\s'\-]+$"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                      placeholder="Enter Last Name"
+                    />
+                    {errors.lastName && (
+                      <p className="text-red-600 text-xl mt-2">{errors.lastName}</p>
+                    )}
                   </div>
                 </div>
+
+                <div>
+                <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
+                <div className="flex gap-4">
+                  <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      let digits = e.target.value.replace(/\D/g, "");
+                      if (digits.length > 10) digits = digits.slice(0, 10);
+
+                      let formatted = digits;
+                      if (digits.length > 4 && digits.length <= 7) {
+                        formatted = digits.slice(0, 4) + " " + digits.slice(4);
+                      } else if (digits.length > 7) {
+                        formatted = digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
+                      }
+
+                      handleChange({
+                        ...e,
+                        target: { ...e.target, value: formatted, name: "phone" }
+                      });
+                    }}
+                    className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                    placeholder="04XX XXX XXX"
+                    required
+                  />
+                </div>
+                {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
               </div>
+
+              </div>
+             
             </div>
+
           )}
 
           {/* Step 3: Confirm */}
@@ -361,14 +405,14 @@ export default function PartsAssistance() {
                   {formData.orderNumber.includes(',') && (
                     <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
                       <p className="text-2xl text-blue-700 font-semibold">
-                        📦 Processing {formData.orderNumber.split(',').filter(o => o.trim()).length} orders
+                        Processing {formData.orderNumber.split(',').filter(o => o.trim()).length} orders
                       </p>
                     </div>
                   )}
 
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
-                    <span className="font-bold text-black">{formData.fullName}</span>
+                    <span className="font-bold text-black">{formData.firstName} {formData.lastName}</span>
                   </div>
 
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
@@ -414,14 +458,14 @@ export default function PartsAssistance() {
                     value={formData.carParkBay}
 
                     onConfirm={(v) => {
-                        setFormData((p) => ({ ...p, carParkBay: v }));
-                        setStepValidationErrors([]);
-                        setErrors((prev) => {
-                          const copy = { ...prev };
-                          delete copy.carParkBay;
-                          return copy;
-                        });
-                      }}
+                      setFormData((p) => ({ ...p, carParkBay: v }));
+                      setStepValidationErrors([]);
+                      setErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.carParkBay;
+                        return copy;
+                      });
+                    }}
                   />
 
                   {errors.carParkBay && (
@@ -484,30 +528,29 @@ export default function PartsAssistance() {
               <ChevronRight size={36} />
             </button>
           ) : (
-           <button
+            <button
               type="button"
               onClick={() => {
                 const errs = validateStep(4);
-              
+
                 if (errs.length > 0) {
                   setStepValidationErrors(errs);
                   return;
                 }
-              
+
                 handleSubmit();
               }}
               disabled={isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
-                !isSubmitting
-                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${!isSubmitting
+                ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

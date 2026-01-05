@@ -6,7 +6,8 @@ import SuccessScreen from "../components/SuccessScreen";
 import CarParkBayPopup from "../components/CarParkPopUp";
 
 interface FormData {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   rmaID: string;
   returnReason: string;
@@ -26,7 +27,8 @@ export default function ReturnAProductForm() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [formData, setFormData] = useState<FormData>({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     phone: "",
     rmaID: "",
     returnReason: "",
@@ -73,8 +75,10 @@ export default function ReturnAProductForm() {
       case 1:
         return !!formData.rmaID?.trim();
       case 2:
-        return !!formData.fullName?.trim() && nameRegex.test(formData.fullName) && formData.phone.replace(/\D/g, "").length >= 10;
+        return !!formData.firstName?.trim() && nameRegex.test(formData.firstName) && formData.phone.replace(/\D/g, "").length >= 10;
       case 3:
+        return !!formData.lastName?.trim() && nameRegex.test(formData.lastName) && formData.phone.replace(/\D/g, "").length >= 10;
+      case 4:
         return !!formData.carParkBay?.trim() && formData.confirmed;
       default:
         return false;
@@ -90,10 +94,16 @@ export default function ReturnAProductForm() {
     }
 
     if (currentStep === 2) {
-      if (!formData.fullName.trim()) {
-        list.push("Full name is required.");
-      } else if (!nameRegex.test(formData.fullName)) {
-        list.push("Full name may contain only letters, spaces, hyphens (–) and apostrophes (').");
+      if (!formData.firstName.trim()) {
+        list.push("First name is required.");
+      } else if (!nameRegex.test(formData.firstName)) {
+        list.push("First name may contain only letters, spaces, hyphens (–) and apostrophes (').");
+      }
+
+      if (!formData.lastName.trim()) {
+        list.push("Last name is required.");
+      } else if (!nameRegex.test(formData.lastName)) {
+        list.push("Last name may contain only letters, spaces, hyphens (–) and apostrophes (').");
       }
 
       const phoneDigits = formData.phone.replace(/\D/g, "");
@@ -105,9 +115,9 @@ export default function ReturnAProductForm() {
     }
 
     if (currentStep === 3) {
-    if (!formData.carParkBay.trim()) list.push("Car park bay is required.");
-    if (!formData.confirmed) list.push("You must confirm the data.");
-  }
+      if (!formData.carParkBay.trim()) list.push("Car park bay is required.");
+      if (!formData.confirmed) list.push("You must confirm the data.");
+    }
 
     return list;
   };
@@ -129,10 +139,16 @@ export default function ReturnAProductForm() {
 
     const newErrors: Errors = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
-      newErrors.fullName = "Full name may only contain letters, spaces, hyphens (-), and apostrophes (').";
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
+      newErrors.firstName = "First name may only contain letters, spaces, hyphens (-), and apostrophes (').";
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
+      newErrors.lastName = "Last name may only contain letters, spaces, hyphens (-), and apostrophes (').";
     }
 
     if (!formData.rmaID.trim()) newErrors.rmaID = "RMA ID is required";
@@ -276,54 +292,78 @@ export default function ReturnAProductForm() {
           {step === 2 && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
-                <h2 className="text-4xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
+                <h2 className="text-5xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
 
                 <div className="space-y-6">
+                  {/* First Name */}
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Full Name</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      First Name
+                    </label>
                     <input
                       type="text"
-                      name="fullName"
-                      value={formData.fullName}
+                      name="firstName"
+                      value={formData.firstName}
                       onChange={handleChange}
-                      pattern="^[A-Za-z\s'-]+$"
+                      pattern="^[A-Za-z\s'\-]+$"
                       className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="Enter Full Name Here"
+                      placeholder="Enter First Name"
                     />
-                    {errors.fullName && <p className="text-red-600 text-xl mt-2">{errors.fullName}</p>}
+                    {errors.firstName && (
+                      <p className="text-red-600 text-xl mt-2">{errors.firstName}</p>
+                    )}
                   </div>
 
+                  {/* Last Name */}
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
-                    <div className="flex gap-4">
-                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
-                      <input
-                        type="text"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={(e) => {
-                          let digits = e.target.value.replace(/\D/g, "");
-                          if (digits.length > 10) digits = digits.slice(0, 10);
-
-                          let formatted = digits;
-                          if (digits.length > 4 && digits.length <= 7) {
-                            formatted = digits.slice(0, 4) + " " + digits.slice(4);
-                          } else if (digits.length > 7) {
-                            formatted = digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
-                          }
-
-                          handleChange({
-                            ...e,
-                            target: { ...e.target, value: formatted, name: "phone" },
-                          } as React.ChangeEvent<HTMLInputElement>);
-                        }}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                        placeholder="04XX XXX XXX"
-                        required
-                      />
-                    </div>
-                    {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      pattern="^[A-Za-z\s'\-]+$"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                      placeholder="Enter Last Name"
+                    />
+                    {errors.lastName && (
+                      <p className="text-red-600 text-xl mt-2">{errors.lastName}</p>
+                    )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
+                  <div className="flex gap-4">
+                    <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        let digits = e.target.value.replace(/\D/g, "");
+                        if (digits.length > 10) digits = digits.slice(0, 10);
+
+                        let formatted = digits;
+                        if (digits.length > 4 && digits.length <= 7) {
+                          formatted = digits.slice(0, 4) + " " + digits.slice(4);
+                        } else if (digits.length > 7) {
+                          formatted = digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
+                        }
+
+                        handleChange({
+                          ...e,
+                          target: { ...e.target, value: formatted, name: "phone" },
+                        } as React.ChangeEvent<HTMLInputElement>);
+                      }}
+                      className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                      placeholder="04XX XXX XXX"
+                      required
+                    />
+                  </div>
+                  {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
                 </div>
               </div>
             </div>
@@ -350,7 +390,7 @@ export default function ReturnAProductForm() {
 
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
-                    <span className="font-bold text-black">{formData.fullName}</span>
+                    <span className="font-bold text-black">{formData.firstName} {formData.lastName}</span>
                   </div>
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Phone:</span>
@@ -388,9 +428,9 @@ export default function ReturnAProductForm() {
                     value={formData.carParkBay}
                     onConfirm={(v: string) => {
                       const cleaned = v.trim();
-                    
+
                       setFormData((p) => ({ ...p, carParkBay: cleaned }));
-                    
+
                       // clear banner + inline carpark error
                       setStepErrors([]);
                       setErrors((prev) => {
@@ -463,20 +503,19 @@ export default function ReturnAProductForm() {
               type="button"
               onClick={() => {
                 const errs = validateStep(3);
-              
+
                 if (errs.length > 0) {
                   setStepErrors(errs);
                   return;
                 }
-              
+
                 handleSubmit();
               }}
               disabled={isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
-                !isSubmitting
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${!isSubmitting
                   ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+                }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>
