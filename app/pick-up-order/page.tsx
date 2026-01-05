@@ -788,7 +788,7 @@ useEffect(() => {
 
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
-                    <span className="font-bold text-black">{formData.firstName}{formData.lastName}</span>
+                    <span className="font-bold text-black">{formData.firstName} {formData.lastName}</span>
                     {/* <span className="font-bold text-black">{formData.lastName}</span> */}
 
                   </div>
