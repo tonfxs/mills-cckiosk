@@ -5,7 +5,9 @@ import { google } from "googleapis";
 // Types
 // ----------------------------
 interface OrderData {
-    fullName: string;
+    // fullName: string;
+    firstName: string;
+    lastName: string;
     phone: string;
     orderNumber: string;
     creditCard: string;
@@ -44,6 +46,8 @@ async function saveToSheet(orderData: OrderData) {
 
     const auth = await getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
+    
+
 
     function getAustraliaTimestamp() {
         const now = new Date();
@@ -71,6 +75,9 @@ async function saveToSheet(orderData: OrderData) {
 
     const rowsPickups = respPickups.data.values || [];
     const lastRowPickups = rowsPickups.length + 1;
+    const fullName = `${orderData.firstName} ${orderData.lastName}`.trim().replace(/\s+/g, " ");
+
+    
 
     await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -81,6 +88,8 @@ async function saveToSheet(orderData: OrderData) {
                 [
                     timestamp,
                     orderData.fullName,
+                    // orderData.firstName,
+                    // orderData.lastName,
                     orderData.phone,
                     orderData.orderNumber,
                     "'" + orderData.creditCard,
@@ -112,6 +121,8 @@ async function saveToSheet(orderData: OrderData) {
                 [
                     timestamp,
                     orderData.fullName,
+                    // orderData.firstName,
+                    // orderData.lastName,
                     orderData.phone,
                     orderData.orderNumber,
                     "'" + orderData.creditCard,
@@ -135,7 +146,8 @@ export async function POST(request: NextRequest) {
         const form = await request.formData();
 
         const orderData: OrderData = {
-            fullName: String(form.get("fullName") || ""),
+            firstName: String(form.get("firstName") || ""),
+            lastName: String(form.get("lastName") || ""),
             phone: String(form.get("phone") || ""),
             orderNumber: String(form.get("orderNumber") || ""),
             creditCard: String(form.get("creditCard") || ""),

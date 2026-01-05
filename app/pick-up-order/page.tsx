@@ -11,7 +11,9 @@ import OtherPaymentPopup from "@/app/components/OtherPaymentPopup";
 
 
 interface FormData {
-  fullName: string;
+  // fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   orderNumber: string;
   creditCard: string;
@@ -87,7 +89,9 @@ export default function PickupKiosk() {
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    fullName: "",
+    // fullName: "",
+    firstName: "",
+    lastName: "",
     phone: "",
     orderNumber: "",
     creditCard: "",
@@ -156,13 +160,23 @@ export default function PickupKiosk() {
         }
         break;
       case 2:
-      if (!formData.fullName.trim()) {
-        stepErrors.push("Full name is required");
-      } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+      if (!formData.firstName.trim()) {
+        stepErrors.push("First name is required");
+      } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
         stepErrors.push(
-          "Full name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+          "First name may contain only letters, spaces, hyphens (-) and apostrophes (')."
         );
       }
+
+      if (!formData.lastName.trim()) {
+        stepErrors.push("Last name is required");
+      } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
+        stepErrors.push(
+          "Last name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+        );
+      }
+
+
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
         } else if (formData.phone.replace(/\s/g, '').length < 9) {
@@ -215,11 +229,27 @@ export default function PickupKiosk() {
     const allErrors: string[] = [];
 
     // Full Name
-    if (!formData.fullName.trim()) {
-      allErrors.push("Full name is required");
-    } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
-      allErrors.push("Full name may only contain letters, spaces, hyphens (-), and apostrophes (').");
-    }
+    // if (!formData.fullName.trim()) {
+    //   allErrors.push("Full name is required");
+    // } else if (!/^[A-Za-z\s'-]+$/.test(formData.fullName)) {
+    //   allErrors.push("Full name may only contain letters, spaces, hyphens (-), and apostrophes (').");
+    // }
+
+    if (!formData.firstName.trim()) {
+        allErrors.push("First name is required");
+      } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
+        allErrors.push(
+          "First name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+        );
+      }
+
+      if (!formData.lastName.trim()) {
+        allErrors.push("Full name is required");
+      } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
+        allErrors.push(
+          "Last name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+        );
+      }
 
     // Phone Number
     if (!formData.phone.trim()) {
@@ -423,7 +453,7 @@ useEffect(() => {
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
                       Payment Method 
-                      <p className="text-red-600 text-lg my-4"> (Note: Only select the payment method used during purchase.)</p>
+                      <p className="text-red-600 text-xl my-4"> (Note: Only select the payment method used during purchase.)</p>
                     </label>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -596,23 +626,49 @@ useEffect(() => {
               <div className="bg-white rounded-3xl shadow-xl p-10">
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
 
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Full Name</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      pattern="^[A-Za-z\s'-]+$"
-                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                      placeholder="Enter Full Name Here"
-                    />
-                    {errors.fullName && <p className="text-red-600 text-xl mt-2">{errors.fullName}</p>}
+                  <div className="space-y-6">
+                    {/* First Name */}
+                    <div>
+                      <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        pattern="^[A-Za-z\s'-]+$"
+                        className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                        placeholder="Enter First Name"
+                      />
+                      {errors.firstName && (
+                        <p className="text-red-600 text-xl mt-2">{errors.firstName}</p>
+                      )}
+                    </div>
+                    
+                    {/* Last Name */}
+                    <div>
+                      <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        pattern="^[A-Za-z\s'-]+$"
+                        className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                        placeholder="Enter Last Name"
+                      />
+                      {errors.lastName && (
+                        <p className="text-red-600 text-xl mt-2">{errors.lastName}</p>
+                      )}
+                    </div>
                   </div>
 
+
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
+                    <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                     <div className="flex gap-4">
                       <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
                         AU
@@ -662,7 +718,6 @@ useEffect(() => {
                   </div>
                 </div>
               </div>
-            </div>
           )}
 
           {/* Step 3: ID */}
@@ -733,7 +788,9 @@ useEffect(() => {
 
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
-                    <span className="font-bold text-black">{formData.fullName}</span>
+                    <span className="font-bold text-black">{formData.firstName}</span>
+                    <span className="font-bold text-black">{formData.lastName}</span>
+
                   </div>
 
                   <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
