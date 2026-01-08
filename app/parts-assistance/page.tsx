@@ -67,6 +67,8 @@ export default function PartsAssistance() {
     }
   };
 
+  // Update the validateStep function - replace case 1:
+
   const validateStep = (stepNumber: number): string[] => {
     const stepErrors: string[] = [];
 
@@ -74,6 +76,18 @@ export default function PartsAssistance() {
       case 1:
         if (!formData.orderNumber.trim()) {
           stepErrors.push("Order number is required");
+        } else {
+          // ✅ Check for duplicate order numbers
+          const orderNumbers = formData.orderNumber
+            .split(',')
+            .map(num => num.trim())
+            .filter(num => num.length > 0);
+
+          const uniqueNumbers = new Set(orderNumbers);
+
+          if (orderNumbers.length !== uniqueNumbers.size) {
+            stepErrors.push("Duplicate order numbers detected. Each order number must be unique");
+          }
         }
         break;
       case 2:
@@ -88,7 +102,6 @@ export default function PartsAssistance() {
         } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
           stepErrors.push("Last name may contain only letters, spaces, hyphens (-) and apostrophes (').");
         }
-
 
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
