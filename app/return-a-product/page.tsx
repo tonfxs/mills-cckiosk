@@ -73,13 +73,33 @@ export default function ReturnAProductForm() {
 
     switch (step) {
       case 1:
-        return !!formData.rmaID?.trim();
+        if (!formData.rmaID?.trim()) return false;
+
+        // ✅ Check for duplicates in canProceed as well
+        const rmaIDs = formData.rmaID
+          .split(',')
+          .map(id => id.trim())
+          .filter(id => id.length > 0);
+
+        const uniqueIDs = new Set(rmaIDs);
+
+        // If duplicates exist, cannot proceed
+        if (rmaIDs.length !== uniqueIDs.size) return false;
+
+        return true;
+
       case 2:
-        return !!formData.firstName?.trim() && nameRegex.test(formData.firstName) && formData.phone.replace(/\D/g, "").length >= 10;
+        return (
+          !!formData.firstName?.trim() &&
+          nameRegex.test(formData.firstName) &&
+          !!formData.lastName?.trim() &&
+          nameRegex.test(formData.lastName) &&
+          formData.phone.replace(/\D/g, "").length >= 10
+        );
+
       case 3:
-        return !!formData.lastName?.trim() && nameRegex.test(formData.lastName) && formData.phone.replace(/\D/g, "").length >= 10;
-      case 4:
         return !!formData.carParkBay?.trim() && formData.confirmed;
+
       default:
         return false;
     }
@@ -90,7 +110,21 @@ export default function ReturnAProductForm() {
     const nameRegex = /^[A-Za-z\s'-]+$/;
 
     if (currentStep === 1) {
-      if (!formData.rmaID.trim()) list.push("RMA ID is required.");
+      if (!formData.rmaID.trim()) {
+        list.push("RMA ID is required.");
+      } else {
+        // ✅ Check for duplicate RMA IDs
+        const rmaIDs = formData.rmaID
+          .split(',')
+          .map(id => id.trim())
+          .filter(id => id.length > 0);
+
+        const uniqueIDs = new Set(rmaIDs);
+
+        if (rmaIDs.length !== uniqueIDs.size) {
+          list.push("Duplicate RMA IDs detected. Each RMA ID must be unique");
+        }
+      }
     }
 
     if (currentStep === 2) {
@@ -513,8 +547,8 @@ export default function ReturnAProductForm() {
               }}
               disabled={isSubmitting}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${!isSubmitting
-                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}

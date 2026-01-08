@@ -110,7 +110,7 @@ export default function PickupKiosk() {
 
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);  
+  const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);
   const [showBayPopup, setShowBayPopup] = useState(false);
   const [showOtherPaymentPopup, setShowOtherPaymentPopup] = useState(false);
 
@@ -148,6 +148,18 @@ export default function PickupKiosk() {
       case 1:
         if (!formData.orderNumber.trim()) {
           stepErrors.push("Order number is required");
+        } else {
+          // Check for duplicate order numbers
+          const orderNumbers = formData.orderNumber
+            .split(',')
+            .map(num => num.trim())
+            .filter(num => num.length > 0);
+
+          const uniqueNumbers = new Set(orderNumbers);
+
+          if (orderNumbers.length !== uniqueNumbers.size) {
+            stepErrors.push("Duplicate order numbers detected. Each order number must be unique");
+          }
         }
         if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
           if (!formData.creditCard.trim()) {
@@ -160,21 +172,21 @@ export default function PickupKiosk() {
         }
         break;
       case 2:
-      if (!formData.firstName.trim()) {
-        stepErrors.push("First name is required");
-      } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
-        stepErrors.push(
-          "First name may contain only letters, spaces, hyphens (-) and apostrophes (')."
-        );
-      }
+        if (!formData.firstName.trim()) {
+          stepErrors.push("First name is required");
+        } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
+          stepErrors.push(
+            "First name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+          );
+        }
 
-      if (!formData.lastName.trim()) {
-        stepErrors.push("Last name is required");
-      } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
-        stepErrors.push(
-          "Last name may contain only letters, spaces, hyphens (-) and apostrophes (')."
-        );
-      }
+        if (!formData.lastName.trim()) {
+          stepErrors.push("Last name is required");
+        } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
+          stepErrors.push(
+            "Last name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+          );
+        }
 
 
         if (!formData.phone.trim()) {
@@ -236,20 +248,20 @@ export default function PickupKiosk() {
     // }
 
     if (!formData.firstName.trim()) {
-        allErrors.push("First name is required");
-      } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
-        allErrors.push(
-          "First name may contain only letters, spaces, hyphens (-) and apostrophes (')."
-        );
-      }
+      allErrors.push("First name is required");
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.firstName)) {
+      allErrors.push(
+        "First name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+      );
+    }
 
-      if (!formData.lastName.trim()) {
-        allErrors.push("Full name is required");
-      } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
-        allErrors.push(
-          "Last name may contain only letters, spaces, hyphens (-) and apostrophes (')."
-        );
-      }
+    if (!formData.lastName.trim()) {
+      allErrors.push("Full name is required");
+    } else if (!/^[A-Za-z\s'-]+$/.test(formData.lastName)) {
+      allErrors.push(
+        "Last name may contain only letters, spaces, hyphens (-) and apostrophes (')."
+      );
+    }
 
     // Phone Number
     if (!formData.phone.trim()) {
@@ -337,32 +349,33 @@ export default function PickupKiosk() {
   const [showCardPopup, setShowCardPopup] = useState(false);
 
   const validateStep1 = () => {
-  const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};
 
-  if (!formData.orderNumber.trim()) {
-    newErrors.orderNumber = "Order number is required";
-  }
-
-  if (
-    ["credit-card", "debit-card"].includes(formData.paymentMethod) &&
-    formData.creditCard.length !== 4
-  ) {
-    newErrors.creditCard = "Last 4 digit is required";
-  }
-
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    if (!formData.orderNumber.trim()) {
+      newErrors.orderNumber = "Order number is required";
+    }
 
 
-// When payment method changes:
-useEffect(() => {
-  if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
-    setShowCardPopup(true);
-  } else {
-    setShowCardPopup(false);
-  }
-}, [formData.paymentMethod]);
+    if (
+      ["credit-card", "debit-card"].includes(formData.paymentMethod) &&
+      formData.creditCard.length !== 4
+    ) {
+      newErrors.creditCard = "Last 4 digit is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
+  // When payment method changes:
+  useEffect(() => {
+    if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
+      setShowCardPopup(true);
+    } else {
+      setShowCardPopup(false);
+    }
+  }, [formData.paymentMethod]);
 
 
 
@@ -452,48 +465,47 @@ useEffect(() => {
 
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                      Payment Method 
+                      Payment Method
                       <p className="text-red-600 text-xl my-4"> (Note: Only select the payment method used during purchase.)</p>
                     </label>
 
                     <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { value: "credit-card", label: "Credit Card" },
-                      { value: "debit-card", label: "Debit Card" },
-                      { value: "cash", label: "Cash" },
-                      { value: "others", label: "Others" }
-                    ].map(({ value, label }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => {
-                          setFormData((prev) => ({ ...prev, paymentMethod: value }));
-                        
-                          if (value === "credit-card" || value === "debit-card") {
-                            setShowCardPopup(true);
-                          }
-                        
-                          if (value === "others") {
-                            setShowCardPopup(false);
-                            setShowOtherPaymentPopup(true);
-                          }
-                        
-                          // Clear validation errors
-                          if (stepValidationErrors.length > 0) {
-                            setStepValidationErrors([]);
-                          }
-                        }}
-                        className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${
-                          formData.paymentMethod === value
+                      {[
+                        { value: "credit-card", label: "Credit Card" },
+                        { value: "debit-card", label: "Debit Card" },
+                        { value: "cash", label: "Cash" },
+                        { value: "others", label: "Others" }
+                      ].map(({ value, label }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, paymentMethod: value }));
+
+                            if (value === "credit-card" || value === "debit-card") {
+                              setShowCardPopup(true);
+                            }
+
+                            if (value === "others") {
+                              setShowCardPopup(false);
+                              setShowOtherPaymentPopup(true);
+                            }
+
+                            // Clear validation errors
+                            if (stepValidationErrors.length > 0) {
+                              setStepValidationErrors([]);
+                            }
+                          }}
+                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
                             ? "bg-blue-600 text-white border-blue-600"
                             : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                        ))}
-                      </div>
-                      
+                            }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
                     {errors.paymentMethod && (
                       <p className="text-red-600 text-xl mt-2">{errors.paymentMethod}</p>
                     )}
@@ -505,7 +517,7 @@ useEffect(() => {
                     onSelect={(method) => {
                       setFormData((prev) => ({ ...prev, paymentMethod: method }));
                       setShowOtherPaymentPopup(false);
-                    
+
                       if (stepValidationErrors.length > 0) {
                         setStepValidationErrors([]);
                       }
@@ -518,7 +530,7 @@ useEffect(() => {
 
 
                   {showCardPopup && (
-                     <div className="fixed inset-0 bg-white/40 backdrop-blur-md flex items-center justify-center z-50">
+                    <div className="fixed inset-0 bg-white/40 backdrop-blur-md flex items-center justify-center z-50">
                       <div className="relative bg-white p-10 rounded-2xl w-[90%] max-w-xl shadow-2xl border-4 border-blue-600">
 
                         <button
@@ -530,7 +542,7 @@ useEffect(() => {
 
                         <h2 className="text-4xl font-semibold mb-6 text-gray-800 text-center pt-10">
                           Enter Last 4 Digits of Your Card
-                        </h2>                 
+                        </h2>
 
                         <NumberPad
                           value={formData.creditCard}
@@ -541,69 +553,107 @@ useEffect(() => {
                             }
                           }}
                           maxLength={4}
-                        />                  
+                        />
 
                         {errors.creditCard && (
                           <p className="text-red-600 text-2xl mt-4 text-center">{errors.creditCard}</p>
-                        )}                  
+                        )}
 
                         <p className="text-gray-500 text-2xl mt-2 text-center">
                           Must be exactly 4 digits
-                        </p>    
+                        </p>
 
                         <button
                           onClick={() => {
                             const stepErrors: string[] = [];
-                          
-                            // Order Number required
+
+                            // ✅ Validate order number first
                             if (!formData.orderNumber.trim()) {
                               stepErrors.push("Order number is required");
-                            
-                              // ✅ Auto-clear card digits
+
+                              // Auto-clear card digits
                               setFormData((prev) => ({
                                 ...prev,
                                 creditCard: "",
                               }));
-                            
-                              // ✅ Clear inline card error
+
+                              // Clear inline card error
                               setErrors((prev) => {
                                 const copy = { ...prev };
                                 delete copy.creditCard;
                                 return copy;
                               });
-                            
-                              //  Show banner
+
+                              // Show banner error
                               setStepValidationErrors(stepErrors);
-                            
-                              //  Close numpad
+
+                              // Close numpad
                               setShowCardPopup(false);
-                            
-                              //  Stop here
+
+                              // Stop here - don't proceed
                               return;
                             }
-                          
-                            //  Validate card digits
+
+                            // ✅ Check for duplicate order numbers
+                            const orderNumbers = formData.orderNumber
+                              .split(',')
+                              .map(num => num.trim())
+                              .filter(num => num.length > 0);
+
+                            const uniqueNumbers = new Set(orderNumbers);
+
+                            if (orderNumbers.length !== uniqueNumbers.size) {
+                              stepErrors.push("Duplicate order numbers detected. Each order number must be unique");
+
+                              // Auto-clear card digits
+                              setFormData((prev) => ({
+                                ...prev,
+                                creditCard: "",
+                              }));
+
+                              // Clear inline card error
+                              setErrors((prev) => {
+                                const copy = { ...prev };
+                                delete copy.creditCard;
+                                return copy;
+                              });
+
+                              // Show banner error
+                              setStepValidationErrors(stepErrors);
+
+                              // Close numpad
+                              setShowCardPopup(false);
+
+                              // Stop here - don't proceed
+                              return;
+                            }
+
+                            // ✅ Validate card digits
                             if (
                               ["credit-card", "debit-card"].includes(formData.paymentMethod) &&
                               formData.creditCard.length !== 4
                             ) {
                               setErrors((prev) => ({
                                 ...prev,
-                                creditCard: "Last 4 digit is required",
+                                creditCard: "Last 4 digits are required",
                               }));
+                              // Don't close popup, don't proceed - user needs to enter 4 digits
                               return;
                             }
-                          
-                            // ✅ Clear errors
+
+                            // ✅ If we get here, order number is valid, no duplicates, AND card digits are valid
+                            // Clear all errors
                             setStepValidationErrors([]);
                             setErrors((prev) => {
                               const copy = { ...prev };
                               delete copy.creditCard;
                               return copy;
                             });
-                          
-                            // ✅ Proceed
+
+                            // Close the popup
                             setShowCardPopup(false);
+
+                            // ✅ NOW proceed to next step since ALL validation passed
                             setStep(2);
                           }}
                           className="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-3xl font-bold"
@@ -613,7 +663,7 @@ useEffect(() => {
 
                       </div>
                     </div>
-                    )}
+                  )}
 
                 </div>
               </div>
@@ -626,98 +676,98 @@ useEffect(() => {
               <div className="bg-white rounded-3xl shadow-xl p-10">
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
 
-                  <div className="space-y-6">
-                    {/* First Name */}
-                    <div>
-                      <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        pattern="^[A-Za-z\s'\-]+$"
-                        className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                        placeholder="Enter First Name"
-                      />
-                      {errors.firstName && (
-                        <p className="text-red-600 text-xl mt-2">{errors.firstName}</p>
-                      )}
-                    </div>
-                    
-                    {/* Last Name */}
-                    <div>
-                      <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        pattern="^[A-Za-z\s'\-]+$"
-                        className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
-                        placeholder="Enter Last Name"
-                      />
-                      {errors.lastName && (
-                        <p className="text-red-600 text-xl mt-2">{errors.lastName}</p>
-                      )}
-                    </div>
+                <div className="space-y-6">
+                  {/* First Name */}
+                  <div>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      pattern="^[A-Za-z\s'\-]+$"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                      placeholder="Enter First Name"
+                    />
+                    {errors.firstName && (
+                      <p className="text-red-600 text-xl mt-2">{errors.firstName}</p>
+                    )}
                   </div>
 
-
+                  {/* Last Name */}
                   <div>
-                    <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
-                    <div className="flex gap-4">
-                      <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
-                        AU
-                      </div>
-                      <input
-                        type="text"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={(e) => {
-                          // Keep digits only
-                          let digits = e.target.value.replace(/\D/g, "");
-
-                          // Limit to 10 digits
-                          if (digits.length > 10) digits = digits.slice(0, 10);
-
-                          // Apply formatting: 4-3-3 (AU mobile format)
-                          let formatted = digits;
-                          if (digits.length > 4 && digits.length <= 7) {
-                            formatted = digits.slice(0, 4) + " " + digits.slice(4);
-                          } else if (digits.length > 7) {
-                            formatted =
-                              digits.slice(0, 4) +
-                              " " +
-                              digits.slice(4, 7) +
-                              " " +
-                              digits.slice(7);
-                          }
-
-                          // Push cleaned digits to state (your handleChange)
-                          handleChange({
-                            ...e,
-                            target: {
-                              ...e.target,
-                              value: formatted, // store formatted value
-                              name: "phone"
-                            }
-                          });
-                        }}
-                        className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl
-                                   focus:border-blue-500 focus:outline-none text-black"
-                        placeholder="04XX XXX XXX"
-                        required
-                      />
-
-                    </div>
-                    {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      pattern="^[A-Za-z\s'\-]+$"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                      placeholder="Enter Last Name"
+                    />
+                    {errors.lastName && (
+                      <p className="text-red-600 text-xl mt-2">{errors.lastName}</p>
+                    )}
                   </div>
                 </div>
+
+
+                <div>
+                  <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
+                  <div className="flex gap-4">
+                    <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
+                      AU
+                    </div>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        // Keep digits only
+                        let digits = e.target.value.replace(/\D/g, "");
+
+                        // Limit to 10 digits
+                        if (digits.length > 10) digits = digits.slice(0, 10);
+
+                        // Apply formatting: 4-3-3 (AU mobile format)
+                        let formatted = digits;
+                        if (digits.length > 4 && digits.length <= 7) {
+                          formatted = digits.slice(0, 4) + " " + digits.slice(4);
+                        } else if (digits.length > 7) {
+                          formatted =
+                            digits.slice(0, 4) +
+                            " " +
+                            digits.slice(4, 7) +
+                            " " +
+                            digits.slice(7);
+                        }
+
+                        // Push cleaned digits to state (your handleChange)
+                        handleChange({
+                          ...e,
+                          target: {
+                            ...e.target,
+                            value: formatted, // store formatted value
+                            name: "phone"
+                          }
+                        });
+                      }}
+                      className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl
+                                   focus:border-blue-500 focus:outline-none text-black"
+                      placeholder="04XX XXX XXX"
+                      required
+                    />
+
+                  </div>
+                  {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
+                </div>
               </div>
+            </div>
           )}
 
           {/* Step 3: ID */}
@@ -820,12 +870,12 @@ useEffect(() => {
                     formData.paymentMethod === "others" ||
                     ["paypal", "ebay", "zippay", "stripe", "storecredit", "electronictransfer", "afterpay", "overthephone", "cardatwindow"].includes(formData.paymentMethod)
                   ) && (
-                    <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
-                      <p className="text-xl font-semibold text-yellow-800">
-                        <span className="font-bold">DISCLAIMER:</span> Your payment and valid ID will undergo verification to ensure the payment details match the name on the order.
-                      </p>
-                    </div>
-                  )}
+                      <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                        <p className="text-xl font-semibold text-yellow-800">
+                          <span className="font-bold">DISCLAIMER:</span> Your payment and valid ID will undergo verification to ensure the payment details match the name on the order.
+                        </p>
+                      </div>
+                    )}
 
 
 
@@ -849,46 +899,46 @@ useEffect(() => {
                     Note: Please do not relocate after confirming your bay.
                   </label>
 
-                    <div className="mt-6 flex items-center justify-between rounded-2xl border bg-white p-6">
-                        <div>
-                          <div className="text-xl font-extrabold text-gray-900">Car Park Bay</div>
-                          <div className="text-4xl font-bold text-gray-600 mt-1">
-                            {formData.carParkBay ? formData.carParkBay : "Not selected"}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowBayPopup(true)}
-                          className="px-10 py-5 rounded-2xl bg-blue-600 text-white text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
-                        >
-                          {formData.carParkBay ? "Change" : "Select Bay"}
-                        </button>
+                  <div className="mt-6 flex items-center justify-between rounded-2xl border bg-white p-6">
+                    <div>
+                      <div className="text-xl font-extrabold text-gray-900">Car Park Bay</div>
+                      <div className="text-4xl font-bold text-gray-600 mt-1">
+                        {formData.carParkBay ? formData.carParkBay : "Not selected"}
                       </div>
+                    </div>
 
-                      <CarParkBayPopup
-                        open={showBayPopup}
-                        onClose={() => setShowBayPopup(false)}
-                        value={formData.carParkBay}
-
-                        onConfirm={(v) => {
-                        setFormData((p) => ({ ...p, carParkBay: v }));
-                        setStepValidationErrors([]);
-                        setErrors((prev) => {
-                          const copy = { ...prev };
-                          delete copy.carParkBay;
-                          return copy;
-                        });
-                      }}
-
-                      />
-     
-                      {errors.carParkBay && (
-                        <p className="text-red-600 text-xl mt-4 text-center">
-                          {errors.carParkBay}
-                        </p>
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => setShowBayPopup(true)}
+                      className="px-10 py-5 rounded-2xl bg-blue-600 text-white text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
+                    >
+                      {formData.carParkBay ? "Change" : "Select Bay"}
+                    </button>
                   </div>
+
+                  <CarParkBayPopup
+                    open={showBayPopup}
+                    onClose={() => setShowBayPopup(false)}
+                    value={formData.carParkBay}
+
+                    onConfirm={(v) => {
+                      setFormData((p) => ({ ...p, carParkBay: v }));
+                      setStepValidationErrors([]);
+                      setErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.carParkBay;
+                        return copy;
+                      });
+                    }}
+
+                  />
+
+                  {errors.carParkBay && (
+                    <p className="text-red-600 text-xl mt-4 text-center">
+                      {errors.carParkBay}
+                    </p>
+                  )}
+                </div>
 
                 {errors.carParkBay && (
                   <p className="text-red-600 text-xl mt-4">{errors.carParkBay}</p>
@@ -896,23 +946,23 @@ useEffect(() => {
               </div>
 
 
-                <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="confirmed"
-                    checked={formData.confirmed}
-                    onChange={handleChange}
-                    className="w-12 h-12 mt-1"
-                  />
-                  <span className="text-3xl font-semibold text-gray-800">
-                    I confirm that all provided information is accurate and valid
-                  </span>
-                </label>
+              <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="confirmed"
+                  checked={formData.confirmed}
+                  onChange={handleChange}
+                  className="w-12 h-12 mt-1"
+                />
+                <span className="text-3xl font-semibold text-gray-800">
+                  I confirm that all provided information is accurate and valid
+                </span>
+              </label>
 
-                {errors.confirmed && (
-                  <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>
-                )}
-              </div>
+              {errors.confirmed && (
+                <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>
+              )}
+            </div>
 
           )}
 
@@ -962,20 +1012,19 @@ useEffect(() => {
               type="button"
               onClick={() => {
                 const errs = validateStep(4);
-              
+
                 if (errs.length > 0) {
                   setStepValidationErrors(errs);
                   return;
                 }
-              
+
                 handleSubmit();
               }}
               disabled={isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
-                !isSubmitting
-                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${!isSubmitting
+                ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>
