@@ -366,9 +366,8 @@ export default function PartsAssistance() {
                   </div>
                 </div>
 
-              </div>
-              <div>
-                <label className="block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
+                <div>
+                <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                 <div className="flex gap-4">
                   <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
                   <input
@@ -398,6 +397,9 @@ export default function PartsAssistance() {
                 </div>
                 {errors.phone && <p className="text-red-600 text-xl mt-2">{errors.phone}</p>}
               </div>
+
+              </div>
+             
             </div>
 
           )}
