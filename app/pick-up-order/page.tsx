@@ -158,7 +158,8 @@ export default function PickupKiosk() {
           const uniqueNumbers = new Set(orderNumbers);
 
           if (orderNumbers.length !== uniqueNumbers.size) {
-            stepErrors.push("Duplicate order numbers detected. Each order number must be unique");
+            stepErrors.push("Duplicate order numbers detected.");
+            stepErrors.push("Each order number must be unique.");
           }
         }
         if (["credit-card", "debit-card"].includes(formData.paymentMethod)) {
@@ -603,7 +604,8 @@ export default function PickupKiosk() {
                             const uniqueNumbers = new Set(orderNumbers);
 
                             if (orderNumbers.length !== uniqueNumbers.size) {
-                              stepErrors.push("Duplicate order numbers detected. Each order number must be unique");
+                              stepErrors.push("Duplicate order numbers detected.");
+                              stepErrors.push("Each order number must be unique.");
 
                               // Auto-clear card digits
                               setFormData((prev) => ({
