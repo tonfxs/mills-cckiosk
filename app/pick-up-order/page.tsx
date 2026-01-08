@@ -512,7 +512,7 @@ export default function PickupKiosk() {
                     )}
                   </div>
 
-                  <OtherPaymentPopup
+                  {/* <OtherPaymentPopup
                     open={showOtherPaymentPopup}
                     onClose={() => setShowOtherPaymentPopup(false)}
                     onSelect={(method) => {
@@ -526,6 +526,22 @@ export default function PickupKiosk() {
                     onAfterSelect={() => {
                       // ✅ proceed to next step
                       setStep((s) => s + 1); // or handleNext()
+                    }}
+                  /> */}
+
+                  <OtherPaymentPopup
+                    open={showOtherPaymentPopup}
+                    onClose={() => setShowOtherPaymentPopup(false)}
+                    onSelect={(method) => {
+                      setFormData((prev) => ({ ...prev, paymentMethod: method }));
+                      setShowOtherPaymentPopup(false);
+
+                      if (stepValidationErrors.length > 0) {
+                        setStepValidationErrors([]);
+                      }
+                    }}
+                    onAfterSelect={() => {
+
                     }}
                   />
 
