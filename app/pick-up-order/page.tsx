@@ -487,9 +487,45 @@ export default function PickupKiosk() {
                               setShowCardPopup(true);
                             }
 
+                            // if (value === "others") {
+                            //   setShowCardPopup(false);
+                            //   setShowOtherPaymentPopup(true);
+                            // }
+
                             if (value === "others") {
+                              const stepErrors: string[] = [];
+                                                        
+                              // ✅ Validate order number first
+                              if (!formData.orderNumber.trim()) {
+                                stepErrors.push("Order number is required");
+                                setStepValidationErrors(stepErrors);
+                                return;
+                              }
+                            
+                              // ✅ Check for duplicate order numbers
+                              const orderNumbers = formData.orderNumber
+                                .split(',')
+                                .map(num => num.trim())
+                                .filter(num => num.length > 0);
+                            
+                              const uniqueNumbers = new Set(orderNumbers);
+                            
+                              if (orderNumbers.length !== uniqueNumbers.size) {
+                                stepErrors.push("Duplicate order numbers detected.");
+                                stepErrors.push("Each order number must be unique.");
+                              
+                                setStepValidationErrors(stepErrors);
+                                return;
+                              }
+                            
+                              // ✅ If valid, open popup
                               setShowCardPopup(false);
                               setShowOtherPaymentPopup(true);
+                            
+                              // Clear validation errors
+                              if (stepValidationErrors.length > 0) {
+                                setStepValidationErrors([]);
+                              }
                             }
 
                             // Clear validation errors
@@ -535,6 +571,8 @@ export default function PickupKiosk() {
                     onSelect={(method) => {
                       setFormData((prev) => ({ ...prev, paymentMethod: method }));
                       setShowOtherPaymentPopup(false);
+
+                      
 
                       if (stepValidationErrors.length > 0) {
                         setStepValidationErrors([]);
