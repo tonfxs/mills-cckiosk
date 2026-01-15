@@ -4,7 +4,7 @@ type DuplicateGroup = {
   sample: { timestamp: string; fullName: string; phone: string; ref: string; status: string; type: string }[];
 };
 
-export default function DuplicatesPanel({ groups }: { groups: DuplicateGroup[] }) {
+export default function DuplicatesPanel({ groups = [] }: { groups?: DuplicateGroup[] }) {
   return (
     <section className="rounded-2xl border bg-white shadow-sm">
       <div className="p-5 border-b">
@@ -38,7 +38,7 @@ export default function DuplicatesPanel({ groups }: { groups: DuplicateGroup[] }
                     </tr>
                   </thead>
                   <tbody>
-                    {g.sample.map((s, idx) => (
+                    {(g.sample ?? []).map((s, idx) => (
                       <tr key={`${g.key}-${idx}`} className="border-t">
                         <td className="py-2 text-gray-500">{s.timestamp}</td>
                         <td className="py-2 text-gray-700">{s.type}</td>

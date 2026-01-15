@@ -10,7 +10,7 @@ type MissingItem = {
   missing: string[];
 };
 
-export default function MissingDataPanel({ items }: { items: MissingItem[] }) {
+export default function MissingDataPanel({ items = [] }: { items?: MissingItem[] }) {
   return (
     <section className="rounded-2xl border bg-white shadow-sm">
       <div className="p-5 border-b">
@@ -33,6 +33,7 @@ export default function MissingDataPanel({ items }: { items: MissingItem[] }) {
               <th className="px-5 py-3 text-left font-medium">Timestamp</th>
             </tr>
           </thead>
+
           <tbody>
             {items.length === 0 ? (
               <tr className="border-t">
@@ -52,7 +53,7 @@ export default function MissingDataPanel({ items }: { items: MissingItem[] }) {
                   <td className="px-5 py-3 text-gray-700">{r.status || "—"}</td>
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {r.missing.map((m) => (
+                      {(r.missing ?? []).map((m) => (
                         <span
                           key={m}
                           className="rounded-full border bg-red-50 text-red-700 border-red-200 px-2 py-0.5 text-xs font-medium"

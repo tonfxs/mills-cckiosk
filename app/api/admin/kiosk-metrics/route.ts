@@ -251,6 +251,37 @@ type FunnelSummary = {
   total: { started: number; submitted: number; verified: number; completed: number };
 };
 
+type StuckItem = {
+  timestamp: string;
+  fullName: string;
+  phone: string;
+  ref: string;
+  carParkBay: string;
+  status: string;
+  type: string;
+  ageMinutes: number;
+  reason: string;
+};
+
+type MissingItem = {
+  timestamp: string;
+  fullName: string;
+  phone: string;
+  ref: string;
+  paymentMethod: string;
+  carParkBay: string;
+  status: string;
+  type: string;
+  missing: string[];
+};
+
+type DuplicateGroup = {
+  key: string;
+  count: number;
+  sample: { timestamp: string; fullName: string; phone: string; ref: string; status: string; type: string }[];
+};
+
+
 async function getGoogleAuth() {
   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -422,6 +453,12 @@ export async function GET() {
       STATUS_PROCEED_TO_WINDOW,
     ]);
 
+    // --- NEW: Drill-down arrays for panels ---
+    const stuckOrders: StuckItem[] = [];
+    const missingInvalidRows: MissingItem[] = [];
+    const dupSamples = new Map<string, { timestamp: string; fullName: string; phone: string; ref: string; status: string; type: string }[]>();
+
+
     // --- Counters (existing) ---
     let ordersPickedUpToday = 0;
     let ordersPickedUpTotal = 0;
@@ -496,34 +533,100 @@ export async function GET() {
         r.refId?.trim() || r.fullName?.trim() || r.phone?.trim() || r.status?.trim()
       );
 
+      // if (meaningful) {
+      //   if (!r.type?.trim()) (missingCount++, bump("Missing: type"));
+      //   if (!r.status?.trim()) (missingCount++, bump("Missing: status"));
+      //   if (!r.fullName?.trim()) (missingCount++, bump("Missing: fullName"));
+      //   if (!r.phone?.trim()) (missingCount++, bump("Missing: phone"));
+      //   if (!r.carParkBay?.trim()) (missingCount++, bump("Missing: carParkBay"));
+
+      //   // refId is required for transaction metrics
+      //   if (!r.refId?.trim()) (missingCount++, bump("Missing: refId"));
+
+      //   // Pickup requires payment method
+      //   if (type === TYPE_PICKUP && !r.paymentMethod?.trim()) {
+      //     missingCount++;
+      //     bump("Missing: paymentMethod (pickup)");
+      //   }
+
+      //   if (r.phone?.trim() && !isLikelyPhone(r.phone)) {
+      //     invalidCount++;
+      //     bump("Invalid: phone");
+      //   }
+      //   if (r.refId?.trim() && !isLikelyRefId(r.refId)) {
+      //     invalidCount++;
+      //     bump("Invalid: refId");
+      //   }
+      // }
+
       if (meaningful) {
-        if (!r.type?.trim()) (missingCount++, bump("Missing: type"));
-        if (!r.status?.trim()) (missingCount++, bump("Missing: status"));
-        if (!r.fullName?.trim()) (missingCount++, bump("Missing: fullName"));
-        if (!r.phone?.trim()) (missingCount++, bump("Missing: phone"));
-        if (!r.carParkBay?.trim()) (missingCount++, bump("Missing: carParkBay"));
-
-        // refId is required for transaction metrics
-        if (!r.refId?.trim()) (missingCount++, bump("Missing: refId"));
-
-        // Pickup requires payment method
-        if (type === TYPE_PICKUP && !r.paymentMethod?.trim()) {
-          missingCount++;
-          bump("Missing: paymentMethod (pickup)");
-        }
-
-        if (r.phone?.trim() && !isLikelyPhone(r.phone)) {
-          invalidCount++;
-          bump("Invalid: phone");
-        }
-        if (r.refId?.trim() && !isLikelyRefId(r.refId)) {
-          invalidCount++;
-          bump("Invalid: refId");
-        }
+      const issues: string[] = [];
+          
+      if (!r.type?.trim()) (missingCount++, bump("Missing: type"), issues.push("type"));
+      if (!r.status?.trim()) (missingCount++, bump("Missing: status"), issues.push("status"));
+      if (!r.fullName?.trim()) (missingCount++, bump("Missing: fullName"), issues.push("fullName"));
+      if (!r.phone?.trim()) (missingCount++, bump("Missing: phone"), issues.push("phone"));
+      if (!r.carParkBay?.trim()) (missingCount++, bump("Missing: carParkBay"), issues.push("carParkBay"));
+          
+      if (!r.refId?.trim()) (missingCount++, bump("Missing: refId"), issues.push("refId"));
+          
+      if (type === TYPE_PICKUP && !r.paymentMethod?.trim()) {
+        missingCount++;
+        bump("Missing: paymentMethod (pickup)");
+        issues.push("paymentMethod");
       }
+    
+      if (r.phone?.trim() && !isLikelyPhone(r.phone)) {
+        invalidCount++;
+        bump("Invalid: phone");
+        issues.push("invalid phone");
+      }
+    
+      if (r.refId?.trim() && !isLikelyRefId(r.refId)) {
+        invalidCount++;
+        bump("Invalid: refId");
+        issues.push("invalid refId");
+      }
+    
+      // If there are issues, add a row for the MissingDataPanel
+      if (issues.length) {
+        missingInvalidRows.push({
+          timestamp: r.timestamp,
+          fullName: r.fullName,
+          phone: r.phone,
+          ref: r.refId,
+          paymentMethod: r.paymentMethod,
+          carParkBay: r.carParkBay,
+          status: r.status,
+          type: r.type,
+          missing: issues,
+        });
+      }
+    }
+
 
       // Duplicates (type+refId)
       addDupKey(r.type, r.refId);
+
+      // store sample rows for duplicate groups
+      const t = norm(r.type);
+      const rid = norm(r.refId);
+      if (t && rid) {
+        const key = `${t}:${rid}`;
+        if (!dupSamples.has(key)) dupSamples.set(key, []);
+        const arr = dupSamples.get(key)!;
+        if (arr.length < 10) {
+          arr.push({
+            timestamp: r.timestamp,
+            fullName: r.fullName,
+            phone: r.phone,
+            ref: r.refId,
+            status: r.status,
+            type: r.type,
+          });
+        }
+      }
+
 
       // Stuck/Aging: only for rows that are NOT complete (per type)
       // and have parseable timestamp + refId
@@ -538,9 +641,25 @@ export async function GET() {
             (type === TYPE_PARTS && partsComplete.has(status));
 
           if (!isCompleted) {
-            if (ageMinutes > 30) agingOver30m += 1;
-            if (ageMinutes > 120) agingOver2h += 1;
+          if (ageMinutes > 30) agingOver30m += 1;
+          if (ageMinutes > 120) agingOver2h += 1;
+
+          // Add row for StuckOrdersPanel when it exceeds 30m
+          if (ageMinutes > 30) {
+            stuckOrders.push({
+              timestamp: r.timestamp,
+              fullName: r.fullName,
+              phone: r.phone,
+              ref: r.refId,
+              carParkBay: r.carParkBay,
+              status: r.status,
+              type: r.type,
+              ageMinutes: Math.round(ageMinutes),
+              reason: ageMinutes > 120 ? "Over 2 hours" : "Over 30 mins",
+            });
           }
+        }
+
         }
       }
 
@@ -661,6 +780,16 @@ export async function GET() {
       total: funnelTotal,
     };
 
+    const duplicateGroups: DuplicateGroup[] = [...dupSamples.entries()]
+  .filter(([, sample]) => sample.length >= 2)
+  .map(([key, sample]) => ({
+    key,
+    count: sample.length,
+    sample,
+  }))
+  .slice(0, 50);
+
+
     return NextResponse.json({
       success: true,
       data: {
@@ -688,6 +817,15 @@ export async function GET() {
         dataQuality,
         duplicates,
         successFunnel,
+
+        stuckOrders: stuckOrders
+        .sort((a, b) => b.ageMinutes - a.ageMinutes)
+        .slice(0, 100),
+            
+      missingInvalidRows: missingInvalidRows.slice(-200),
+            
+      duplicateGroups,
+
       },
     });
   } catch (err: any) {
