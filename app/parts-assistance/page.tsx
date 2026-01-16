@@ -304,6 +304,8 @@ export default function PartsAssistance() {
                 <div className="space-y-10">
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">Order Number(s)</label>
+                    <p className="text-red-600 text-xl font-semibold my-4">(Note: Multiple order numbers can be separated by a comma.)</p>
+
                     <input
                       type="text"
                       name="orderNumber"

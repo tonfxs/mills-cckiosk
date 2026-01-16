@@ -502,6 +502,7 @@ export async function GET() {
     // --- NEW: Stuck/Aging ---
     let agingOver30m = 0;
     let agingOver2h = 0;
+    // let agingOver1h = 0;
 
     // --- NEW: Funnel ---
     const funnelToday = { started: 0, submitted: 0, verified: 0, completed: 0 };
@@ -630,38 +631,72 @@ export async function GET() {
 
       // Stuck/Aging: only for rows that are NOT complete (per type)
       // and have parseable timestamp + refId
-      if (r.refId?.trim()) {
+      // if (r.refId?.trim()) {
+      //   const tsDateUtc = parseSydneyTimestampToUtcDate(r.timestamp);
+      //   if (tsDateUtc) {
+      //     const ageMinutes = (nowUtc.getTime() - tsDateUtc.getTime()) / 60_000;
+
+      //     const isCompleted =
+      //       (type === TYPE_PICKUP && pickupComplete.has(status)) ||
+      //       (type === TYPE_RETURN && returnComplete.has(status)) ||
+      //       (type === TYPE_PARTS && partsComplete.has(status));
+
+      //     if (!isCompleted) {
+      //     if (ageMinutes > 30) agingOver30m += 1;
+      //     if (ageMinutes > 120) agingOver2h += 1;
+
+      //     // Add row for StuckOrdersPanel when it exceeds 30m
+      //     if (ageMinutes > 30) {
+      //       stuckOrders.push({
+      //         timestamp: r.timestamp,
+      //         fullName: r.fullName,
+      //         phone: r.phone,
+      //         ref: r.refId,
+      //         carParkBay: r.carParkBay,
+      //         status: r.status,
+      //         type: r.type,
+      //         ageMinutes: Math.round(ageMinutes),
+      //         reason: ageMinutes > 120 ? "Over 2 hours" : "Over 30 mins",
+      //       });
+      //     }
+      //   }
+      //   }
+      // }
+
+      // Stuck/Aging: TODAY ONLY (Sydney)
+      if (today && r.refId?.trim()) {
         const tsDateUtc = parseSydneyTimestampToUtcDate(r.timestamp);
         if (tsDateUtc) {
           const ageMinutes = (nowUtc.getTime() - tsDateUtc.getTime()) / 60_000;
-
+        
           const isCompleted =
             (type === TYPE_PICKUP && pickupComplete.has(status)) ||
             (type === TYPE_RETURN && returnComplete.has(status)) ||
             (type === TYPE_PARTS && partsComplete.has(status));
-
+        
           if (!isCompleted) {
-          if (ageMinutes > 30) agingOver30m += 1;
-          if (ageMinutes > 120) agingOver2h += 1;
-
-          // Add row for StuckOrdersPanel when it exceeds 30m
-          if (ageMinutes > 30) {
-            stuckOrders.push({
-              timestamp: r.timestamp,
-              fullName: r.fullName,
-              phone: r.phone,
-              ref: r.refId,
-              carParkBay: r.carParkBay,
-              status: r.status,
-              type: r.type,
-              ageMinutes: Math.round(ageMinutes),
-              reason: ageMinutes > 120 ? "Over 2 hours" : "Over 30 mins",
-            });
+            if (ageMinutes > 30) agingOver30m += 1;
+            if (ageMinutes > 120) agingOver2h += 1;
+          
+            if (ageMinutes > 30) {
+              stuckOrders.push({
+                timestamp: r.timestamp,
+                fullName: r.fullName,
+                phone: r.phone,
+                ref: r.refId,
+                carParkBay: r.carParkBay,
+                status: r.status,
+                type: r.type,
+                ageMinutes: Math.round(ageMinutes),
+                reason: ageMinutes > 120 ? "Over 2 hours" : "Over 30 mins",
+              });
+            }
           }
         }
-
-        }
       }
+
+
+
 
       // --- Existing transaction-specific stats (completed only) ---
       // For these stats, we require refId

@@ -35,7 +35,7 @@ export default function DashboardHeader({
   onToggleAutoRefresh,
   onRefresh,
   error,
-  title = "Admin Dashboard",
+  title = "Mills Brands - Shopfront Kiosk Dashboard",
   subtitle,
 }: DashboardHeaderProps) {
   const [mounted, setMounted] = useState(false);

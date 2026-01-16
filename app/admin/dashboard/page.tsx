@@ -2217,7 +2217,7 @@ export default function DashboardClient() {
 
           <DashboardStatCard
             title="Last Updated"
-            value={loading ? '—' : 'Just now'}
+            value={loading ? '—' : 'Now'}
             subtitle={autoRefresh ? 'Every 30 seconds' : 'Manual'}
             icon={<RefreshCw className="h-5 w-5" />}
           />

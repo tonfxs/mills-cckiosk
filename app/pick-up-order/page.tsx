@@ -453,12 +453,13 @@ export default function PickupKiosk() {
                 <div className="space-y-10">
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">Order Number(s)</label>
+                    <p className="text-red-600 text-xl font-semibold my-4">(Note: Multiple order numbers can be separated by a comma.)</p>
                     <input
                       type="text"
                       name="orderNumber"
                       value={formData.orderNumber}
                       onChange={handleChange}
-                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                      className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black "
                       placeholder="e.g., E1234567, M7654321, 100000123456"
                     />
                     {errors.orderNumber && <p className="text-red-600 text-xl mt-2">{errors.orderNumber}</p>}
