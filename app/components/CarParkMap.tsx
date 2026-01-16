@@ -56,8 +56,8 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
 
     // =============== Reception Stairs (custom button) ===============
     const reception = {
-      x: VB_W - 460,   // top-right-ish
-      y: 18,
+      x: VB_W - 600,   // top-right-ish
+      y: 600,
       w: 300,
       h: 74,
       labelX: VB_W - 195,

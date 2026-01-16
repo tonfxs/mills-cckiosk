@@ -453,7 +453,7 @@ export default function PickupKiosk() {
                 <div className="space-y-10">
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">Order Number(s)</label>
-                    <p className="text-red-600 text-xl font-semibold my-4">(Note: Multiple order numbers can be separated by a comma.)</p>
+                    <p className="text-red-600 text-3xl font-semibold my-4">(Note: Separate multiple order numbers with a comma.)</p>
                     <input
                       type="text"
                       name="orderNumber"
@@ -468,7 +468,7 @@ export default function PickupKiosk() {
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
                       Payment Method
-                      <p className="text-red-600 text-xl my-4"> (Note: Only select the payment method used during purchase.)</p>
+                      <p className="text-red-600 text-3xl my-4"> (Note: Only select the payment method used during purchase.)</p>
                     </label>
 
                     <div className="grid grid-cols-2 gap-4">

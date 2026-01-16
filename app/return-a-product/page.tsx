@@ -307,7 +307,7 @@ export default function ReturnAProductForm() {
 
                 <div>
                   <label className="block text-4xl font-semibold mb-4 text-gray-700">RMA ID(s)</label>
-                  <p className="text-red-600 text-xl font-semibold my-4">(Note: Multiple entries can be separated by a comma.)</p>
+                  <p className="text-red-600 text-3xl font-semibold my-4">(Note: Separate multiple order numbers with a comma.)</p>
 
                   <input
                     type="text"
