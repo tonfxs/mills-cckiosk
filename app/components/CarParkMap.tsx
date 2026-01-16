@@ -26,6 +26,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     sideBays,
     wall,
     fence,
+    reception, // ✅ add
     oppLabelX,
     oppLabelY,
     sideLabelY,
@@ -52,6 +53,19 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
       w: 70,
       h: 340,
     };
+
+    // =============== Reception Stairs (custom button) ===============
+    const reception = {
+      x: VB_W - 460,   // top-right-ish
+      y: 18,
+      w: 300,
+      h: 74,
+      labelX: VB_W - 195,
+      labelY: 70,
+      value: "Reception-Stairs",
+      label: "Reception Stairs",
+    };
+
 
     // Opposite Bays: 7–17 (display 17..7)
     const oppositeNums = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8] as const;
@@ -169,6 +183,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
       sideBays,
       wall,
       fence,
+      reception, // ✅ add
       oppLabelX: oppCenterX,
       oppLabelY,
       sideLabelY,
@@ -246,6 +261,33 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
             Wall Park
           </text>
         </g>
+
+        {/* Reception Stairs */}
+        <g onClick={() => onChange(reception.value)} style={{ cursor: "pointer" }}>
+          <rect
+            x={reception.x}
+            y={reception.y}
+            width={reception.w}
+            height={reception.h}
+            rx="8"
+            fill={isSelected(reception.value) ? "#16a34a" : "#ffffff"}
+            stroke={isSelected(reception.value) ? "#14532d" : "#9ca3af"}
+            strokeWidth="4"
+          />
+          <text
+            x={reception.x + reception.w / 2}
+            y={reception.y + reception.h / 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="26"
+            fontWeight="800"
+            fill={isSelected(reception.value) ? "#ffffff" : "#6b7280"}
+          >
+            Reception Stairs
+          </text>
+
+        </g>
+
 
         {/* Opposite label */}
         <text x={oppLabelX} y={oppLabelY} fill="#2563eb" fontSize="26" fontWeight="700" textAnchor="middle">
