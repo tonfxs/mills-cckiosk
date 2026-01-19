@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     { id: "parts", icon: Bolt, label: "Parts Assistance", href: "/admin/parts", match: "startsWith" },
     // { id: "users", icon: Users, label: "Users", href: "/admin/users", match: "startsWith" },
     // { id: "alerts", icon: Bell, label: "Alerts", href: "/admin/alerts", match: "startsWith" },
-    // { id: "settings", icon: Settings, label: "Settings", href: "/admin/settings", match: "startsWith" },
+    { id: "settings", icon: Settings, label: "Settings", href: "/admin/settings", match: "startsWith" },
   ];
 
   const isItemActive = (item: MenuItem) => {
@@ -74,10 +74,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           {!isCollapsed && (
             <div className="min-w-0">
               <div className="text-sm font-semibold text-gray-900 truncate">
-                Admin
+                Shopfront Kiosk
               </div>
               <div className="text-xs text-gray-500 truncate">
-                Mills Kiosk
+                Mills Brands
               </div>
             </div>
           )}
