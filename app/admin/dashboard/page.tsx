@@ -2293,7 +2293,7 @@ export default function DashboardClient() {
                   ? 'Loading…'
                   : todayFunnelRate !== null
                     ? `Today: ${funnelTodayCompleted}/${funnelTodayStarted} • Total: ${totalFunnelRate ?? '—'}%`
-                    : `Today completed: ${funnelTodayCompleted} • (needs API for started)`
+                    : `Today completed: ${funnelTodayCompleted}`
               }
               icon={<TrendingUp className="h-5 w-5" />}
             />

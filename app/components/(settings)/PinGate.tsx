@@ -54,7 +54,7 @@ export default function PinGate({
           <button
             type="button"
             onClick={lock}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800"
+            className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
           >
             Lock
           </button>

@@ -13,8 +13,8 @@ export default function ToggleField({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`w-full flex items-center justify-between rounded-xl text-slate-600 border px-4 py-3 ${
-        checked ? 'border-emerald-200 bg-emerald-50 text-slate-600' : 'border-slate-200 bg-white text-slate-600'
+      className={`w-full flex items-center justify-between rounded-xl border px-4 py-3 ${
+        checked ? 'border-emerald-200 bg-emerald-50 ' : 'border-slate-200 bg-white '
       }`}
     >
       <span className="text-sm font-semibold text-slate-900">{checked ? 'Enabled' : 'Disabled'}</span>

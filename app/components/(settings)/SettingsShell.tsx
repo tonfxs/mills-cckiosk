@@ -377,7 +377,7 @@ function ConnectivityTest({ apiBaseUrl }: { apiBaseUrl: string }) {
         <button
           type="button"
           onClick={run}
-          className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-sm font-semibold"
+          className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-sm font-semibold text-slate-600"
         >
           Run test
         </button>

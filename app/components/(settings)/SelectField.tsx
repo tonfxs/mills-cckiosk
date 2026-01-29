@@ -15,7 +15,7 @@ export default function SelectField({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400 bg-white"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400 text-slate-600 bg-white"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>

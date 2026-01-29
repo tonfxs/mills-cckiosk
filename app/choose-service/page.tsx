@@ -78,13 +78,13 @@ export default function ChooseService() {
           Return a Product
         </button>
 
-        <button
+        {/* <button
           onClick={() => handleServiceClick("/parts-assistance")}
           className={baseButton}
           type="button"
         >
           Parts Assistance
-        </button>
+        </button> */}
 
         {/* <button onClick={handleConnectToAgent} className={baseButton} type="button">
           Connect to a Live Agent
