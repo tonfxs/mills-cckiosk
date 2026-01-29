@@ -139,28 +139,24 @@
 // }
 
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-// This route should call YOUR NETO proxy endpoint.
-// You said you have app/api/neto/route.ts in your structure screenshot.
-// We'll forward to that.
+// Supports both object params and promise params (some Next builds type it as Promise)
+type Ctx =
+  | { params: { orderKey: string } }
+  | { params: Promise<{ orderKey: string }> };
 
-export async function GET(
-  req: Request,
-  ctx: { params: Promise<{ orderNumber: string }> | { orderNumber: string } }
-) {
-  const { orderNumber } = await Promise.resolve(ctx.params);
-  const key = decodeURIComponent(orderNumber || "").trim();
+export async function GET(request: NextRequest, ctx: Ctx) {
+  const { orderKey } = await Promise.resolve((ctx as any).params);
+  const key = decodeURIComponent(orderKey || "").trim();
 
   if (!key) {
-    return NextResponse.json({ ok: false, error: "Missing orderNumber" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Missing orderKey" }, { status: 400 });
   }
 
   try {
-    // Forward to your NETO proxy route.
-    // NOTE: we MUST match the payload your /api/neto expects.
-    // So for now we send a generic "action" and "body" pattern.
-    const netoRes = await fetch(new URL("/api/neto", req.url), {
+    // Forward to your NETO proxy route (/api/neto)
+    const netoRes = await fetch(new URL("/api/neto", request.url), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -172,6 +168,7 @@ export async function GET(
 
     const text = await netoRes.text();
     let json: any;
+
     try {
       json = JSON.parse(text);
     } catch {
