@@ -304,143 +304,143 @@
 
 
 // app/api/kiosk/orders/[refId]/route.ts
-import { NextResponse } from "next/server";
-import { google } from "googleapis";
-import { netoRequest } from "@/app/lib/neto-client";
+// import { NextResponse } from "next/server";
+// import { google } from "googleapis";
+// import { netoRequest } from "@/app/lib/neto-client";
 
-type SheetRow = {
-  orderId?: string; // Neto internal OrderID saved in sheet
-  refId?: string;   // whatever your kiosk used as key (order number / etc.)
-};
+// type SheetRow = {
+//   orderId?: string; // Neto internal OrderID saved in sheet
+//   refId?: string;   // whatever your kiosk used as key (order number / etc.)
+// };
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
-const SHEET_TAB = process.env.GOOGLE_SHEET_TAB || "Master List";
+// const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
+// const SHEET_TAB = process.env.GOOGLE_SHEET_TAB || "Master List";
 
-// NOTE: Adjust columns based on your sheet layout.
-// Example: A=timestamp, B=fullName, C=phone, D=refId, ... and maybe OrderID is in column L, etc.
-const RANGE = `${SHEET_TAB}!A:Z`;
+// // NOTE: Adjust columns based on your sheet layout.
+// // Example: A=timestamp, B=fullName, C=phone, D=refId, ... and maybe OrderID is in column L, etc.
+// const RANGE = `${SHEET_TAB}!A:Z`;
 
-type NetoGetOrderResponse = {
-  Ack?: "Success" | "Warning" | "Error";
-  Orders?: any[];
-  Errors?: Array<{ ErrorCode?: string; Description?: string }>;
-};
+// type NetoGetOrderResponse = {
+//   Ack?: "Success" | "Warning" | "Error";
+//   Orders?: any[];
+//   Errors?: Array<{ ErrorCode?: string; Description?: string }>;
+// };
 
-function jsonError(message: string, status = 400, extra?: unknown) {
-  return NextResponse.json({ ok: false, message, extra }, { status });
-}
+// function jsonError(message: string, status = 400, extra?: unknown) {
+//   return NextResponse.json({ ok: false, message, extra }, { status });
+// }
 
-async function getSheetsClient() {
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-  });
+// async function getSheetsClient() {
+//   const auth = new google.auth.GoogleAuth({
+//     credentials: {
+//       client_email: process.env.GOOGLE_CLIENT_EMAIL,
+//       private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+//     },
+//     scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+//   });
 
-  return google.sheets({ version: "v4", auth });
-}
+//   return google.sheets({ version: "v4", auth });
+// }
 
-function headerIndex(headers: string[]) {
-  const map = new Map<string, number>();
-  headers.forEach((h, i) => map.set(h.trim().toLowerCase(), i));
-  return map;
-}
+// function headerIndex(headers: string[]) {
+//   const map = new Map<string, number>();
+//   headers.forEach((h, i) => map.set(h.trim().toLowerCase(), i));
+//   return map;
+// }
 
-async function findOrderIdByRefId(refId: string): Promise<string | null> {
-  const sheets = await getSheetsClient();
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: RANGE,
-    valueRenderOption: "UNFORMATTED_VALUE",
-  });
+// async function findOrderIdByRefId(refId: string): Promise<string | null> {
+//   const sheets = await getSheetsClient();
+//   const res = await sheets.spreadsheets.values.get({
+//     spreadsheetId: SHEET_ID,
+//     range: RANGE,
+//     valueRenderOption: "UNFORMATTED_VALUE",
+//   });
 
-  const values = res.data.values || [];
-  if (values.length < 2) return null;
+//   const values = res.data.values || [];
+//   if (values.length < 2) return null;
 
-  const headers = (values[0] as string[]).map(String);
-  const idx = headerIndex(headers);
+//   const headers = (values[0] as string[]).map(String);
+//   const idx = headerIndex(headers);
 
-  // These header names must match your sheet header row (case-insensitive).
-  const refIdCol = idx.get("refid");
-  const orderIdCol = idx.get("orderid");
+//   // These header names must match your sheet header row (case-insensitive).
+//   const refIdCol = idx.get("refid");
+//   const orderIdCol = idx.get("orderid");
 
-  if (refIdCol == null) throw new Error(`Sheet missing header: refId`);
-  if (orderIdCol == null) throw new Error(`Sheet missing header: OrderID`);
+//   if (refIdCol == null) throw new Error(`Sheet missing header: refId`);
+//   if (orderIdCol == null) throw new Error(`Sheet missing header: OrderID`);
 
-  for (let r = 1; r < values.length; r++) {
-    const row = values[r] as any[];
-    const rowRef = String(row[refIdCol] ?? "").trim();
-    if (!rowRef) continue;
+//   for (let r = 1; r < values.length; r++) {
+//     const row = values[r] as any[];
+//     const rowRef = String(row[refIdCol] ?? "").trim();
+//     if (!rowRef) continue;
 
-    if (rowRef === refId.trim()) {
-      const orderId = String(row[orderIdCol] ?? "").trim();
-      return orderId || null;
-    }
-  }
+//     if (rowRef === refId.trim()) {
+//       const orderId = String(row[orderIdCol] ?? "").trim();
+//       return orderId || null;
+//     }
+//   }
 
-  return null;
-}
+//   return null;
+// }
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { refId: string } }
-) {
-  try {
-    const refId = decodeURIComponent(params.refId || "").trim();
-    if (!refId) return jsonError("Missing refId", 400);
+// export async function GET(
+//   _req: Request,
+//   { params }: { params: { refId: string } }
+// ) {
+//   try {
+//     const refId = decodeURIComponent(params.refId || "").trim();
+//     if (!refId) return jsonError("Missing refId", 400);
 
-    const orderId = await findOrderIdByRefId(refId);
-    if (!orderId) return jsonError(`No OrderID found in sheet for refId=${refId}`, 404);
+//     const orderId = await findOrderIdByRefId(refId);
+//     if (!orderId) return jsonError(`No OrderID found in sheet for refId=${refId}`, 404);
 
-    // Neto GetOrder expects internal OrderID in OrderIDFilter (works for internal IDs).
-    const body = {
-      Filter: {
-        OrderIDFilter: [orderId],
-      },
-      // Choose selectors you actually need on the frontend
-      OutputSelector: [
-        "ID",
-        "OrderID",
-        "OrderNumber",
-        "OrderStatus",
-        "DatePlaced",
-        "DateUpdated",
-        "Email",
-        "ShipAddress",
-        "BillAddress",
-        "GrandTotal",
-        "ShippingTotal",
-        "ProductSubtotal",
-        "OrderTax",
-        "TaxInclusive",
-        "ShippingOption",
-        "DeliveryInstruction",
-        "SalesChannel",
-        "OrderPayment",
-        "OrderPayment.PaymentType",
-        "OrderLines",
-        "OrderLines.OrderLine",
-      ],
-    };
+//     // Neto GetOrder expects internal OrderID in OrderIDFilter (works for internal IDs).
+//     const body = {
+//       Filter: {
+//         OrderIDFilter: [orderId],
+//       },
+//       // Choose selectors you actually need on the frontend
+//       OutputSelector: [
+//         "ID",
+//         "OrderID",
+//         "OrderNumber",
+//         "OrderStatus",
+//         "DatePlaced",
+//         "DateUpdated",
+//         "Email",
+//         "ShipAddress",
+//         "BillAddress",
+//         "GrandTotal",
+//         "ShippingTotal",
+//         "ProductSubtotal",
+//         "OrderTax",
+//         "TaxInclusive",
+//         "ShippingOption",
+//         "DeliveryInstruction",
+//         "SalesChannel",
+//         "OrderPayment",
+//         "OrderPayment.PaymentType",
+//         "OrderLines",
+//         "OrderLines.OrderLine",
+//       ],
+//     };
 
-    const neto = await netoRequest<NetoGetOrderResponse>("GetOrder", body, { timeoutMs: 20000 });
+//     const neto = await netoRequest<NetoGetOrderResponse>("GetOrder", body, { timeoutMs: 20000 });
 
-    if (neto?.Ack === "Error") {
-      return jsonError("Neto GetOrder failed", 502, neto.Errors ?? neto);
-    }
+//     if (neto?.Ack === "Error") {
+//       return jsonError("Neto GetOrder failed", 502, neto.Errors ?? neto);
+//     }
 
-    const order = neto?.Orders?.[0];
-    if (!order) return jsonError(`Order not found in Neto for OrderID=${orderId}`, 404);
+//     const order = neto?.Orders?.[0];
+//     if (!order) return jsonError(`Order not found in Neto for OrderID=${orderId}`, 404);
 
-    return NextResponse.json({
-      ok: true,
-      refId,
-      orderId,
-      order,
-    });
-  } catch (err: any) {
-    return jsonError(err?.message || "Unexpected server error", 500);
-  }
-}
+//     return NextResponse.json({
+//       ok: true,
+//       refId,
+//       orderId,
+//       order,
+//     });
+//   } catch (err: any) {
+//     return jsonError(err?.message || "Unexpected server error", 500);
+//   }
+// }
