@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -13,6 +13,8 @@ export default function LoginPage() {
     // TODO: hook to auth API / NextAuth
     console.log({ email, password });
   };
+  
+
 
   return (
     <>
@@ -52,6 +54,7 @@ export default function LoginPage() {
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+              // href="admin/dashboard"
             >
               Sign In
             </button>

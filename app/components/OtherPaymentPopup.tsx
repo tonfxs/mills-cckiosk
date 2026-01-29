@@ -12,7 +12,7 @@ interface OtherPaymentPopupProps {
 const OTHER_PAYMENT_METHODS = [
   { value: "afterpay", label: "Afterpay" },
   { value: "cardatwindow", label: "Card at Window (EFTPOS)" },
-  { value: "ebay", label: "eBay" },
+  { value: "cash", label: "Cash" },
   { value: "electronictransfer", label: "Electronic Transfer" },
   { value: "overthephone", label: "Over the Phone (Westpac PayWay)" },
   { value: "paypal", label: "PayPal" },
@@ -61,6 +61,8 @@ export default function OtherPaymentPopup({
             >
               {label}
             </button>
+
+            
           ))}
         </div>
 
