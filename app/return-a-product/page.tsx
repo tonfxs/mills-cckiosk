@@ -4,6 +4,7 @@ import { ChevronRight, Package, UserRoundPen, PackageCheckIcon } from "lucide-re
 import Link from "next/link";
 import SuccessScreen from "../components/SuccessScreen";
 import CarParkBayPopup from "../components/CarParkPopUp";
+import RmaPromptModal from "../components/RmaPromptModal";
 
 interface FormData {
   firstName: string;
@@ -25,7 +26,7 @@ export default function ReturnAProductForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBayPopup, setShowBayPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-
+  const [showRmaModal, setShowRmaModal] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -241,6 +242,15 @@ export default function ReturnAProductForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+
+      <RmaPromptModal
+        open={showRmaModal}
+        onYes={() => {
+          setShowRmaModal(false);
+          setStep(1);
+        }}
+      />
+      
       {showSuccess && (
         <SuccessScreen
           title="Success!"
@@ -561,3 +571,4 @@ export default function ReturnAProductForm() {
     </div>
   );
 }
+
