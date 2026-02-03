@@ -676,12 +676,21 @@ const OUTPUT_SELECTOR = [
   "GrandTotal",
   "ShippingTotal",
   "SalesChannel",
+  "InternalOrderNotes",
+  "StickyNotes",
+  "BillFirstName",
+  "BillLastName",
+  "DefaultPaymentType",
+  "DeliveryInstruction",
+
+
 
   "OrderLine",
   "OrderLine.SKU",
   "OrderLine.ProductName",
   "OrderLine.Quantity",
   "OrderLine.UnitPrice",
+  "OrderLine.WarehouseName",
   "OrderLine.PickQuantity",
   "OrderLine.BackorderQuantity",
 

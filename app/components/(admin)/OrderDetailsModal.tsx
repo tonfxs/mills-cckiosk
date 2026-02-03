@@ -284,6 +284,21 @@ export function OrderDetailsModal({
                         <DataRow label="Order #" value={orderNumberDisplay} />
                         <DataRow label="Status" value={String(order?.OrderStatus ?? "—")} />
                         <DataRow label="Date Placed" value={String(order?.DatePlaced ?? "—")} />
+                        <DataRow label="Sales Channel" value={String(order?.SalesChannel ?? "—")} />
+                        <DataRow label="Payment Method" value={String(order?.DefaultPaymentType ?? "—")} />
+
+
+                      </DataSection>
+
+                      <DataSection title="Notes">
+                        <DataRow
+                          label="Note Title"
+                          value={String(order?.StickyNotes?.Title ?? "—")}
+                        />
+                        <DataRow
+                          label="Note Description"
+                          value={String(order?.StickyNotes?.Description ?? "—")}
+                        />
                       </DataSection>
 
                       {/* Customer Info */}
@@ -297,6 +312,12 @@ export function OrderDetailsModal({
                       <DataSection title="Order Totals">
                         <DataRow label="Grand Total" value={money(order?.GrandTotal)} />
                         <DataRow label="Shipping Total" value={money(order?.ShippingTotal)} />
+                      </DataSection>
+
+
+                      <DataSection title="Internal Order Notes">
+                        <DataRow label="Notes" value={String(order?.InternalOrderNotes)} />
+
                       </DataSection>
                     </div>
                   </div>
@@ -314,6 +335,7 @@ export function OrderDetailsModal({
                         <tr>
                           <th className="text-left px-4 py-3 font-semibold">SKU</th>
                           <th className="text-left px-4 py-3 font-semibold">Name</th>
+                          <th className="text-left px-4 py-3 font-semibold">Warehouse</th>
                           <th className="text-right px-4 py-3 font-semibold">Qty</th>
                           <th className="text-right px-4 py-3 font-semibold">Price</th>
                           <th className="text-right px-4 py-3 font-semibold">Total</th>
@@ -325,6 +347,9 @@ export function OrderDetailsModal({
                           const sku = pickLineField(line, "SKU", "ItemSKU", "ProductSKU") ?? "—";
                           const name =
                             pickLineField(line, "ProductName", "Name", "ItemName", "Title") ?? "—";
+
+                          const warehouse = pickLineField(line, "WarehouseName", "Warehouse") ?? "—";
+
 
                           const qtyRaw = pickLineField(line, "Quantity", "Qty", "OrderLineQty");
                           const priceRaw = pickLineField(line, "UnitPrice", "Price", "LinePrice");
@@ -340,6 +365,8 @@ export function OrderDetailsModal({
                             <tr key={idx} className="border-t hover:bg-green-50">
                               <td className="px-4 py-3 font-mono text-slate-700">{String(sku)}</td>
                               <td className="px-4 py-3 text-slate-700">{String(name)}</td>
+                              <td className="px-4 py-3 text-slate-700">{String(warehouse)}</td>
+
                               <td className="px-4 py-3 text-right text-slate-700">
                                 {qtyRaw ?? "—"}
                               </td>
