@@ -710,27 +710,29 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import StatusPill from "@/app/components/(admin)/StatusPill";
 import { OrderDetailsModal } from "@/app/components/(admin)/OrderDetailsModal";
+import type { PickupRow } from "@/app/types/pickup";
 
-type PickupRow = {
-  timestamp: string;
-  fullName: string;
-  phone: string;
 
-  // kiosk ref (e.g. E9703418)
-  orderNumber: string;
+// export type PickupRow = {
+//   timestamp: string;
+//   fullName: string;
+//   phone: string;
 
-  creditCard: string;
-  validId: string;
-  paymentMethod: string;
-  carParkBay: string;
-  status: string;
-  agent: string;
-  type: string;
+//   // kiosk ref (e.g. E9703418)
+//   orderNumber: string;
 
-  // From MASTER LIST L/M if you updated datatable route to A:M
-  notes?: string;
-  netoOrderId?: string; // ✅ may be blank for older rows
-};
+//   creditCard: string;
+//   validId: string;
+//   paymentMethod: string;
+//   carParkBay: string;
+//   status: string;
+//   agent: string;
+//   type: string;
+
+//   // From MASTER LIST L/M if you updated datatable route to A:M
+//   notes?: string;
+//   netoOrderId?: string; // ✅ may be blank for older rows
+// };
 
 type ApiResponse = {
   items: PickupRow[];
@@ -793,10 +795,15 @@ export default function PickupOrdersClient() {
     statuses: [],
   });
 
-  // ✅ modal state: can be NetoOrderID OR kiosk ref
+  // ✅ modal state: store both the key and the full row data
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selectedRowData, setSelectedRowData] = useState<PickupRow | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+
+  const refreshOrders = () => {
+    load();
+  };
 
   const load = async (next?: Partial<{ page: number }>) => {
     abortRef.current?.abort();
@@ -852,6 +859,12 @@ export default function PickupOrdersClient() {
       return;
     }
     setSelectedKey(key);
+    setSelectedRowData(row); // ✅ Store the entire row for comparison
+  }
+
+  function closeModal() {
+    setSelectedKey(null);
+    setSelectedRowData(null);
   }
 
   return (
@@ -1020,7 +1033,19 @@ export default function PickupOrdersClient() {
         </div>
       </div>
 
-      <OrderDetailsModal open={!!selectedKey} orderKey={selectedKey} onClose={() => setSelectedKey(null)} />
+      {/* ✅ Pass both orderKey and rowData to the modal */}
+      <OrderDetailsModal
+        open={!!selectedKey}
+        orderKey={selectedKey}
+        rowData={selectedRowData}
+        onClose={closeModal}
+        onRefresh={refreshOrders}
+        onPatchRow={(patch) => {
+          setSelectedRowData((prev) =>
+            prev ? { ...prev, ...patch } : prev
+          );
+        }}
+      />
     </div>
   );
 }
