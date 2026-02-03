@@ -229,7 +229,6 @@ export function OrderDetailsModal({
                 {rowData && (
                   <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 mb-5">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-blue-600 text-lg">ℹ️</span>
                       <h3 className="font-semibold text-blue-900">Data Comparison</h3>
                     </div>
                     <p className="text-sm text-blue-800">
@@ -244,7 +243,7 @@ export function OrderDetailsModal({
                   {rowData && (
                     <div className="rounded-2xl border-2 border-purple-200 bg-purple-50 overflow-hidden">
                       <div className="px-4 py-3 bg-purple-100 border-b border-purple-200">
-                        <h3 className="font-bold text-purple-900">📱 Kiosk Input Data</h3>
+                        <h3 className="font-bold text-purple-900">Kiosk Input Data</h3>
                         <p className="text-xs text-purple-700 mt-0.5">Data from table/user input</p>
                       </div>
                       <div className="p-4 space-y-4">
@@ -275,7 +274,7 @@ export function OrderDetailsModal({
                   {/* Neto API Data */}
                   <div className="rounded-2xl border-2 border-green-200 bg-green-50 overflow-hidden">
                     <div className="px-4 py-3 bg-green-100 border-b border-green-200">
-                      <h3 className="font-bold text-green-900">🌐 Neto Source Data</h3>
+                      <h3 className="font-bold text-green-900">Neto Source Data</h3>
                       <p className="text-xs text-green-700 mt-0.5">Data from Neto API</p>
                     </div>
                     <div className="p-4 space-y-4">

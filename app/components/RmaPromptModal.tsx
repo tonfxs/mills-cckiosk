@@ -22,7 +22,7 @@ export default function RmaPromptModal({
 
     const redirectTimer = setTimeout(() => {
       router.push("/");
-    }, 5000);
+    }, 8000);
 
     return () => clearTimeout(redirectTimer);
   }, [view, router]);
@@ -34,8 +34,8 @@ export default function RmaPromptModal({
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-12 text-center animate-in fade-in zoom-in duration-200">
         {view === "question" && (
           <>
-            <h2 className="text-5xl font-extrabold text-gray-800 mb-12">
-              Do you have RMA paperwork?
+            <h2 className="text-4xl font-extrabold text-gray-800 mb-16">
+              Do you have a printed copy of your RMA paperwork?
             </h2>
 
             <div className="flex gap-10 justify-center">
