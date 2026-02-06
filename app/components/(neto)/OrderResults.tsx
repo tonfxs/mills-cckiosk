@@ -1,7 +1,10 @@
 "use client";
 
 import React from "react";
-import type { OrderResult } from "@/app/types/neto-lookup";
+// import type { OrderResult } from "@/app/types/neto-lookup";
+
+import type { OrderResult } from "../../types/neto-lookup";
+
 
 function matchBadgeClasses(match: OrderResult["match"]) {
   if (match.nameMatch && match.phoneMatch) return "bg-emerald-100 text-emerald-800";
