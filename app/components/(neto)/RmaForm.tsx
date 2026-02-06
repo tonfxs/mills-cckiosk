@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import type { RmaResult } from "@/app/types/neto-lookup";
+import type { RmaResult } from "../../types/neto-lookup";
 import { Section } from "./Section";
 import { Grid } from "./Grid";
 import { Field } from "./Field";

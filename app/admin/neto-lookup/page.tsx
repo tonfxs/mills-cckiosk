@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { LookupResponse } from "../../types/neto-lookup";
+import type { NetoOrderSummary } from "../../types/neto-lookup";
 
 export default function AdminLookupPage() {
   const [customerName, setCustomerName] = useState("");
