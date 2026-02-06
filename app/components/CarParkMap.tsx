@@ -58,7 +58,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     // =============== Reception Stairs (custom button) ===============
     const reception = {
       x: VB_W - 600,   // top-right-ish
-      y: 600,
+      y: 550,
       w: 300,
       h: 74,
       labelX: VB_W - 195,
@@ -69,13 +69,13 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
 
     // =============== You are here (custom button) ===============
     const here = {
-      x: VB_W - 600,   // top-right-ish
-      y: 700,
-      w: 300,
-      h: 74,
+      x: VB_W - 520,   // top-right-ish
+      y: 650,
+      w: 350,
+      h: 350,
       labelX: VB_W - 195,
       labelY: 70,
-      label: "You are here!",
+      label: "You are standing here!",
     };
 
 
@@ -301,7 +301,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
 
         </g>
 
-        <g pointerEvents="none">
+        {/* <g pointerEvents="none">
           <rect
             x={here.x}
             y={here.y}
@@ -318,13 +318,74 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize="26"
-            fontWeight="800"
+            fontWeight="900"
              fill="#92400e"
           >
-            You are here! 
+            YOU ARE HERE! 
           </text>
 
+        </g> */}
+
+        {/* You Are Here – Person + Speech Bubble */}
+        <g
+          transform={`translate(${here.x}, ${here.y})`}
+          pointerEvents="none"
+        >
+          {/* Speech bubble */}
+          <g transform="translate(60, -10)">
+            <rect
+              x="0"
+              y="0"
+              rx="12"
+              ry="12"
+              width="220"
+              height="70"
+              fill="#fef3c7"
+              stroke="#f59e0b"
+              strokeWidth="4"
+            />
+
+            {/* Bubble tail */}
+            <polygon
+              points="40,70 55,70 30,95"
+              fill="#fef3c7"
+              stroke="#f59e0b"
+              strokeWidth="4"
+            />
+
+            <text
+              x="110"
+              y="44"
+              textAnchor="middle"
+              fontSize="24"
+              fontWeight="900"
+              fill="#92400e"
+            >
+              YOU ARE HERE!
+            </text>
+          </g>
+
+          {/* Person icon */}
+          <g transform="translate(40, 80)">
+            {/* Head */}
+            <circle cx="0" cy="-22" r="16" fill="#2563eb" />
+
+            {/* Body */}
+            <rect
+              x="-14"
+              y="-4"
+              width="28"
+              height="40"
+              rx="12"
+              fill="#2563eb"
+            />
+
+            {/* Legs */}
+            <line x1="-8" y1="36" x2="-8" y2="56" stroke="#2563eb" strokeWidth="6" />
+            <line x1="8" y1="36" x2="8" y2="56" stroke="#2563eb" strokeWidth="6" />
+          </g>
         </g>
+
 
 
         {/* Opposite label */}

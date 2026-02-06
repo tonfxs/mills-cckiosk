@@ -241,10 +241,10 @@ export function OrderDetailsModal({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {/* Kiosk Input Data */}
                   {rowData && (
-                    <div className="rounded-2xl border-2 border-purple-200 bg-purple-50 overflow-hidden">
-                      <div className="px-4 py-3 bg-purple-100 border-b border-purple-200">
-                        <h3 className="font-bold text-purple-900">Kiosk Input Data</h3>
-                        <p className="text-xs text-purple-700 mt-0.5">Data from table/user input</p>
+                    <div className="rounded-2xl border-2 border-green-200 bg-green-50 overflow-hidden">
+                      <div className="px-4 py-3 bg-green-100 border-b border-green-200">
+                        <h3 className="font-bold text-green-900">Kiosk Input Data</h3>
+                        <p className="text-xs text-green-700 mt-0.5">Data from table/user input</p>
                       </div>
                       <div className="p-4 space-y-4">
                         {/* Order Info */}
