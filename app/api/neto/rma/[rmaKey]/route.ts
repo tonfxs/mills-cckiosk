@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { netoRequest } from "@/app/lib/neto-client";
 
-type GetRmaResponse = {
-  Ack: "Success" | "Error";
+type NetoGetRmaResponse = {
+  Ack?: string;
   Rma?: any;
 };
 
+// ✅ Based on Neto API documentation - only include supported fields
 const OUTPUT_SELECTOR = [
   "OrderID",
   "InvoiceNumber",
@@ -25,187 +26,180 @@ const OUTPUT_SELECTOR = [
   "DateIssued",
   "DateUpdated",
   "DateApproved",
-  "RmaLines.RmaLine",
-  "RmaLines.RmaLine.ItemNumber",
-  "RmaLines.RmaLine.ProductName",
-  "RmaLines.RmaLine.Quantity",
-  "RmaLines.RmaLine.ReturnReason",
-  "RmaLines.RmaLine.ItemStatus",
-  "RmaLines.RmaLine.RefundSubtotal",
-  "RmaLines.RmaLine.Tax",
-  "RmaLines.RmaLine.TaxCode",
-  "RmaLines.RmaLine.WarehouseID",
-  "RmaLines.RmaLine.WarehouseName",
-  "RmaLines.RmaLine.WarehouseReference",
-  "RmaLines.RmaLine.ResolutionOutcome",
-  "RmaLines.RmaLine.ItemStatusType",
-  "RmaLines.RmaLine.ResolutionStatus",
-  "RmaLines.RmaLine.ManufacturerClaims",
-  "RmaLines.RmaLine.IsRestockIssued",
-  "Refunds.Refund",
-  "Refunds.Refund.PaymentMethodID",
-  "Refunds.Refund.PaymentMethodName",
-  "Refunds.Refund.DateIssued",
-  "Refunds.Refund.DateRefunded",
-  "Refunds.Refund.RefundStatus",
+  
+  "RmaLine",
+  "RmaLine.ItemNumber",
+  "RmaLine.Extra",
+  "RmaLine.ExtraOptions",
+  "RmaLine.ItemNotes",
+  "RmaLine.ProductName",
+  "RmaLine.RefundSubtotal",
+  "RmaLine.Tax",
+  "RmaLine.TaxCode",
+  "RmaLine.WarehouseID",
+  "RmaLine.WarehouseName",
+  "RmaLine.WarehouseReference",
+  "RmaLine.ResolutionOutcome",
+  "RmaLine.ReturnReason",
+  "RmaLine.ItemStatusType",
+  "RmaLine.ItemStatus",
+  "RmaLine.ResolutionStatus",
+  "RmaLine.ManufacturerClaims",
+  "RmaLine.IsRestockIssued",
+  
+  "RefundedTotal",
+  "Refund",
+  "Refund.PaymentMethodID",
+  "Refund.PaymentMethodName",
+  "Refund.DateIssued",
+  "Refund.DateRefunded",
+  "Refund.RefundStatus",
 ] as const;
+
+// ---------- helpers ----------
+function cleanInternalNotes(notes: string | null | undefined): string {
+  if (!notes) return "";
+  
+  return notes
+    // Remove tabs, replace with nothing
+    .replace(/\t+/g, "")
+    // Remove special character patterns like ###, +++, $$$
+    .replace(/[#\$\+]{3,}/g, "")
+    // Remove quotes around standalone words
+    .replace(/["']/g, "")
+    // Normalize line breaks (convert \r\n to \n, remove extra blank lines)
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    // Clean up spacing around colons
+    .replace(/\s*:\s*/g, ": ")
+    // Remove leading/trailing whitespace from each line
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join("\n")
+    .trim();
+}
+
+function extractLines(rma: any): any[] {
+  if (!rma) return [];
+  
+  // Check for RmaLines.RmaLine (nested structure)
+  if (rma.RmaLines?.RmaLine) {
+    const lines = rma.RmaLines.RmaLine;
+    return Array.isArray(lines) ? lines : [lines];
+  }
+  
+  // Check for direct RmaLine
+  if (rma.RmaLine) {
+    return Array.isArray(rma.RmaLine) ? rma.RmaLine : [rma.RmaLine];
+  }
+
+  return [];
+}
+
+function extractRefunds(rma: any): any[] {
+  if (!rma) return [];
+  
+  // Check for Refunds.Refund (nested structure)
+  if (rma.Refunds?.Refund) {
+    const refunds = rma.Refunds.Refund;
+    return Array.isArray(refunds) ? refunds : [refunds];
+  }
+  
+  // Check for direct Refund
+  if (rma.Refund) {
+    return Array.isArray(rma.Refund) ? rma.Refund : [rma.Refund];
+  }
+
+  return [];
+}
+
+function normalizeRmaRef(raw: string) {
+  const ref = decodeURIComponent(raw || "").trim();
+  const digitsOnly = ref.replace(/\D/g, "");
+  return { ref, digitsOnly };
+}
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ rmaKey: string }> }
+  ctx: { params: Promise<{ rmaKey: string }> }
 ) {
+  const { rmaKey: raw } = await ctx.params;
+  const { ref, digitsOnly } = normalizeRmaRef(raw);
+
+  if (!digitsOnly) {
+    return NextResponse.json(
+      { success: false, error: "Invalid RMA reference" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const { rmaKey } = await params;
-    const rawKey = rmaKey?.trim();
-    if (!rawKey) return NextResponse.json({ success: false, error: "Missing RMA ID" }, { status: 400 });
+    // Same pattern as GetOrder - OutputSelector inside Filter
+    const payload = {
+      Filter: {
+        RmaID: digitsOnly,
+        OutputSelector: OUTPUT_SELECTOR,
+      },
+    };
 
-    // Only numeric RMA IDs
-    const numericRmaId = rawKey.replace(/\D+/g, "");
-    if (!numericRmaId) return NextResponse.json({ success: false, error: "Invalid RMA ID" }, { status: 400 });
+    console.log("[NETO GetRma REQUEST]", JSON.stringify(payload, null, 2));
 
-    console.log("[NETO GetRma] Searching numeric RMA:", numericRmaId);
-
-    const response = await netoRequest<GetRmaResponse>(
+    const data = await netoRequest<NetoGetRmaResponse>(
       "GetRma",
-      { Filter: { RmaID: numericRmaId }, OUTPUT_SELECTOR },
+      payload,
       { timeoutMs: 60_000 }
     );
 
-    console.log("[NETO GetRma RAW RESPONSE]", JSON.stringify(response, null, 2));
+    console.log("[NETO GetRma RAW RESPONSE]", JSON.stringify(data, null, 2));
 
-    const rma = response?.Rma;
-    if (!rma) return NextResponse.json({ success: false, error: `RMA not found for ID ${numericRmaId}` }, { status: 404 });
-
-    // Ensure RmaLine is always an array
-    let rmaLines: any[] = [];
-    if (rma.RmaLines?.RmaLine) {
-      rmaLines = Array.isArray(rma.RmaLines.RmaLine) ? rma.RmaLines.RmaLine : [rma.RmaLines.RmaLine];
+    if (data?.Ack !== "Success" || !data?.Rma) {
+      return NextResponse.json(
+        { success: false, error: `RMA not found for ref ${ref}` },
+        { status: 404 }
+      );
     }
 
-    // Ensure Refund is always an array
-    let refunds: any[] = [];
-    if (rma.Refunds?.Refund) {
-      refunds = Array.isArray(rma.Refunds.Refund) ? rma.Refunds.Refund : [rma.Refunds.Refund];
-    }
+    const rmaLines = extractLines(data.Rma);
+    const refunds = extractRefunds(data.Rma);
+
+    console.log("[NETO RESOLVED RMA]", JSON.stringify(data.Rma, null, 2));
+    console.log("[NETO RESOLVED RMA LINES]", JSON.stringify(rmaLines, null, 2));
+    console.log("[NETO RESOLVED REFUNDS]", JSON.stringify(refunds, null, 2));
 
     const rmaData = {
-      ...rma,
-      RmaNumber: numericRmaId,
-      OriginalOrderID: rma.OrderID,
-      OriginalOrderNumber: rma.PurchaseOrderNumber,
+      RmaID: data.Rma.RmaID || digitsOnly,
+      RmaNumber: data.Rma.RmaNumber || digitsOnly,
+      RmaStatus: data.Rma.RmaStatus,
+      DateIssued: data.Rma.DateIssued,
+      DateUpdated: data.Rma.DateUpdated,
+      DateApproved: data.Rma.DateApproved,
+      OriginalOrderID: data.Rma.OrderID,
+      OriginalOrderNumber: data.Rma.PurchaseOrderNumber,
+      CustomerEmail: data.Rma.CustomerUsername ?? null,
+      CustomerFirstName: data.Rma.CustomerFirstName,
+      CustomerLastName: data.Rma.CustomerLastName,
+      CustomerPhone: data.Rma.CustomerPhone,
+      RefundTotal: data.Rma.RefundTotal,
+      RefundSubtotal: data.Rma.RefundSubtotal,
+      RefundTaxTotal: data.Rma.RefundTaxTotal,
+      ReturnReason: data.Rma.ReturnReason,
+      InternalNotes: cleanInternalNotes(data.Rma.InternalNotes),
       RmaLine: rmaLines,
       Refund: refunds,
     };
 
-    return NextResponse.json({ success: true, data: rmaData });
-  } catch (err: any) {
-    console.error("[NETO RMA LOOKUP ERROR]", err);
-    return NextResponse.json({ success: false, error: err?.message ?? "Request Error" }, { status: 502 });
+    return NextResponse.json({
+      success: true,
+      data: rmaData,
+      itemsCount: rmaLines.length,
+      matchedQuery: "RmaID",
+    });
+  } catch (e: any) {
+    console.error("[NETO RMA LOOKUP ERROR]", e);
+    return NextResponse.json(
+      { success: false, error: e?.message ?? "Failed to fetch RMA from Neto" },
+      { status: 502 }
+    );
   }
 }
-
-
-// import { NextResponse } from "next/server";
-// import { netoRequest } from "@/app/lib/neto-client";
-
-// type NetoGetRmaResponse = {
-//   Ack?: string;
-//   Rma?: any;
-// };
-
-// const OUTPUT_SELECTOR = [
-//   "RmaID",
-//   "RmaStatus",
-//   "DateIssued",
-//   "OrderID",
-//   "PurchaseOrderNumber",
-//   "CustomerUsername",
-//   "CustomerFirstName",
-//   "CustomerLastName",
-//   "CustomerPhone",
-//   "RmaLine",
-//   "RmaLine.ItemNumber",
-//   "RmaLine.ProductName",
-//   "RmaLine.Quantity",
-//   "RmaLine.ReturnReason",
-//   "RmaLine.ItemStatus",
-//   "RmaLine.RefundSubtotal",
-// ] as const;
-
-// // ---------- helpers ----------
-// function extractLines(rma: any): any[] {
-//   if (!rma) return [];
-//   if (Array.isArray(rma.RmaLine)) return rma.RmaLine;
-
-//   const rl = rma.RmaLine;
-//   if (rl && Array.isArray(rl.RmaLine)) return rl.RmaLine;
-//   if (rl && typeof rl === "object") return [rl];
-
-//   return [];
-// }
-
-// function normalizeRmaRef(raw: string) {
-//   const ref = decodeURIComponent(raw || "").trim();
-//   const digitsOnly = ref.replace(/\D/g, "");
-//   return { ref, digitsOnly };
-// }
-
-// export async function GET(
-//   _req: Request,
-//   ctx: { params: Promise<{ rmaKey: string }> }
-// ) {
-//   const { rmaKey: raw } = await ctx.params;
-//   const { ref, digitsOnly } = normalizeRmaRef(raw);
-
-//   if (!digitsOnly) {
-//     return NextResponse.json(
-//       { ok: false, error: "Invalid RMA reference" },
-//       { status: 400 }
-//     );
-//   }
-
-//   try {
-//     const payload = {
-//       Filter: {
-//         RmaID: digitsOnly,
-//         OutputSelector: OUTPUT_SELECTOR,
-//       },
-//     };
-
-//     const data = await netoRequest<NetoGetRmaResponse>(
-//       "GetRma",
-//       payload,
-//       { timeoutMs: 25_000 }
-//     );
-
-//     if (data?.Ack !== "Success" || !data?.Rma) {
-//       return NextResponse.json(
-//         { ok: false, error: `RMA not found for ref ${ref}` },
-//         { status: 404 }
-//       );
-//     }
-
-//     const rma = {
-//       ...data.Rma,
-//       RmaNumber: digitsOnly,
-//       OriginalOrderID: data.Rma.OrderID,
-//       OriginalOrderNumber: data.Rma.PurchaseOrderNumber,
-//       CustomerEmail: data.Rma.CustomerUsername ?? null,
-//     };
-
-//     const items = extractLines(data.Rma);
-
-//     return NextResponse.json({
-//       ok: true,
-//       rma,
-//       items,
-//       itemsCount: items.length,
-//       matchedQuery: "RmaID",
-//     });
-//   } catch (e: any) {
-//     return NextResponse.json(
-//       { ok: false, error: e?.message ?? "Failed to fetch RMA from Neto" },
-//       { status: 502 }
-//     );
-//   }
-// }

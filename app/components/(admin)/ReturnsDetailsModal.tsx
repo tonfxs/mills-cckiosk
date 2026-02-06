@@ -56,10 +56,6 @@ type NetoRma = {
   }>;
 };
 
-type ApiResponse =
-  | { ok: true; rma: NetoRma; items: any[] }
-  | { ok: false; error: string };
-
 /* ================================
    Helpers
 ================================ */
@@ -125,32 +121,47 @@ export function RmaDetailsModal({
         }
 
         const json = await res.json();
+        console.log("API Response:", json);
 
         if (!json?.success || !json?.data) {
-          throw new Error("RMA not found");
+          throw new Error(json?.error || "RMA not found");
         }
 
         const rmaData = json.data;
+        console.log("RMA Data received:", rmaData);
+        console.log("RmaLine array:", rmaData.RmaLine);
 
         setRma(rmaData);
 
         // Map RmaLine to items for display
-        setItems(
-          Array.isArray(rmaData.RmaLine)
-            ? rmaData.RmaLine.map((line: any) => ({
-                SKU: line.ItemNumber,
-                ProductName: line.ProductName,
-                ReturnQty: line.Quantity ?? line.ReturnQty,
-                Reason: line.ReturnReason,
-                Condition: line.ItemStatus,
-                RefundAmount: line.RefundSubtotal,
-              }))
-            : []
-        );
+        const rmaLines = rmaData.RmaLine || [];
+        console.log("Processing RmaLines, count:", rmaLines.length);
+
+        if (Array.isArray(rmaLines)) {
+          const mappedItems = rmaLines.map((line: any, idx: number) => {
+            console.log(`Line ${idx}:`, line);
+            return {
+              SKU: line.SKU || line.ItemNumber || "—",
+              ProductName: line.ProductName || "—",
+              ReturnQty: line.Quantity || "—", // Neto returns Quantity field in the actual data
+              Reason: line.ReturnReason || "—",
+              Condition: line.ItemStatus || "—",
+              RefundAmount: line.RefundSubtotal ?? 0,
+            };
+          });
+          console.log("Mapped items:", mappedItems);
+          setItems(mappedItems);
+        } else {
+          console.warn("RmaLine is not an array:", rmaLines);
+          setItems([]);
+        }
       } catch (err: any) {
+        console.error("Error loading RMA:", err);
         setError(err?.message ?? "Failed to load RMA");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
@@ -212,7 +223,7 @@ export function RmaDetailsModal({
               <RmaStatusDropdown
                 rmaNumber={rma?.RmaNumber}
                 currentStatus={rma?.RmaStatus ?? "—"}
-                onUpdate={onRefresh ?? (() => {})}
+                onUpdate={onRefresh ?? (() => { })}
               />
 
               <button
@@ -270,14 +281,14 @@ export function RmaDetailsModal({
                 {/* Notes */}
                 <Section title="Notes">
                   <Row label="Reason" value={rma.ReturnReason} />
-                  <Row label="Internal" value={rma.InternalNotes} />
+                  <Row label="Internal" value={rma.InternalNotes} multiline />
                 </Section>
 
                 {/* Returned Items */}
                 <div className="rounded-2xl border overflow-hidden">
                   <div className="px-4 py-3 bg-slate-200 border-b border-slate-200 ">
                     <h3 className="font-semibold text-slate-700">
-                      Returned Items
+                      Returned Items ({items.length})
                     </h3>
                   </div>
 
@@ -352,21 +363,35 @@ function Section({
 function Row({
   label,
   value,
-  highlight
+  highlight,
+  multiline
 }: {
   label: string;
   value: any;
   highlight?: boolean;
+  multiline?: boolean;
 }) {
+  const displayValue = value ?? "—";
+
+  if (multiline && displayValue !== "—") {
+    return (
+      <div className="text-sm">
+        <span className="text-slate-600 block mb-1">{label}</span>
+        <div className="font-semibold text-slate-800 whitespace-pre-line bg-slate-50 rounded-lg p-3 text-xs leading-relaxed">
+          {displayValue}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-between text-sm gap-4">
       <span className="text-slate-600">{label}</span>
       <span
-        className={`font-semibold ${
-          highlight ? "text-emerald-700" : "text-slate-800"
-        }`}
+        className={`font-semibold ${highlight ? "text-emerald-700" : "text-slate-800"
+          }`}
       >
-        {value ?? "—"}
+        {displayValue}
       </span>
     </div>
   );
@@ -430,9 +455,8 @@ function RmaStatusDropdown({
             <button
               key={s}
               onClick={() => update(s)}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 text-slate-600 ${
-                s === status ? "font-semibold bg-slate-50" : ""
-              }`}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 text-slate-600 ${s === status ? "font-semibold bg-slate-50" : ""
+                }`}
             >
               {s}
             </button>
@@ -442,8 +466,6 @@ function RmaStatusDropdown({
     </div>
   );
 }
-
-
 // "use client";
 
 // import { useEffect, useMemo, useState } from "react";
