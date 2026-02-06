@@ -26,7 +26,8 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     sideBays,
     wall,
     fence,
-    reception, // ✅ add
+    reception, //add
+    here, // add
     oppLabelX,
     oppLabelY,
     sideLabelY,
@@ -66,6 +67,17 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
       label: "Reception Stairs",
     };
 
+    // =============== You are here (custom button) ===============
+    const here = {
+      x: VB_W - 600,   // top-right-ish
+      y: 700,
+      w: 300,
+      h: 74,
+      labelX: VB_W - 195,
+      labelY: 70,
+      label: "You are here!",
+    };
+
 
     // Opposite Bays: 7–17 (display 17..7)
     const oppositeNums = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8] as const;
@@ -93,7 +105,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     const sideBlockW = 3 * sideW + 2 * sideGap;
     const sideBaseW = Math.max(360, sideBlockW + 80);
 
-    const sideBays: BaySpec[] = [1, 2, 3].map((n, i) => ({
+    const sideBays: BaySpec[] = [26, 25, 24].map((n, i) => ({
       label: String(n),
       value: `Side-${n}`,
       x: sideBaseX + 40 + i * (sideW + sideGap),
@@ -184,6 +196,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
       wall,
       fence,
       reception, // ✅ add
+      here, //add
       oppLabelX: oppCenterX,
       oppLabelY,
       sideLabelY,
@@ -284,6 +297,31 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
             fill={isSelected(reception.value) ? "#ffffff" : "#6b7280"}
           >
             Reception Stairs
+          </text>
+
+        </g>
+
+        <g pointerEvents="none">
+          <rect
+            x={here.x}
+            y={here.y}
+            width={here.w}
+            height={here.h}
+            rx="10"
+            fill="#fef3c7"        // amber background
+            stroke="#f59e0b"
+            strokeWidth="4"
+          />
+          <text
+            x={here.x + here.w / 2}
+            y={here.y + here.h / 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="26"
+            fontWeight="800"
+             fill="#92400e"
+          >
+            You are here! 
           </text>
 
         </g>

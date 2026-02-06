@@ -603,6 +603,7 @@ function AssignAgentDropdown({
   const agents = [
     "JB",
     "CC",
+    "KB",
   ];
 
   const handleAssignAgent = async (newAgent: string) => {

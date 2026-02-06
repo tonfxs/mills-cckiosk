@@ -23,6 +23,18 @@ interface Errors {
   [key: string]: string;
 }
 
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
+}
+
+function isValidAuMobile(phone: string) {
+  const digits = normalizePhone(phone);
+  return /^04\d{8}$/.test(digits); // starts with 04 + 8 digits = 10 total
+}
+
+
+
+
 /**
  * ✅ RULE:
  * - If there is NO comma, treat input as ONE order only
@@ -76,9 +88,6 @@ function parseOrderNumbers(raw: string) {
 
   return { list, error: null };
 }
-
-
-
 
 // NumberPad Component
 const NumberPad = ({
@@ -226,8 +235,8 @@ export default function PickupKiosk() {
 
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
-        } else if (formData.phone.replace(/\s/g, "").length < 9) {
-          stepErrors.push("Phone number must be at least 10 digits");
+        }  else if (!isValidAuMobile(formData.phone)) {
+          stepErrors.push("Phone number must be a valid Australian mobile (10 digits starting with 04)");
         }
         break;
 
@@ -245,7 +254,12 @@ export default function PickupKiosk() {
     return stepErrors;
   };
 
-  const canProceed = () => validateStep(step).length === 0;
+  // const canProceed = () => validateStep(step).length === 0;
+  const canProceed = () => {
+  const errors = validateStep(step);
+  if (step === 2 && !isValidAuMobile(formData.phone)) return false;
+  return errors.length === 0;
+};
 
   const handleContinue = () => {
     const stepErrors = validateStep(step);
@@ -277,8 +291,8 @@ export default function PickupKiosk() {
 
     if (!formData.phone.trim()) {
       allErrors.push("Phone number is required");
-    } else if (formData.phone.replace(/\s/g, "").length < 10) {
-      allErrors.push("Phone number must be at least 10 digits");
+    } else if (!isValidAuMobile(formData.phone)) {
+      allErrors.push("Phone number must be a valid Australian mobile (10 digits starting with 04)");
     }
 
     // ✅ Use the SAME parser rule on submit too
@@ -464,7 +478,7 @@ export default function PickupKiosk() {
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
                       Payment Method
-                      <p className="text-red-600 text-3xl my-4">(Note: Only select the payment method used during purchase.)</p>
+                      <p className="text-red-600 text-3xl my-4">(Note: Only select the payment method used during purchase. This is for verification purposes only.)</p>
                     </label>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -664,7 +678,7 @@ export default function PickupKiosk() {
                 <div>
                   <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                   <div className="flex gap-4">
-                    <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
+                    <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">+61</div>
                     <input
                       type="text"
                       name="phone"
