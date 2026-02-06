@@ -26,7 +26,8 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     sideBays,
     wall,
     fence,
-    reception, // ✅ add
+    reception, //add
+    here, // add
     oppLabelX,
     oppLabelY,
     sideLabelY,
@@ -57,13 +58,24 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     // =============== Reception Stairs (custom button) ===============
     const reception = {
       x: VB_W - 600,   // top-right-ish
-      y: 600,
+      y: 550,
       w: 300,
       h: 74,
       labelX: VB_W - 195,
       labelY: 70,
       value: "Reception-Stairs",
       label: "Reception Stairs",
+    };
+
+    // =============== You are here (custom button) ===============
+    const here = {
+      x: VB_W - 520,   // top-right-ish
+      y: 650,
+      w: 350,
+      h: 350,
+      labelX: VB_W - 195,
+      labelY: 70,
+      label: "You are standing here!",
     };
 
 
@@ -93,7 +105,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
     const sideBlockW = 3 * sideW + 2 * sideGap;
     const sideBaseW = Math.max(360, sideBlockW + 80);
 
-    const sideBays: BaySpec[] = [1, 2, 3].map((n, i) => ({
+    const sideBays: BaySpec[] = [26, 25, 24].map((n, i) => ({
       label: String(n),
       value: `Side-${n}`,
       x: sideBaseX + 40 + i * (sideW + sideGap),
@@ -184,6 +196,7 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
       wall,
       fence,
       reception, // ✅ add
+      here, //add
       oppLabelX: oppCenterX,
       oppLabelY,
       sideLabelY,
@@ -287,6 +300,92 @@ export default function CarParkMap({ value, onChange }: CarParkMapProps): JSX.El
           </text>
 
         </g>
+
+        {/* <g pointerEvents="none">
+          <rect
+            x={here.x}
+            y={here.y}
+            width={here.w}
+            height={here.h}
+            rx="10"
+            fill="#fef3c7"        // amber background
+            stroke="#f59e0b"
+            strokeWidth="4"
+          />
+          <text
+            x={here.x + here.w / 2}
+            y={here.y + here.h / 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="26"
+            fontWeight="900"
+             fill="#92400e"
+          >
+            YOU ARE HERE! 
+          </text>
+
+        </g> */}
+
+        {/* You Are Here – Person + Speech Bubble */}
+        <g
+          transform={`translate(${here.x}, ${here.y})`}
+          pointerEvents="none"
+        >
+          {/* Speech bubble */}
+          <g transform="translate(60, -10)">
+            <rect
+              x="0"
+              y="0"
+              rx="12"
+              ry="12"
+              width="220"
+              height="70"
+              fill="#fef3c7"
+              stroke="#f59e0b"
+              strokeWidth="4"
+            />
+
+            {/* Bubble tail */}
+            <polygon
+              points="40,70 55,70 30,95"
+              fill="#fef3c7"
+              stroke="#f59e0b"
+              strokeWidth="4"
+            />
+
+            <text
+              x="110"
+              y="44"
+              textAnchor="middle"
+              fontSize="24"
+              fontWeight="900"
+              fill="#92400e"
+            >
+              YOU ARE HERE!
+            </text>
+          </g>
+
+          {/* Person icon */}
+          <g transform="translate(40, 80)">
+            {/* Head */}
+            <circle cx="0" cy="-22" r="16" fill="#2563eb" />
+
+            {/* Body */}
+            <rect
+              x="-14"
+              y="-4"
+              width="28"
+              height="40"
+              rx="12"
+              fill="#2563eb"
+            />
+
+            {/* Legs */}
+            <line x1="-8" y1="36" x2="-8" y2="56" stroke="#2563eb" strokeWidth="6" />
+            <line x1="8" y1="36" x2="8" y2="56" stroke="#2563eb" strokeWidth="6" />
+          </g>
+        </g>
+
 
 
         {/* Opposite label */}
