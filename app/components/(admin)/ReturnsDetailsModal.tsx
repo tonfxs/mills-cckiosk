@@ -143,6 +143,11 @@ export function RmaDetailsModal({
               Reason: line.ReturnReason || "—",
               Condition: line.ItemStatus || "—",
               RefundAmount: line.RefundSubtotal ?? 0,
+
+              ResolutionOutcome: line.ResolutionOutcome || "—",
+              ItemStatusType: line.ItemStatusType || "—",
+              ResolutionStatus: line.ResolutionStatus || "—",
+              ManufacturerClaims: line.ManufacturerClaims || "—",
             };
           });
           console.log("Mapped items:", mappedItems);
@@ -275,10 +280,9 @@ export function RmaDetailsModal({
                 </Section>
 
                 {/* Notes */}
-                <Section title="Notes">
-                  <Row label="Reason" value={rma.ReturnReason} />
-                  <Row label="Internal" value={rma.InternalNotes} multiline />
-                </Section>
+                {/* <Section title="Notes">
+                  <Row label="Internal Notes" value={rma.InternalNotes} multiline />
+                </Section> */}
 
                 {/* Returned Items */}
                 <div className="rounded-2xl border overflow-hidden">
@@ -294,8 +298,12 @@ export function RmaDetailsModal({
                         <th className="px-4 py-3 text-left">SKU</th>
                         <th className="px-4 py-3 text-left">Product</th>
                         <th className="px-4 py-3 text-right">Qty</th>
-                        <th className="px-4 py-3 text-left">Reason</th>
+                        <th className="px-4 py-3 text-left">Return Reason</th>
                         <th className="px-4 py-3 text-left">Condition</th>
+                        <th className="px-4 py-3 text-left">Status Type</th>
+                        <th className="px-4 py-3 text-left">Resolution</th>
+                        <th className="px-4 py-3 text-left">Res. Status</th>
+                        <th className="px-4 py-3 text-left">Mfg Claims</th>
                         <th className="px-4 py-3 text-right">Refund</th>
                       </tr>
                     </thead>
@@ -307,6 +315,10 @@ export function RmaDetailsModal({
                           <td className="px-4 py-3 text-right text-slate-500">{i.ReturnQty}</td>
                           <td className="px-4 py-3 text-slate-500">{i.Reason}</td>
                           <td className="px-4 py-3 text-slate-500">{i.Condition}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ItemStatusType}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ResolutionOutcome}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ResolutionStatus}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ManufacturerClaims}</td>
                           <td className="px-4 py-3 text-right font-semibold text-slate-500">
                             {money(i.RefundAmount)}
                           </td>
