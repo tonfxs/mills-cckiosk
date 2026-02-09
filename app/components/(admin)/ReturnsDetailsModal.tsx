@@ -6,6 +6,8 @@ type NetoRma = {
   RmaID?: string;
   RmaNumber?: string;
   RmaStatus?: string;
+  K1Status?: string;  // ✅ Add this
+  Agent?: string;     // ✅ Add this
   DateIssued?: string;
   DateUpdated?: string;
   DateApproved?: string;
@@ -78,11 +80,15 @@ function money(v: any): string {
 export function RmaDetailsModal({
   open,
   rmaKey,
+  initialK1Status,
+  initialAgent,
   onClose,
   onRefresh
 }: {
   open: boolean;
   rmaKey: string | null;
+  initialK1Status?: string;
+  initialAgent?: string;
   onClose: () => void;
   onRefresh?: () => void;
 }) {
@@ -107,6 +113,7 @@ export function RmaDetailsModal({
       setItems([]);
 
       try {
+        // ✅ Fetch RMA from Neto
         const res = await fetch(`/api/neto/rma/${encodeURIComponent(rmaKey?.trim() ?? "")}`, {
           cache: "no-store",
         });
@@ -127,6 +134,35 @@ export function RmaDetailsModal({
         console.log("RMA Data received:", rmaData);
         console.log("RmaLine array:", rmaData.RmaLine);
 
+        // ✅ Fetch K1 Status and Agent from returns-datatable
+        try {
+          const sheetRes = await fetch(
+            `/api/admin/returns-datatable?q=${encodeURIComponent(rmaKey?.trim() ?? "")}`,
+            { cache: "no-store" }
+          );
+
+          if (sheetRes.ok) {
+            const sheetJson = await sheetRes.json();
+            console.log("Returns datatable response:", sheetJson);
+
+            if (sheetJson.success && sheetJson.data?.items?.length > 0) {
+              // Find exact match
+              const match = sheetJson.data.items.find(
+                (item: any) => item.rmaID === rmaKey?.trim()
+              );
+
+              if (match) {
+                rmaData.K1Status = match.status;
+                rmaData.Agent = match.agent;
+                console.log("Found K1 Status:", match.status, "Agent:", match.agent);
+              }
+            }
+          }
+        } catch (sheetErr) {
+          console.warn("Failed to fetch Google Sheet data:", sheetErr);
+          // Continue without sheet data
+        }
+
         setRma(rmaData);
 
         // Map RmaLine to items for display
@@ -139,7 +175,7 @@ export function RmaDetailsModal({
             return {
               SKU: line.SKU || line.ItemNumber || "—",
               ProductName: line.ProductName || "—",
-              ReturnQty: line.Quantity || "—", // Neto returns Quantity field in the actual data
+              ReturnQty: line.Quantity || "—",
               Reason: line.ReturnReason || "—",
               Condition: line.ItemStatus || "—",
               RefundAmount: line.RefundSubtotal ?? 0,
@@ -221,9 +257,17 @@ export function RmaDetailsModal({
             </div>
 
             <div className="flex gap-3">
-              <RmaStatusDropdown
+              {/* ✅ K1 Status Dropdown */}
+              <K1StatusDropdown
                 rmaNumber={rma?.RmaNumber}
-                currentStatus={rma?.RmaStatus ?? "—"}
+                currentStatus={rma?.K1Status ?? "—"}
+                onUpdate={onRefresh ?? (() => { })}
+              />
+
+              {/* ✅ Agent Dropdown */}
+              <AgentDropdown
+                rmaNumber={rma?.RmaNumber}
+                currentAgent={rma?.Agent ?? "—"}
                 onUpdate={onRefresh ?? (() => { })}
               />
 
@@ -279,14 +323,9 @@ export function RmaDetailsModal({
                   />
                 </Section>
 
-                {/* Notes */}
-                {/* <Section title="Notes">
-                  <Row label="Internal Notes" value={rma.InternalNotes} multiline />
-                </Section> */}
-
-                {/* Returned Items */}
+                {/* Returned Items - Main Info */}
                 <div className="rounded-2xl border overflow-hidden">
-                  <div className="px-4 py-3 bg-slate-200 border-b border-slate-200 ">
+                  <div className="px-4 py-3 bg-slate-200 border-b border-slate-200">
                     <h3 className="font-semibold text-slate-700">
                       Returned Items ({items.length})
                     </h3>
@@ -298,12 +337,6 @@ export function RmaDetailsModal({
                         <th className="px-4 py-3 text-left">SKU</th>
                         <th className="px-4 py-3 text-left">Product</th>
                         <th className="px-4 py-3 text-right">Qty</th>
-                        <th className="px-4 py-3 text-left">Return Reason</th>
-                        <th className="px-4 py-3 text-left">Condition</th>
-                        <th className="px-4 py-3 text-left">Status Type</th>
-                        <th className="px-4 py-3 text-left">Resolution</th>
-                        <th className="px-4 py-3 text-left">Res. Status</th>
-                        <th className="px-4 py-3 text-left">Mfg Claims</th>
                         <th className="px-4 py-3 text-right">Refund</th>
                       </tr>
                     </thead>
@@ -313,12 +346,6 @@ export function RmaDetailsModal({
                           <td className="px-4 py-3 font-mono text-slate-500">{i.SKU}</td>
                           <td className="px-4 py-3 text-slate-500">{i.ProductName}</td>
                           <td className="px-4 py-3 text-right text-slate-500">{i.ReturnQty}</td>
-                          <td className="px-4 py-3 text-slate-500">{i.Reason}</td>
-                          <td className="px-4 py-3 text-slate-500">{i.Condition}</td>
-                          <td className="px-4 py-3 text-slate-500">{i.ItemStatusType}</td>
-                          <td className="px-4 py-3 text-slate-500">{i.ResolutionOutcome}</td>
-                          <td className="px-4 py-3 text-slate-500">{i.ResolutionStatus}</td>
-                          <td className="px-4 py-3 text-slate-500">{i.ManufacturerClaims}</td>
                           <td className="px-4 py-3 text-right font-semibold text-slate-500">
                             {money(i.RefundAmount)}
                           </td>
@@ -328,7 +355,54 @@ export function RmaDetailsModal({
                       {items.length === 0 && (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={4}
+                            className="px-4 py-6 text-center text-slate-500"
+                          >
+                            No returned items
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Returned Items - Details */}
+                <div className="rounded-2xl border overflow-hidden">
+                  <div className="px-4 py-3 bg-slate-100 border-b border-slate-200">
+                    <h3 className="font-semibold text-slate-700">
+                      Item Details
+                    </h3>
+                  </div>
+
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-600 border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left">SKU</th>
+                        <th className="px-4 py-3 text-left">Reason</th>
+                        <th className="px-4 py-3 text-left">Returned Item Status</th>
+                        <th className="px-4 py-3 text-left">Item Status Type</th>
+                        <th className="px-4 py-3 text-left">Outcome</th>
+                        <th className="px-4 py-3 text-left">RMA Status</th>
+                        <th className="px-4 py-3 text-left">Manufacturing Claims</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((i, idx) => (
+                        <tr key={idx} className="border-t">
+                          <td className="px-4 py-3 font-mono text-slate-500">{i.SKU}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.Reason}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.Condition}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ItemStatusType}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ResolutionOutcome}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ResolutionStatus}</td>
+                          <td className="px-4 py-3 text-slate-500">{i.ManufacturerClaims}</td>
+                        </tr>
+                      ))}
+
+                      {items.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={7}
                             className="px-4 py-6 text-center text-slate-500"
                           >
                             No returned items
@@ -406,10 +480,10 @@ function Row({
 }
 
 /* ================================
-   RMA Status Dropdown
+   K1 Status Dropdown
 ================================ */
 
-function RmaStatusDropdown({
+function K1StatusDropdown({
   rmaNumber,
   currentStatus,
   onUpdate
@@ -420,56 +494,179 @@ function RmaStatusDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState(currentStatus);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     setStatus(currentStatus);
   }, [currentStatus]);
 
   const statuses = [
-    "Pending Verification",
-    "Pending Pickup",
+    "Item Recieved",
     "Proceed to Window",
     "Endorsed to WH",
-    "Order Collected",
-    "Item Received"
+    "Pending Verification",
   ];
 
   async function update(newStatus: string) {
-    if (!rmaNumber || newStatus === status) return;
+    if (!rmaNumber || newStatus === status || updating) return;
+
+    setUpdating(true);
     setStatus(newStatus);
     setOpen(false);
 
-    await fetch("/api/admin/update-rma-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rmaNumber, status: newStatus })
-    });
+    try {
+      const res = await fetch("/api/admin/update-rma-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rmaNumber,
+          status: newStatus
+        })
+      });
 
-    onUpdate();
+      if (!res.ok) {
+        throw new Error("Failed to update K1 status");
+      }
+
+      onUpdate();
+    } catch (err) {
+      console.error("Error updating K1 status:", err);
+      setStatus(currentStatus);
+      alert("Failed to update K1 status");
+    } finally {
+      setUpdating(false);
+    }
   }
 
   return (
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="rounded-xl border px-4 py-2 text-sm font-semibold bg-slate-50 text-slate-700 border-slate-400 hover:bg-slate-100"
+        disabled={updating}
+        className="rounded-xl border px-4 py-2 text-sm font-semibold bg-blue-50 text-blue-700 border-blue-400 hover:bg-blue-100 disabled:opacity-50"
       >
-        Status: {status}
+        K1: {status}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-56 rounded-xl border bg-white shadow-lg z-50">
-          {statuses.map(s => (
-            <button
-              key={s}
-              onClick={() => update(s)}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 text-slate-600 ${s === status ? "font-semibold bg-slate-50" : ""
-                }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        <>
+          <button
+            className="fixed inset-0 z-40"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute right-0 mt-2 w-48 rounded-xl border bg-white shadow-lg z-50">
+            {statuses.map(s => (
+              <button
+                key={s}
+                onClick={() => update(s)}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 text-slate-600 ${s === status ? "font-semibold bg-slate-50" : ""
+                  }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ================================
+   Agent Dropdown
+================================ */
+
+function AgentDropdown({
+  rmaNumber,
+  currentAgent,
+  onUpdate
+}: {
+  rmaNumber?: string;
+  currentAgent: string;
+  onUpdate: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [agent, setAgent] = useState(currentAgent);
+  const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    setAgent(currentAgent);
+  }, [currentAgent]);
+
+  const agents = [
+    "JB",
+    "KB",
+    "CC",
+  ];
+
+  async function update(newAgent: string) {
+    if (!rmaNumber || newAgent === agent || updating) return;
+
+    setUpdating(true);
+    setAgent(newAgent);
+    setOpen(false);
+
+    try {
+      console.log("[AGENT UPDATE] Sending request:", { orderNumber: rmaNumber, agent: newAgent });
+
+      const res = await fetch("/api/admin/assign-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber: rmaNumber,
+          agent: newAgent
+        })
+      });
+
+      console.log("[AGENT UPDATE] Response status:", res.status);
+
+      const responseData = await res.json();
+      console.log("[AGENT UPDATE] Response data:", responseData);
+
+      if (!res.ok) {
+        throw new Error(responseData.error || "Failed to update agent");
+      }
+
+      console.log("[AGENT UPDATE] Success!");
+      onUpdate();
+    } catch (err) {
+      console.error("[AGENT UPDATE] Error:", err);
+      setAgent(currentAgent);
+      alert("Failed to update agent: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={updating}
+        className="rounded-xl border px-4 py-2 text-sm font-semibold bg-green-50 text-green-700 border-green-400 hover:bg-green-100 disabled:opacity-50"
+      >
+        Agent: {agent}
+      </button>
+
+      {open && (
+        <>
+          <button
+            className="fixed inset-0 z-40"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute right-0 mt-2 w-48 rounded-xl border bg-white shadow-lg z-50">
+            {agents.map(a => (
+              <button
+                key={a}
+                onClick={() => update(a)}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 text-slate-600 ${a === agent ? "font-semibold bg-slate-50" : ""
+                  }`}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
