@@ -17,12 +17,12 @@ function getGoogleSheets() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { rmaNumber, status } = body;
+    const { orderNumber, status } = body;
 
     // Validate input
-    if (!rmaNumber || !status) {
+    if (!orderNumber || !status) {
       return NextResponse.json(
-        { success: false, error: "Missing rmaNumber or status" },
+        { success: false, error: "Missing orderNumber or status" },
         { status: 400 }
       );
     }
@@ -38,10 +38,10 @@ export async function POST(request: NextRequest) {
 
     const sheets = getGoogleSheets();
 
-    // Read the entire sheet to find the RMA
+    // Read the entire sheet to find the order
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "MASTER LIST!A:L", // A to L covers all columns shown
+      range: "MASTER LIST!A:M",
     });
 
     const rows = response.data.values || [];
@@ -52,31 +52,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Column positions (0-indexed) based on your screenshot:
+    // Column positions (0-indexed):
     // A=0: Timestamp
-    // B=1: FullName
-    // C=2: # (number)
-    // D=3: Phone
-    // E=4: #Order
-    // F=5: Credit Card (Last 4)
-    // G=6: Valid ID Type
-    // H=7: Payment Method
-    // I=8: Car Park Bay
-    // J=9: K1 Status
-    // K=10: Agent
-    // L=11: Transaction Type
-    // M=12: Notes
+    // B=1: Full Name
+    // C=2: Phone
+    // D=3: Order Number
+    // E=4: Credit Card
+    // F=5: Valid ID
+    // G=6: Payment Method
+    // H=7: Car Park Bay
+    // I=8: Status
+    // J=9: Agent
+    // K=10: Type
+    // L=11: Notes
+    const orderNumberColIndex = 3; // Column D
+    const statusColIndex = 8;      // Column I
 
-    const orderColIndex = 4;   // Column E (#Order)
-    const k1StatusColIndex = 9; // Column J (K1 Status)
-
-    // Find the row with matching order/RMA number (start from row 1 to skip header)
+    // Find the row with matching order number (start from row 1, assuming row 0 might be headers or first data row)
     let rowIndex = -1;
-    for (let i = 1; i < rows.length; i++) {
-      const cellValue = rows[i][orderColIndex]?.toString().trim();
-      // Match both order number format (M2272350) and RMA format (Rma319178)
-      if (cellValue === rmaNumber.trim() ||
-        cellValue?.toLowerCase().replace(/[^a-z0-9]/g, '') === rmaNumber.toLowerCase().replace(/[^a-z0-9]/g, '')) {
+    for (let i = 0; i < rows.length; i++) {
+      const cellValue = rows[i][orderNumberColIndex]?.toString().trim();
+      if (cellValue === orderNumber.trim()) {
         rowIndex = i;
         break;
       }
@@ -84,13 +80,13 @@ export async function POST(request: NextRequest) {
 
     if (rowIndex === -1) {
       return NextResponse.json(
-        { success: false, error: `Order/RMA ${rmaNumber} not found in sheet` },
+        { success: false, error: `Order ${orderNumber} not found in sheet` },
         { status: 404 }
       );
     }
 
-    // Update K1 Status column (Column J)
-    const statusColLetter = "J";
+    // Column I = 8, so I in A1 notation
+    const statusColLetter = "I";
     const updateRange = `MASTER LIST!${statusColLetter}${rowIndex + 1}`;
 
     // Update the status cell
@@ -105,20 +101,20 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `K1 Status updated to "${status}" for ${rmaNumber}`,
+      message: `Status updated to "${status}" for order ${orderNumber}`,
       data: {
-        rmaNumber,
+        orderNumber,
         status,
         rowIndex: rowIndex + 1,
         column: statusColLetter,
       },
     });
   } catch (error: any) {
-    console.error("Error updating RMA status:", error);
+    console.error("Error updating status:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to update RMA status",
+      { 
+        success: false, 
+        error: error.message || "Failed to update status",
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
       { status: 500 }

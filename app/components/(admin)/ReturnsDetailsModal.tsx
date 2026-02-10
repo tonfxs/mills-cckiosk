@@ -6,8 +6,8 @@ type NetoRma = {
   RmaID?: string;
   RmaNumber?: string;
   RmaStatus?: string;
-  K1Status?: string;  // ✅ Add this
-  Agent?: string;     // ✅ Add this
+  K1Status?: string;
+  Agent?: string;
   DateIssued?: string;
   DateUpdated?: string;
   DateApproved?: string;
@@ -80,6 +80,7 @@ function money(v: any): string {
 export function RmaDetailsModal({
   open,
   rmaKey,
+  orderNumber,  // ✅ Add this
   initialK1Status,
   initialAgent,
   onClose,
@@ -87,6 +88,7 @@ export function RmaDetailsModal({
 }: {
   open: boolean;
   rmaKey: string | null;
+  orderNumber?: string;  // ✅ Add this
   initialK1Status?: string;
   initialAgent?: string;
   onClose: () => void;
@@ -113,7 +115,7 @@ export function RmaDetailsModal({
       setItems([]);
 
       try {
-        // ✅ Fetch RMA from Neto
+        // Fetch RMA from Neto
         const res = await fetch(`/api/neto/rma/${encodeURIComponent(rmaKey?.trim() ?? "")}`, {
           cache: "no-store",
         });
@@ -134,7 +136,7 @@ export function RmaDetailsModal({
         console.log("RMA Data received:", rmaData);
         console.log("RmaLine array:", rmaData.RmaLine);
 
-        // ✅ Fetch K1 Status and Agent from returns-datatable
+        // Fetch K1 Status and Agent from returns-datatable
         try {
           const sheetRes = await fetch(
             `/api/admin/returns-datatable?q=${encodeURIComponent(rmaKey?.trim() ?? "")}`,
@@ -154,7 +156,9 @@ export function RmaDetailsModal({
               if (match) {
                 rmaData.K1Status = match.status;
                 rmaData.Agent = match.agent;
-                console.log("Found K1 Status:", match.status, "Agent:", match.agent);
+                // ✅ Store the FULL order number with prefix from the sheet
+                rmaData.SheetOrderNumber = match.orderNumber;
+                console.log("Found K1 Status:", match.status, "Agent:", match.agent, "Sheet Order Number:", match.orderNumber);
               }
             }
           }
@@ -257,15 +261,16 @@ export function RmaDetailsModal({
             </div>
 
             <div className="flex gap-3">
-              {/* ✅ K1 Status Dropdown */}
+              {/* K1 Status Dropdown */}
               <K1StatusDropdown
                 rmaNumber={rma?.RmaNumber}
                 currentStatus={rma?.K1Status ?? "—"}
                 onUpdate={onRefresh ?? (() => { })}
               />
 
-              {/* ✅ Agent Dropdown */}
+              {/* ✅ Agent Dropdown - Pass the FULL order number from sheet */}
               <AgentDropdown
+                orderNumber={orderNumber}  // ✅ Use the prop directly
                 rmaNumber={rma?.RmaNumber}
                 currentAgent={rma?.Agent ?? "—"}
                 onUpdate={onRefresh ?? (() => { })}
@@ -577,10 +582,12 @@ function K1StatusDropdown({
 ================================ */
 
 function AgentDropdown({
+  orderNumber,
   rmaNumber,
   currentAgent,
   onUpdate
 }: {
+  orderNumber?: string;
   rmaNumber?: string;
   currentAgent: string;
   onUpdate: () => void;
@@ -600,20 +607,27 @@ function AgentDropdown({
   ];
 
   async function update(newAgent: string) {
-    if (!rmaNumber || newAgent === agent || updating) return;
+    const identifier = orderNumber || rmaNumber;
+
+    if (!identifier || newAgent === agent || updating) return;
 
     setUpdating(true);
     setAgent(newAgent);
     setOpen(false);
 
     try {
-      console.log("[AGENT UPDATE] Sending request:", { orderNumber: rmaNumber, agent: newAgent });
+      console.log("[AGENT UPDATE] Sending request:", {
+        orderNumber,
+        rmaNumber,
+        agent: newAgent
+      });
 
       const res = await fetch("/api/admin/assign-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderNumber: rmaNumber,
+          orderNumber,
+          rmaNumber,
           agent: newAgent
         })
       });

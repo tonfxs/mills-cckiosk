@@ -7,19 +7,33 @@ import { netoRequest } from "@/app/lib/neto-client";
 
 type NetoGetOrderResponse = {
   Ack?: string;
-  Orders?: NetoOrder[];
+  Order?: NetoOrder[];
+};
+
+type NetoAddress = {
+  FirstName?: string;
+  LastName?: string;
+  Phone?: string;
+  Company?: string;
+  StreetLine1?: string;
+  StreetLine2?: string;
+  City?: string;
+  State?: string;
+  PostCode?: string;
+  Country?: string;
 };
 
 type NetoOrder = {
-  OrderNumber: string;
-  PurchaseOrderNumber?: string;
-  BillFirstName?: string;
-  BillLastName?: string;
-  BillPhone?: string;
-  PaymentMethod?: string;
+  OrderID: string;
+  ShipAddress?: NetoAddress;
+  BillAddress?: NetoAddress;
   OrderStatus?: string;
   DatePlaced?: string;
   SalesChannel?: string;
+  Username?: string;
+  PurchaseOrderNumber?: string;
+  OrderLine?: Array<{ eBay?: { eBayStoreName?: string } }>;
+  [key: string]: any;
 };
 
 /* ----------------------------------------
@@ -27,22 +41,46 @@ type NetoOrder = {
 ---------------------------------------- */
 
 const OUTPUT_SELECTOR = [
-  "OrderNumber",
+  "OrderID",
   "PurchaseOrderNumber",
-  "BillFirstName",
-  "BillLastName",
-  "BillPhone",
-  "PaymentMethod",
+  "ShipAddress",
+  "BillAddress",
   "OrderStatus",
   "DatePlaced",
   "SalesChannel",
-];
+  "Username",
+  "OrderLine",
+  "OrderLine.eBay.eBayStoreName",
+] as const;
 
-const ALLOWED_STATUSES = new Set([
-  "Pick",
-  "Pack",
-  "Pick New",
-]);
+const LIMIT = 100;
+const MAX_PAGES = 10;
+
+/* ----------------------------------------
+   Helpers
+---------------------------------------- */
+
+function daysAgo(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function mapForUI(o: NetoOrder) {
+  return {
+    orderNumber: o.OrderID,
+    purchaseOrderNumber: o.PurchaseOrderNumber ?? "",
+    firstName: o.BillAddress?.FirstName ?? o.ShipAddress?.FirstName ?? "",
+    lastName: o.BillAddress?.LastName ?? o.ShipAddress?.LastName ?? "",
+    phoneNumber: o.BillAddress?.Phone ?? o.ShipAddress?.Phone ?? "",
+    orderStatus: o.OrderStatus ?? "",
+    datePlaced: o.DatePlaced ?? "",
+    salesChannel: o.SalesChannel ?? "",
+  };
+}
 
 /* ----------------------------------------
    Route
@@ -50,132 +88,82 @@ const ALLOWED_STATUSES = new Set([
 
 export async function POST(req: Request) {
   try {
-    const { customerName, ebayUsername } = await req.json();
+    const { customerName } = await req.json();
+    console.log("[INPUT CUSTOMER NAME]", customerName);
 
-    if (
-      (!customerName || customerName.trim().length < 3) &&
-      (!ebayUsername || ebayUsername.trim().length < 2)
-    ) {
-      return NextResponse.json(
-        { ok: false, error: "Enter a customer name or an eBay username." },
-        { status: 400 }
-      );
-    }
+    const normalizedCustomerName = customerName ? customerName.toLowerCase() : "";
+    console.log("[NORMALIZED INPUT]", normalizedCustomerName);
 
-    const nameParts = customerName
-      ? customerName.trim().split(/\s+/).filter(Boolean)
-      : [];
+    const result = await fetchOrdersFromPastWeek();
 
-    const firstName = nameParts[0];
-    const lastName =
-      nameParts.length > 1 ? nameParts[nameParts.length - 1] : undefined;
-
-    const orders = await findOrders({
-      firstName,
-      lastName,
-      ebayUsername,
-    });
+    console.log("[TOTAL ORDERS RETRIEVED]", result.orders.length);
 
     return NextResponse.json({
       ok: true,
       result: {
-        customerName: customerName || "",
-        ebayUsername: ebayUsername || "",
-        orders,
+        customerName,
+        orders: result.orders,
+        totalFetched: result.totalFetched,
+        totalPages: result.totalPages,
       },
     });
-  } catch (e: any) {
-    console.error("[NETO CUSTOMER LOOKUP]", e);
+  } catch (err: any) {
+    console.error("[ERROR]", err);
     return NextResponse.json(
-      { ok: false, error: e?.message ?? "Lookup failed." },
+      { ok: false, error: err?.message ?? "Lookup failed." },
       { status: 500 }
     );
   }
 }
 
 /* ----------------------------------------
-   Neto Lookup Logic
+   Fetch Orders
 ---------------------------------------- */
 
-async function findOrders(params: {
-  firstName?: string;
-  lastName?: string;
-  ebayUsername?: string;
-}) {
+async function fetchOrdersFromPastWeek() {
   const collected: NetoOrder[] = [];
+  const dateFrom = daysAgo(7);
+  let page = 1;
+  let totalFetched = 0;
 
-  // 1️⃣ Name-based search
-  if (params.firstName && params.lastName) {
-    const res = await netoRequest<NetoGetOrderResponse>("GetOrder", {
-      Filter: {
-        BillFirstName: params.firstName,
-        BillLastName: params.lastName,
-      },
-      OutputSelector: OUTPUT_SELECTOR,
-      Limit: 50,
-    });
+  console.log("[DATE FROM]", dateFrom);
 
-    if (res?.Orders?.length) collected.push(...res.Orders);
+  try {
+    while (page <= MAX_PAGES) {
+      console.log(`\n[FETCHING ORDERS] Page ${page}`);
+
+      const payload = {
+        Filter: {
+          DatePlacedFrom: dateFrom,
+          Page: page,
+          Limit: LIMIT,
+        },
+        OutputSelector: OUTPUT_SELECTOR,
+      };
+
+      console.log("[NETO REQUEST PAYLOAD]", JSON.stringify(payload, null, 2));
+
+      const res = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 60000 });
+      const orders = res?.Order ?? [];
+      totalFetched += orders.length;
+
+      console.log(`[ORDERS RECEIVED ON PAGE ${page}] ${orders.length}`);
+
+      if (!orders.length) break;
+
+      collected.push(...orders);
+
+      if (orders.length < LIMIT) break;
+      page++;
+    }
+
+    return {
+      orders: collected.map(mapForUI),
+      totalFetched,
+      totalPages: page,
+    };
+  } catch (err: any) {
+    console.error("[NETO FETCH FAILED]", err);
+    return { orders: [], totalFetched: 0, totalPages: 0 };
   }
-
-  // 2️⃣ Username fallback
-  if (params.firstName) {
-    const res = await netoRequest<NetoGetOrderResponse>("GetOrder", {
-      Filter: {
-        Username: params.firstName,
-      },
-      OutputSelector: OUTPUT_SELECTOR,
-      Limit: 50,
-    });
-
-    if (res?.Orders?.length) collected.push(...res.Orders);
-  }
-
-  // 3️⃣ eBay username (high confidence)
-  if (params.ebayUsername?.trim()) {
-    const res = await netoRequest<NetoGetOrderResponse>("GetOrder", {
-      Filter: {
-        SalesChannel: "eBay",
-        Username: params.ebayUsername.trim(),
-      },
-      OutputSelector: OUTPUT_SELECTOR,
-      Limit: 50,
-    });
-
-    if (res?.Orders?.length) collected.push(...res.Orders);
-  }
-
-  return dedupe(collected)
-    .filter(hasAllowedStatus)
-    .map(mapForUI);
-}
-
-/* ----------------------------------------
-   Helpers
----------------------------------------- */
-
-function dedupe(orders: NetoOrder[]) {
-  const map = new Map<string, NetoOrder>();
-  for (const o of orders) {
-    if (o?.OrderNumber) map.set(o.OrderNumber, o);
-  }
-  return [...map.values()];
-}
-
-function hasAllowedStatus(o: NetoOrder) {
-  return o.OrderStatus && ALLOWED_STATUSES.has(o.OrderStatus);
-}
-
-function mapForUI(o: NetoOrder) {
-  return {
-    orderNumber: o.OrderNumber,
-    purchaseOrderNumber: o.PurchaseOrderNumber ?? "",
-    firstName: o.BillFirstName ?? "",
-    lastName: o.BillLastName ?? "",
-    phoneNumber: o.BillPhone ?? "",
-    paymentMethod: o.PaymentMethod ?? "",
-    orderStatus: o.OrderStatus ?? "",
-    datePlaced: o.DatePlaced ?? "",
-    salesChannel: o.SalesChannel ?? "",
-  };
 }
