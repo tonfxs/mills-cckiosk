@@ -501,7 +501,7 @@ function K1StatusDropdown({
   }, [currentStatus]);
 
   const statuses = [
-    "Item Recieved",
+    "Item Received",
     "Proceed to Window",
     "Endorsed to WH",
     "Pending Verification",
@@ -545,7 +545,7 @@ function K1StatusDropdown({
         disabled={updating}
         className="rounded-xl border px-4 py-2 text-sm font-semibold bg-blue-50 text-blue-700 border-blue-400 hover:bg-blue-100 disabled:opacity-50"
       >
-        K1: {status}
+        Status: {status}
       </button>
 
       {open && (
