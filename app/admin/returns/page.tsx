@@ -348,8 +348,11 @@ export default function ReturnsClient() {
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedRmaKey, setSelectedRmaKey] = useState<string | null>(null);
-
+  const [selectedRma, setSelectedRma] = useState<{
+    rmaKey: string;
+    k1Status: string;
+    agent: string;
+  } | null>(null);
   const load = async (next?: Partial<{ page: number }>) => {
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -526,12 +529,17 @@ export default function ReturnsClient() {
                       <td
                         className="px-5 py-3 font-medium text-gray-900 cursor-pointer hover:underline"
                         onClick={() => {
-                          setSelectedRmaKey(r.rmaID);
+                          setSelectedRma({
+                            rmaKey: r.rmaID,
+                            k1Status: r.status,   // 👈 assuming this is K1 status
+                            agent: r.agent || "—"
+                          });
                           setModalOpen(true);
                         }}
                       >
                         {r.rmaID}
                       </td>
+
 
                       <td className="px-5 py-3 text-gray-700">{r.fullName}</td>
                       <td className="px-5 py-3 text-gray-700">{r.phone}</td>
@@ -550,13 +558,16 @@ export default function ReturnsClient() {
       </div>
 
       {/* ---------- Return Details Modal ---------- */}
-      {modalOpen && selectedRmaKey && (
+      {modalOpen && selectedRma && (
         <RmaDetailsModal
-          rmaKey={selectedRmaKey}
           open={modalOpen}
+          rmaKey={selectedRma.rmaKey}
+          initialK1Status={selectedRma.k1Status}
+          initialAgent={selectedRma.agent}
           onClose={() => setModalOpen(false)}
         />
       )}
+
     </div>
   );
 }

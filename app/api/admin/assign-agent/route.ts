@@ -52,35 +52,51 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Column positions (0-indexed):
+        // ✅ Column positions based on your returns-datatable:
         // A=0: Timestamp
-        // B=1: Full Name
+        // B=1: FullName
         // C=2: Phone
-        // D=3: Order Number
-        // E=4: Credit Card
-        // F=5: Valid ID
-        // G=6: Payment Method
+        // D=3: RMA ID / Order Number
+        // E=4: ?
+        // F=5: ?
+        // G=6: ?
         // H=7: Car Park Bay
-        // I=8: Status
+        // I=8: K1 Status
         // J=9: Agent
-        // K=10: Type
+        // K=10: Transaction Type (ORDER PICKUP vs RETURN PRODUCT)
         // L=11: Notes
-        const orderNumberColIndex = 3; // Column D
-        const agentColIndex = 9;       // Column J
 
-        // Find the row with matching order number (start from row 0)
+        const orderNumberColIndex = 3;   // Column D (RMA ID)
+        const agentColIndex = 9;         // Column J (Agent)
+        const typeColIndex = 10;         // Column K (Transaction Type)
+
+        // ✅ Find the row with matching order number AND type = "return product"
         let rowIndex = -1;
         for (let i = 0; i < rows.length; i++) {
             const cellValue = rows[i][orderNumberColIndex]?.toString().trim();
-            if (cellValue === orderNumber.trim()) {
+            const typeValue = rows[i][typeColIndex]?.toString().trim().toLowerCase();
+
+            // Extract just the numbers from both the cell and the search term
+            const cellNumbers = cellValue?.replace(/\D/g, '') || ''; // Remove all non-digits
+            const searchNumbers = orderNumber.trim().replace(/\D/g, ''); // Remove all non-digits
+
+            console.log(`[ASSIGN-AGENT] Row ${i}: Cell="${cellValue}" (numbers: "${cellNumbers}"), Type="${typeValue}", Looking for="${orderNumber}" (numbers: "${searchNumbers}")`);
+
+            // Match if the numeric parts are the same
+            const isMatch = cellNumbers && searchNumbers && cellNumbers === searchNumbers;
+            const isReturn = typeValue === "return product";
+
+            if (isMatch && isReturn) {
                 rowIndex = i;
+                console.log(`[ASSIGN-AGENT] ✅ Found return order at row ${i}`);
                 break;
             }
         }
 
         if (rowIndex === -1) {
+            console.log(`[ASSIGN-AGENT] ❌ No match found for "${orderNumber}"`);
             return NextResponse.json(
-                { success: false, error: `Order ${orderNumber} not found in sheet` },
+                { success: false, error: `Return order "${orderNumber}" not found in sheet. Searched for numeric match: ${orderNumber.replace(/\D/g, '')}` },
                 { status: 404 }
             );
         }
@@ -101,7 +117,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Agent assigned to "${agent}" for order ${orderNumber}`,
+            message: `Agent assigned to "${agent}" for return order ${orderNumber}`,
             data: {
                 orderNumber,
                 agent,

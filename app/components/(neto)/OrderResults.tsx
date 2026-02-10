@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
-// import type { OrderResult } from "@/app/types/neto-lookup";
 
+import React from "react";
 import type { OrderResult } from "../../types/neto-lookup";
+
 
 
 function matchBadgeClasses(match: OrderResult["match"]) {

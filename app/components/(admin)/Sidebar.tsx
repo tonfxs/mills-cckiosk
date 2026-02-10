@@ -12,6 +12,7 @@ import {
   BarChart3,
   Menu,
   Bolt,
+  UserCog,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -39,11 +40,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard", match: "startsWith" },
     { id: "pickups", icon: ShoppingCart, label: "Pick Up Orders", href: "/admin/pickup", match: "startsWith" },
     { id: "returns", icon: Package, label: "Return Products", href: "/admin/returns", match: "startsWith" },
-    { id: "parts", icon: Bolt, label: "Parts Assistance", href: "/admin/parts", match: "startsWith" },
+    // { id: "parts", icon: Bolt, label: "Parts Assistance", href: "/admin/parts", match: "startsWith" },
     // { id: "users", icon: Users, label: "Users", href: "/admin/users", match: "startsWith" },
     // { id: "alerts", icon: Bell, label: "Alerts", href: "/admin/alerts", match: "startsWith" },
-    { id: "settings", icon: Settings, label: "Settings", href: "/admin/settings", match: "startsWith" },
-    { id: "neto", icon: BarChart3, label: "Neto", href: "/admin/neto-lookup", match: "startsWith" },
+    // { id: "settings", icon: Settings, label: "Settings", href: "/admin/settings", match: "startsWith" },
+    // { id: "neto", icon: BarChart3, label: "Neto", href: "/admin/neto-lookup", match: "startsWith" },
+    { id: "user-guide", icon: UserCog, label: "User Guide", href: "/admin/user-guide", match: "startsWith" },
   ];
 
   const isItemActive = (item: MenuItem) => {

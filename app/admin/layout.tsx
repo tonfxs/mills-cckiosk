@@ -1,32 +1,3 @@
-// import type { ReactNode } from "react";
-// import AdminShell from "./AdminShell";
-
-// export default function AdminLayout({ children }: { children: ReactNode }) {
-//   return <AdminShell>{children}</AdminShell>;
-// }
-
-// import { redirect } from "next/navigation";
-// import { getServerSession } from "next-auth";
-
-// export default async function AdminLayout({
-//   children,
-// }: {
-//   children: React.ReactNode;
-// }) {
-//   const session = await getServerSession();
-
-//   // if (!session) {
-//   //   redirect("/login");
-//   // }
-
-//   return (
-//     <>
-//       {/* AdminShell, Sidebar, Header */}
-//       {children}
-//     </>
-//   );
-// }
-
 'use client';
 
 import React, { useState } from 'react';
@@ -41,7 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const hideSidebar = pathname?.includes('/admin/login');
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="flex min-h-screen bg-gray-50">
       {!hideSidebar && (
         <Sidebar
           isCollapsed={isCollapsed}
