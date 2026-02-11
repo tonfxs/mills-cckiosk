@@ -1,169 +1,228 @@
-import { NextResponse } from "next/server";
+// app/api/neto/customer-orders/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import { netoRequest } from "@/app/lib/neto-client";
 
 /* ----------------------------------------
    Types
 ---------------------------------------- */
-
 type NetoGetOrderResponse = {
   Ack?: string;
-  Order?: NetoOrder[];
-};
-
-type NetoAddress = {
-  FirstName?: string;
-  LastName?: string;
-  Phone?: string;
-  Company?: string;
-  StreetLine1?: string;
-  StreetLine2?: string;
-  City?: string;
-  State?: string;
-  PostCode?: string;
-  Country?: string;
+  Order?: any[];
+  Orders?: any[];
 };
 
 type NetoOrder = {
   OrderID: string;
-  ShipAddress?: NetoAddress;
-  BillAddress?: NetoAddress;
-  OrderStatus?: string;
-  DatePlaced?: string;
-  SalesChannel?: string;
-  Username?: string;
-  PurchaseOrderNumber?: string;
-  OrderLine?: Array<{ eBay?: { eBayStoreName?: string } }>;
+  OrderLine?: any;
+  BillFirstName?: string;
+  BillLastName?: string;
   [key: string]: any;
 };
 
 /* ----------------------------------------
    Constants
 ---------------------------------------- */
-
 const OUTPUT_SELECTOR = [
+  "ID",
   "OrderID",
+  "OrderNumber",
   "PurchaseOrderNumber",
-  "ShipAddress",
-  "BillAddress",
   "OrderStatus",
   "DatePlaced",
-  "SalesChannel",
+  "DateUpdated",
+  "Email",
   "Username",
+  "ShipAddress",
+  "BillAddress",
+  "GrandTotal",
+  "ShippingTotal",
+  "SalesChannel",
+  "InternalOrderNotes",
+  "StickyNotes",
+
+  "BillFirstName",
+  "BillLastName",
+  "ShipFirstName",
+  "ShipLastName",
+
+  "DefaultPaymentType",
+  "DeliveryInstruction",
+  "CompleteStatus",
+  "UserGroup",
+
   "OrderLine",
+  "OrderLine.SKU",
+  "OrderLine.ProductName",
+  "OrderLine.Quantity",
+  "OrderLine.UnitPrice",
+  "OrderLine.WarehouseName",
+  "OrderLine.PickQuantity",
+  "OrderLine.BackorderQuantity",
+
+  // eBay
+  "OrderLine.eBay.eBayUsername",
   "OrderLine.eBay.eBayStoreName",
+  "OrderLine.eBay.eBayTransactionID",
+  "OrderLine.eBay.eBayAuctionID",
+  "OrderLine.eBay.ListingType",
+  "OrderLine.eBay.DateCreated",
+  "OrderLine.eBay.DatePaid",
 ] as const;
 
 const LIMIT = 100;
-const MAX_PAGES = 10;
+const MAX_PAGES = 20;
+const BATCH_DELAY_MS = 300;
+const REQUIRED_EBAY_STORE = "SecondsToYou";
 
 /* ----------------------------------------
    Helpers
 ---------------------------------------- */
-
 function daysAgo(days: number) {
   const d = new Date();
   d.setDate(d.getDate() - days);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return d.toISOString().slice(0, 10);
 }
 
-function mapForUI(o: NetoOrder) {
+function listOrders(data: NetoGetOrderResponse): any[] {
+  const orders = data?.Order ?? data?.Orders ?? [];
+  return Array.isArray(orders) ? orders : [];
+}
+
+function extractOrderLines(order: any): any[] {
+  if (!order?.OrderLine) return [];
+
+  if (Array.isArray(order.OrderLine)) return order.OrderLine;
+  if (Array.isArray(order.OrderLine.OrderLine)) return order.OrderLine.OrderLine;
+  if (Array.isArray(order.OrderLine.Line)) return order.OrderLine.Line;
+
+  return typeof order.OrderLine === "object" ? [order.OrderLine] : [];
+}
+
+function normalize(str: string) {
+  return str.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function getCustomerFullName(order: any): string {
+  const first = String(order?.BillFirstName || "").trim();
+  const last = String(order?.BillLastName || "").trim();
+  return `${first} ${last}`.trim();
+}
+
+function matchesCustomerName(order: any, search: string): boolean {
+  if (!search) return true;
+  return normalize(getCustomerFullName(order)).includes(normalize(search));
+}
+
+/* ----------------------------------------
+   eBay Guard (HARD FILTER)
+---------------------------------------- */
+function isSecondsToYouOrder(order: any): boolean {
+  const firstLine = extractOrderLines(order)[0];
+  return firstLine?.eBay?.eBayStoreName === REQUIRED_EBAY_STORE;
+}
+
+function extractEbayData(order: any) {
+  const firstLine = extractOrderLines(order)[0];
+  const ebay = firstLine?.eBay;
+
   return {
-    orderNumber: o.OrderID,
-    purchaseOrderNumber: o.PurchaseOrderNumber ?? "",
-    firstName: o.BillAddress?.FirstName ?? o.ShipAddress?.FirstName ?? "",
-    lastName: o.BillAddress?.LastName ?? o.ShipAddress?.LastName ?? "",
-    phoneNumber: o.BillAddress?.Phone ?? o.ShipAddress?.Phone ?? "",
-    orderStatus: o.OrderStatus ?? "",
-    datePlaced: o.DatePlaced ?? "",
-    salesChannel: o.SalesChannel ?? "",
+    ebayStoreName: REQUIRED_EBAY_STORE,
+    ebayUsername: ebay?.eBayUsername ?? null,
+    ebayTransactionID: ebay?.eBayTransactionID ?? null,
+    ebayAuctionID: ebay?.eBayAuctionID ?? null,
+    listingType: ebay?.ListingType ?? null,
+    dateCreated: ebay?.DateCreated ?? null,
+    datePaid: ebay?.DatePaid ?? null,
   };
 }
 
 /* ----------------------------------------
    Route
 ---------------------------------------- */
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { customerName } = await req.json();
-    console.log("[INPUT CUSTOMER NAME]", customerName);
+    const body = await req.json().catch(() => ({}));
+    const customerName = String(body?.customerName || "").trim();
 
-    const normalizedCustomerName = customerName ? customerName.toLowerCase() : "";
-    console.log("[NORMALIZED INPUT]", normalizedCustomerName);
+    const dateFrom = daysAgo(7);
+    const validOrders: NetoOrder[] = [];
+    let page = 1;
 
-    const result = await fetchOrdersFromPastWeek();
-
-    console.log("[TOTAL ORDERS RETRIEVED]", result.orders.length);
-
-    return NextResponse.json({
-      ok: true,
-      result: {
-        customerName,
-        orders: result.orders,
-        totalFetched: result.totalFetched,
-        totalPages: result.totalPages,
-      },
+    console.log("[NETO] Fetch start", {
+      dateFrom,
+      customerName: customerName || "(all)",
+      store: REQUIRED_EBAY_STORE,
     });
-  } catch (err: any) {
-    console.error("[ERROR]", err);
-    return NextResponse.json(
-      { ok: false, error: err?.message ?? "Lookup failed." },
-      { status: 500 }
-    );
-  }
-}
 
-/* ----------------------------------------
-   Fetch Orders
----------------------------------------- */
-
-async function fetchOrdersFromPastWeek() {
-  const collected: NetoOrder[] = [];
-  const dateFrom = daysAgo(7);
-  let page = 1;
-  let totalFetched = 0;
-
-  console.log("[DATE FROM]", dateFrom);
-
-  try {
     while (page <= MAX_PAGES) {
-      console.log(`\n[FETCHING ORDERS] Page ${page}`);
-
       const payload = {
         Filter: {
           DatePlacedFrom: dateFrom,
           Page: page,
           Limit: LIMIT,
+          SalesChannel: "eBay",
+          OrderStatus: "pick",
+          OutputSelector: OUTPUT_SELECTOR,
         },
-        OutputSelector: OUTPUT_SELECTOR,
       };
 
-      console.log("[NETO REQUEST PAYLOAD]", JSON.stringify(payload, null, 2));
+      const data = await netoRequest<NetoGetOrderResponse>(
+        "GetOrder",
+        payload,
+        { timeoutMs: 60000 }
+      );
 
-      const res = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 60000 });
-      const orders = res?.Order ?? [];
-      totalFetched += orders.length;
-
-      console.log(`[ORDERS RECEIVED ON PAGE ${page}] ${orders.length}`);
-
+      const orders = listOrders(data);
       if (!orders.length) break;
 
-      collected.push(...orders);
+      // 🔥 DROP NON-SecondsToYou ORDERS IMMEDIATELY
+      for (const order of orders) {
+        if (isSecondsToYouOrder(order)) {
+          validOrders.push(order);
+        }
+      }
 
       if (orders.length < LIMIT) break;
+
       page++;
+      await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
     }
 
-    return {
-      orders: collected.map(mapForUI),
-      totalFetched,
-      totalPages: page,
-    };
+    console.log("[NETO] SecondsToYou orders:", validOrders.length);
+
+    const processedOrders = validOrders
+      .map(order => {
+        const lines = extractOrderLines(order);
+
+        return {
+          ...order,
+          OrderLine: lines,
+          itemsCount: lines.length,
+          customerFullName: getCustomerFullName(order),
+          ...extractEbayData(order),
+        };
+      })
+      .filter(order => matchesCustomerName(order, customerName));
+
+    return NextResponse.json({
+      ok: true,
+      result: {
+        totalFetched: validOrders.length,
+        totalFiltered: processedOrders.length,
+        orders: processedOrders,
+        filter: {
+          customerName: customerName || null,
+          store: REQUIRED_EBAY_STORE,
+          dateFrom,
+          dateTo: new Date().toISOString().slice(0, 10),
+        },
+      },
+    });
   } catch (err: any) {
-    console.error("[NETO FETCH FAILED]", err);
-    return { orders: [], totalFetched: 0, totalPages: 0 };
+    console.error("[NETO ERROR]", err);
+    return NextResponse.json(
+      { ok: false, error: err?.message ?? "Customer order lookup failed" },
+      { status: 500 }
+    );
   }
 }
