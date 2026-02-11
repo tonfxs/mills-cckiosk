@@ -19,6 +19,7 @@ const OTHER_PAYMENT_METHODS = [
   { value: "stripe", label: "Stripe" },
   { value: "storecredit", label: "Store Credit" },
   { value: "zippay", label: "ZipPay" },
+  { value: "replacement", label: "Replacement Order" },
 
 
 ];

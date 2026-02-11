@@ -5,7 +5,7 @@ type ReturnRow = {
   timestamp: string;   // A
   fullName: string;    // B
   phone: string;       // C
-  rmaID: string;       // D
+  rmaID: string;       // D - Keep full value with prefix (e.g., "Rfi318730")
   carParkBay: string;  // H
   status: string;      // I
   agent: string;       // J
@@ -32,7 +32,7 @@ function toReturnRow(row: any[]): ReturnRow {
     timestamp: String(row?.[0] ?? ""),
     fullName: String(row?.[1] ?? ""),
     phone: String(row?.[2] ?? ""),
-    rmaID: String(row?.[3] ?? ""),
+    rmaID: String(row?.[3] ?? ""),  // ✅ Keep as-is, don't remove prefix
     carParkBay: String(row?.[7] ?? ""),
     status: String(row?.[8] ?? ""),
     agent: String(row?.[9] ?? ""),
