@@ -1,6 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import OrderCard from "../../components/(admin)/OrderCard";
+import AdcModal, { OrderDetails } from "../../components/(admin)/AdcModal";
+
+
 
 type NetoOrder = {
   OrderID: string;
@@ -54,11 +58,34 @@ export default function AdminLookupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LookupResponse | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
+
 
   const canSearch = useMemo(
     () => customerName.trim().length >= 3 && !loading,
     [customerName, loading]
   );
+
+  async function handleOrderClick(order: NetoOrderSummary) {
+  setModalLoading(true);
+  setModalOpen(true);
+
+  // Fetch full order details from API (replace with real API call)
+  try {
+    const res = await fetch(`/api/neto/order-details/${order.orderNumber}`);
+    const data: OrderDetails = await res.json();
+
+    setSelectedOrder(data);
+  } catch (err) {
+    console.error("Error fetching order details:", err);
+    setSelectedOrder(null);
+  } finally {
+    setModalLoading(false);
+  }
+}
+
 
   async function onSearch() {
     setLoading(true);
@@ -125,7 +152,7 @@ export default function AdminLookupPage() {
   return (
     <div className="p-6 md:p-10">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900">Customer Order Lookup</h1>
+        <h1 className="text-3xl font-bold text-slate-900">ADC Active Order Lookup</h1>
         <p className="text-slate-600 mt-1">
           Search Neto orders using the customer's full or partial name.
         </p>
@@ -185,64 +212,77 @@ export default function AdminLookupPage() {
             )}
 
             {mappedOrders.map((order) => (
-              <OrderCard key={order.orderNumber} order={order} />
+              <div key={order.orderNumber} onClick={() => handleOrderClick(order)}>
+                <OrderCard order={order} />
+              </div>
             ))}
+
+            <AdcModal
+            open={modalOpen}
+            order={selectedOrder}
+            loading={modalLoading}
+            onClose={() => setModalOpen(false)}
+            />
           </div>
         )}
       </div>
     </div>
+
+    
   );
 }
 
-function OrderCard({ order }: { order: NetoOrderSummary }) {
-  return (
-    <div className="rounded-2xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-bold text-lg">Order #{order.orderNumber}</h3>
-          <p className="text-sm text-slate-500 mt-1">
-            {order.salesChannel && (
-              <span className="inline-block bg-slate-100 px-2 py-1 rounded text-xs font-semibold mr-2">
-                {order.salesChannel}
-              </span>
-            )}
-            {(order.itemCount ?? 0) > 0 && (
-              <span className="text-xs text-slate-600">
-                {order.itemCount ?? 0} item{(order.itemCount ?? 0) !== 1 ? "s" : ""}
-              </span>
-            )}
-          </p>
-        </div>
-        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${order.orderStatus === "Dispatched"
-            ? "bg-green-100 text-green-700"
-            : order.orderStatus === "Pending"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-slate-100 text-slate-700"
-          }`}>
-          {order.orderStatus || "—"}
-        </span>
-      </div>
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <KeyValue k="Customer" v={`${order.firstName} ${order.lastName}`.trim() || "—"} />
-        <KeyValue k="Email" v={order.email} />
-        <KeyValue k="Payment Method" v={order.paymentMethod} />
-        <KeyValue k="Amount" v={order.paymentAmount ? `$${order.paymentAmount}` : "—"} />
-        <KeyValue k="Phone" v={order.phoneNumber} />
-        <KeyValue
-          k="Date Placed"
-          v={order.datePlaced ? new Date(order.datePlaced).toLocaleDateString() : "—"}
-        />
-      </div>
-    </div>
-  );
-}
 
-function KeyValue({ k, v }: { k: string; v?: string }) {
-  return (
-    <div>
-      <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">{k}</p>
-      <p className="text-sm font-semibold text-slate-900 mt-1">{v || "—"}</p>
-    </div>
-  );
-}
+// function OrderCard({ order }: { order: NetoOrderSummary }) {
+//   return (
+//     <div className="rounded-2xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+//       <div className="flex justify-between items-start">
+//         <div>
+//           <h3 className="font-bold text-lg">Order #{order.orderNumber}</h3>
+//           <p className="text-sm text-slate-500 mt-1">
+//             {order.salesChannel && (
+//               <span className="inline-block bg-slate-100 px-2 py-1 rounded text-xs font-semibold mr-2">
+//                 {order.salesChannel}
+//               </span>
+//             )}
+//             {(order.itemCount ?? 0) > 0 && (
+//               <span className="text-xs text-slate-600">
+//                 {order.itemCount ?? 0} item{(order.itemCount ?? 0) !== 1 ? "s" : ""}
+//               </span>
+//             )}
+//           </p>
+//         </div>
+//         <span className={`text-xs font-semibold px-3 py-1 rounded-full ${order.orderStatus === "Dispatched"
+//             ? "bg-green-100 text-green-700"
+//             : order.orderStatus === "Pending"
+//               ? "bg-yellow-100 text-yellow-700"
+//               : "bg-slate-100 text-slate-700"
+//           }`}>
+//           {order.orderStatus || "—"}
+//         </span>
+//       </div>
+
+//       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+//         <KeyValue k="Customer" v={`${order.firstName} ${order.lastName}`.trim() || "—"} />
+//         <KeyValue k="Email" v={order.email} />
+//         <KeyValue k="Payment Method" v={order.paymentMethod} />
+//         <KeyValue k="Amount" v={order.paymentAmount ? `$${order.paymentAmount}` : "—"} />
+//         <KeyValue k="Phone" v={order.phoneNumber} />
+//         <KeyValue
+//           k="Date Placed"
+//           v={order.datePlaced ? new Date(order.datePlaced).toLocaleDateString() : "—"}
+//         />
+//       </div>
+//     </div>
+//   );
+// }
+
+// function KeyValue({ k, v }: { k: string; v?: string }) {
+//   return (
+//     <div>
+//       <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">{k}</p>
+//       <p className="text-sm font-semibold text-slate-900 mt-1">{v || "—"}</p>
+//     </div>
+//   );
+// }

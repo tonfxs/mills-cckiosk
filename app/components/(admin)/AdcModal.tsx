@@ -28,19 +28,19 @@ export interface OrderDetails {
   Items: OrderItem[];
 }
 
-interface OrderDetailsModalProps {
+interface AdcModalProps {
   open: boolean;
   order: OrderDetails | null;
   loading?: boolean;
   onClose: () => void;
 }
 
-export default function OrderDetailsModal({
+export default function AdcModal({
   open,
   order,
   loading = false,
   onClose,
-}: OrderDetailsModalProps) {
+}: AdcModalProps) {
   // Close on ESC key
   useEffect(() => {
     function handleEsc(e: KeyboardEvent) {
@@ -62,17 +62,17 @@ export default function OrderDetailsModal({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl p-6">
+      <div className="relative w-auto max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl p-6">
 
         {/* Header */}
         <div className="flex items-center justify-between border-b pb-4 mb-4">
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl text-slate-600 font-semibold">
             {loading ? "Loading Order..." : `Order #${order?.OrderNumber ?? ""}`}
           </h2>
 
           <button
             onClick={onClose}
-            className="rounded-lg p-2 hover:bg-gray-100 transition"
+            className="rounded-lg p-2 hover:bg-gray-100 transition text-slate-600"
           >
             <X size={20} />
           </button>
