@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import OrderCard from "../../components/(admin)/OrderCard";
 import AdcModal from "../../components/(admin)/AdcModal";
+import OrderCardSkeleton from "../../components/(admin)/OrderCardSkeleton";
 
 type NetoOrder = {
   OrderID: string;
@@ -59,6 +60,9 @@ export default function AdminLookupPage() {
   const [selectedOrderKey, setSelectedOrderKey] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Use a ref to store the AbortController so we can access it across renders
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const canSearch = useMemo(() => customerName.trim().length >= 3 && !loading, [customerName, loading]);
 
   const handleOrderClick = useCallback((order: NetoOrderSummary) => {
@@ -66,16 +70,30 @@ export default function AdminLookupPage() {
     setModalOpen(true);
   }, []);
 
-  // --- Incremental / batched search ---
+  const onCancel = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setLoading(false);
+      setProgress("Search cancelled.");
+    }
+  }, []);
+
+  const [progress, setProgress] = useState("");
+
   const onSearch = useCallback(async () => {
     setLoading(true);
     setError(null);
     setResult(null);
+    setProgress("Initializing...");
+
+    // Create a new AbortController for this specific search session
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       const dateFrom = new Date();
       dateFrom.setDate(dateFrom.getDate() - 30);
-      const filter = {
+      const filterConfig = {
         customerName: customerName.trim(),
         dateFrom: dateFrom.toISOString().slice(0, 10),
         dateTo: new Date().toISOString().slice(0, 10),
@@ -87,8 +105,13 @@ export default function AdminLookupPage() {
       let page = 1;
 
       while (page <= MAX_PAGES) {
+        // Check if we were aborted before starting a new fetch
+        if (controller.signal.aborted) break;
+
+        setProgress(`Fetching page ${page}...`);
+
         const payload = {
-          customerName: filter.customerName,
+          customerName: filterConfig.customerName,
           page,
           limit: LIMIT,
         };
@@ -97,38 +120,42 @@ export default function AdminLookupPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
+          signal: controller.signal, // Pass the signal to the fetch request
         });
 
         const data = await res.json();
         if (!res.ok || !data?.ok) throw new Error(data?.error || "Lookup failed");
 
-        // Append new batch
         allOrders = [...allOrders, ...data.result.orders];
 
-        // Update UI immediately
         setResult({
           totalFetched: allOrders.length,
-          totalFiltered: allOrders.length, // can filter client-side later if needed
+          totalFiltered: allOrders.length,
           orders: allOrders,
-          filter,
+          filter: filterConfig,
         });
 
-        // Stop if last page
         if (data.result.orders.length < LIMIT) break;
         page++;
       }
     } catch (err: any) {
-      console.error(err);
-      setError(err?.message || "Something went wrong.");
+      if (err.name === "AbortError") {
+        console.log("Search aborted by user");
+      } else {
+        console.error(err);
+        setError(err?.message || "Something went wrong.");
+      }
     } finally {
-      setLoading(false);
+      // Only set loading to false if this was the active controller
+      if (abortControllerRef.current === controller) {
+        setLoading(false);
+        abortControllerRef.current = null;
+      }
     }
   }, [customerName]);
 
-  // --- Map orders for display ---
   const mappedOrders: NetoOrderSummary[] = useMemo(() => {
     if (!result?.orders) return [];
-
     return result.orders.map((o: NetoOrder) => {
       const payment = Array.isArray(o.OrderPayment) && o.OrderPayment.length > 0 ? o.OrderPayment[0] : null;
       return {
@@ -154,7 +181,6 @@ export default function AdminLookupPage() {
         <h1 className="text-3xl font-bold text-slate-900">ADC Active Order Lookup</h1>
         <p className="text-slate-600 mt-1">Search Neto orders using the customer's full or partial name.</p>
 
-        {/* Search box */}
         <div className="mt-6 rounded-2xl border bg-white p-6 shadow-sm">
           <label className="text-sm font-semibold text-slate-800">Customer Name</label>
           <div className="mt-2 flex gap-3">
@@ -163,48 +189,74 @@ export default function AdminLookupPage() {
               onChange={(e) => setCustomerName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && canSearch && onSearch()}
               placeholder="e.g. Juan Dela Cruz"
-              className="flex-1 rounded-xl border px-4 py-3 text-slate-600"
+              disabled={loading}
+              className="flex-1 rounded-xl border px-4 py-3 text-slate-600 outline-none focus:ring-2 focus:ring-slate-900/5 transition-all disabled:bg-slate-50"
             />
-            <button
-              disabled={!canSearch}
-              onClick={onSearch}
-              className={`rounded-xl px-6 py-3 font-semibold text-white ${!canSearch ? "bg-slate-300 cursor-not-allowed" : "bg-slate-900 hover:bg-slate-800"}`}
-            >
-              {loading ? "Searching…" : "Search"}
-            </button>
+
+            {loading ? (
+              <button
+                onClick={onCancel}
+                className="rounded-xl px-6 py-3 font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-200"
+              >
+                Cancel
+              </button>
+            ) : (
+              <button
+                disabled={!canSearch}
+                onClick={onSearch}
+                className={`rounded-xl px-6 py-3 font-semibold text-white transition-colors ${!canSearch ? "bg-slate-300 cursor-not-allowed" : "bg-slate-900 hover:bg-slate-800"
+                  }`}
+              >
+                Search
+              </button>
+            )}
           </div>
-          {error && <div className="mt-4 rounded-xl bg-red-50 p-4 text-red-700">{error}</div>}
+          {loading && <p className="mt-2 text-xs text-slate-400 italic animate-pulse">{progress}</p>}
+          {error && <div className="mt-4 rounded-xl bg-red-50 p-4 text-red-700 text-sm border border-red-100">{error}</div>}
         </div>
 
-        {/* Orders list */}
-        {result && (
+        {(result || loading) && (
           <div className="mt-8 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">
-                {result.filter.customerName ? `Orders for "${result.filter.customerName}"` : "All Orders"}
-              </h2>
-              <p className="text-sm text-slate-600">
-                Showing {result.totalFiltered} of {result.totalFetched} orders
-              </p>
-            </div>
-
-            {mappedOrders.length === 0 && (
-              <div className="rounded-2xl border bg-slate-50 p-8 text-center">
-                <p className="text-slate-600">No orders found for "{result.filter.customerName}"</p>
-                <p className="text-sm text-slate-500 mt-2">Try a different name or check the date range</p>
+            {result && (
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900">
+                  {result.filter.customerName ? `Orders for "${result.filter.customerName}"` : "All Orders"}
+                </h2>
+                <div className="flex items-center gap-3">
+                  {loading && <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" />}
+                  <p className="text-sm text-slate-600">Found {result.totalFiltered} orders</p>
+                </div>
               </div>
             )}
 
             {mappedOrders.map((order) => (
-              <div key={order.orderNumber} onClick={() => handleOrderClick(order)}>
+              <div
+                key={order.orderNumber}
+                onClick={() => handleOrderClick(order)}
+                className="cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99]"
+              >
                 <OrderCard order={order} />
               </div>
             ))}
 
-            {/* Loading placeholder for incremental batches */}
             {loading && (
-              <div className="text-center text-slate-500 py-4">
-                Loading more orders…
+              <>
+                {mappedOrders.length === 0 ? (
+                  <>
+                    <OrderCardSkeleton />
+                    <OrderCardSkeleton />
+                    <OrderCardSkeleton />
+                  </>
+                ) : (
+                  <OrderCardSkeleton />
+                )}
+              </>
+            )}
+
+            {!loading && result && mappedOrders.length === 0 && (
+              <div className="rounded-2xl border bg-slate-50 p-8 text-center">
+                <p className="text-slate-600 font-medium">No orders found for "{result.filter.customerName}"</p>
+                <p className="text-sm text-slate-500 mt-1">Try a different name or broaden your search.</p>
               </div>
             )}
           </div>
