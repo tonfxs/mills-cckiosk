@@ -99,38 +99,142 @@ export default function PickupOrdersClient() {
     load();
   };
 
-  const load = async (next?: Partial<{ page: number }>) => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  // const load = async (next?: Partial<{ page: number }>) => {
+  //   abortRef.current?.abort();
+  //   const controller = new AbortController();
+  //   abortRef.current = controller;
 
-    try {
-      setError("");
-      setLoading(true);
+  //   try {
+  //     setError("");
+  //     setLoading(true);
 
-      const d = await fetchPickups({
-        q,
-        status,
-        page: next?.page ?? page,
-        pageSize,
-        signal: controller.signal,
-      });
+  //     const d = await fetchPickups({
+  //       q,
+  //       status,
+  //       page: next?.page ?? page,
+  //       pageSize,
+  //       signal: controller.signal,
+  //     });
 
-      setData(d);
-      setPage(d.page);
-    } catch (e: any) {
-      if (String(e?.name || "").includes("Abort")) return;
-      setError(e?.message || "Failed to load");
-    } finally {
-      setLoading(false);
+  //     setData(d);
+  //     setPage(d.page);
+  //   } catch (e: any) {
+  //     if (String(e?.name || "").includes("Abort")) return;
+  //     setError(e?.message || "Failed to load");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   setPage(1);
+  //   load({ page: 1 });
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [q, status, pageSize]);
+
+  // useEffect(() => {
+  // // Initial load whenever filters change
+  // setPage(1);
+  // load({ page: 1 });
+
+  // // Set up polling
+  // const interval = setInterval(() => {
+  //   // Only auto-refresh if modal is not open
+  //   if (!selectedKey) {
+  //     load({ page });
+  //   }
+  // }, 5000); // 5 seconds, adjust as needed
+
+  // return () => clearInterval(interval);
+  // }, [q, status, pageSize, page, selectedKey]); // re-run if filters, page, or modal state changes
+
+  // // Keep modal data in sync with table updates
+  // useEffect(() => {
+  //   if (selectedKey && selectedRowData) {
+  //     const updatedRow = data.items.find(
+  //       (r) => (r.netoOrderId || r.orderNumber) === selectedKey
+  //     );
+  //     if (updatedRow) {
+  //       setSelectedRowData((prev) => ({
+  //         ...prev,
+  //         ...updatedRow, // merge latest changes
+  //       }));
+  //     }
+  //   }
+  // }, [data, selectedKey]);
+
+  // ------------------- load function -------------------
+const load = async (next?: Partial<{ page: number }>, background = false) => {
+  // Abort any previous request
+  abortRef.current?.abort();
+  const controller = new AbortController();
+  abortRef.current = controller;
+
+  try {
+    if (!background) setLoading(true); // show spinner only for manual loads
+    setError("");
+
+    const d = await fetchPickups({
+      q,
+      status,
+      page: next?.page ?? page,
+      pageSize,
+      signal: controller.signal,
+    });
+
+    setData(d);
+    setPage(d.page);
+  } catch (e: any) {
+    // ignore aborted requests
+    if (String(e?.name || "").includes("Abort")) return;
+    setError(e?.message || "Failed to load");
+  } finally {
+    if (!background) setLoading(false);
+  }
+};
+
+// ------------------- polling useEffect -------------------
+useEffect(() => {
+  let isMounted = true;
+
+  const poll = async () => {
+    if (!selectedKey && isMounted) { // don't poll while modal is open
+      try {
+        await load({ page }, true); // background = true
+      } catch (e) {
+        console.error("Background polling error:", e);
+      }
     }
   };
 
-  useEffect(() => {
-    setPage(1);
-    load({ page: 1 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, status, pageSize]);
+  // initial load
+  poll();
+
+  // start interval
+  const interval = setInterval(poll, 5000); // every 5s, adjust as needed
+
+  return () => {
+    isMounted = false;
+    clearInterval(interval);
+  };
+}, [page, q, status, pageSize, selectedKey]);
+
+// ------------------- sync modal data with table -------------------
+useEffect(() => {
+  if (selectedKey && selectedRowData) {
+    const updatedRow = data.items.find(
+      (r) => (r.netoOrderId || r.orderNumber) === selectedKey
+    );
+    if (updatedRow) {
+      setSelectedRowData((prev) => ({
+        ...prev,
+        ...updatedRow, // merge latest changes from table
+      }));
+    }
+  }
+}, [data, selectedKey]);
+
+
 
   const sydneyTime = useMemo(() => {
     return new Intl.DateTimeFormat("en-AU", {

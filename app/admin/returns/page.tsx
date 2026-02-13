@@ -85,14 +85,49 @@ export default function ReturnsClient() {
     agent: string;
   } | null>(null);
 
-  const load = async (next?: Partial<{ page: number }>) => {
+  // const load = async (next?: Partial<{ page: number }>) => {
+  //   abortRef.current?.abort();
+  //   const controller = new AbortController();
+  //   abortRef.current = controller;
+
+  //   try {
+  //     setError("");
+  //     setLoading(true);
+
+  //     const d = await fetchReturns({
+  //       q,
+  //       status,
+  //       page: next?.page ?? page,
+  //       pageSize,
+  //       signal: controller.signal,
+  //     });
+
+  //     setData(d);
+  //     setPage(d.page);
+  //   } catch (e: any) {
+  //     if (String(e?.name || "").includes("Abort")) return;
+  //     setError(e?.message || "Failed to load");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   setPage(1);
+  //   load({ page: 1 });
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [q, status, pageSize]);
+
+
+  // ------------------- load function -------------------
+  const load = async (next?: Partial<{ page: number }>, background = false) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
+      if (!background) setLoading(true);
       setError("");
-      setLoading(true);
 
       const d = await fetchReturns({
         q,
@@ -108,15 +143,52 @@ export default function ReturnsClient() {
       if (String(e?.name || "").includes("Abort")) return;
       setError(e?.message || "Failed to load");
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
+  const refreshReturns = () => load();
+
+  // ------------------- polling -------------------
   useEffect(() => {
-    setPage(1);
-    load({ page: 1 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, status, pageSize]);
+    let isMounted = true;
+
+    const poll = async () => {
+      if (!modalOpen && isMounted) {
+        try {
+          await load({ page }, true); // background = true
+        } catch (e) {
+          console.error("Background polling error:", e);
+        }
+      }
+    };
+
+    poll(); // initial fetch
+    const interval = setInterval(poll, 5000); // every 5s
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [page, q, status, pageSize, modalOpen]);
+
+  // ------------------- sync modal data -------------------
+  useEffect(() => {
+    if (modalOpen && selectedRma) {
+      const updatedRow = data.items.find(r => r.rmaID === selectedRma.rmaKey);
+      if (updatedRow) {
+        setSelectedRma(prev => prev ? {
+          ...prev,
+          k1Status: updatedRow.status,
+          agent: updatedRow.agent || "—",
+        } : prev);
+      }
+    }
+  }, [data, modalOpen, selectedRma]);
+
+  
+
+
 
   const sydneyTime = useMemo(() => {
     return new Intl.DateTimeFormat("en-AU", {
