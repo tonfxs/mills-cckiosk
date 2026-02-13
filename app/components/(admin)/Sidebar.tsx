@@ -13,6 +13,7 @@ import {
   Menu,
   Bolt,
   UserCog,
+  ListPlus,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -44,7 +45,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     // { id: "users", icon: Users, label: "Users", href: "/admin/users", match: "startsWith" },
     // { id: "alerts", icon: Bell, label: "Alerts", href: "/admin/alerts", match: "startsWith" },
     // { id: "settings", icon: Settings, label: "Settings", href: "/admin/settings", match: "startsWith" },
-    { id: "neto", icon: BarChart3, label: "Neto", href: "/admin/neto-lookup", match: "startsWith" },
+    { id: "adc-list", icon: ListPlus, label: "ADC List", href: "/admin/adc-list", match: "startsWith" },
+    { id: "adc", icon: BarChart3, label: "ADC Lookup", href: "/admin/neto-lookup", match: "startsWith" },
     { id: "user-guide", icon: UserCog, label: "User Guide", href: "/admin/user-guide", match: "startsWith" },
   ];
 

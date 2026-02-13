@@ -178,18 +178,16 @@ export function OrderDetailsModal({
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Update Status Dropdown */}
               {rowData && (
                 <UpdateStatusDropdown
                   orderNumber={rowData.orderNumber}
                   currentStatus={rowData.status || "—"}
                   onUpdate={() => {
-                    onRefresh?.(); // ✅ re-fetch table data
+                    onRefresh?.();
                   }}
                 />
               )}
 
-              {/* Assign Agent Dropdown */}
               {rowData && (
                 <AssignAgentDropdown
                   orderNumber={rowData.orderNumber}
@@ -247,25 +245,20 @@ export function OrderDetailsModal({
                         <p className="text-xs text-green-700 mt-0.5">Data from table/user input</p>
                       </div>
                       <div className="p-4 space-y-4">
-                        {/* Order Info */}
                         <DataSection title="Order Information">
                           <DataRow label="Order #" value={rowData.orderNumber} />
                           <DataRow label="Status" value={rowData.status} />
                           <DataRow label="Time" value={rowData.timestamp} />
                         </DataSection>
 
-                        {/* Customer Info */}
                         <DataSection title="Customer">
                           <DataRow label="Name" value={rowData.fullName} />
                           <DataRow label="Phone" value={rowData.phone} />
-                          {/* <DataRow label="Email" value={rowData.email || "—"} /> */}
                         </DataSection>
 
-                        {/* Additional Info */}
                         <DataSection title="Pickup Details">
                           <DataRow label="Payment" value={rowData.paymentMethod} />
                           <DataRow label="Car Park Bay" value={rowData.carParkBay} />
-
                         </DataSection>
                       </div>
                     </div>
@@ -278,49 +271,49 @@ export function OrderDetailsModal({
                       <p className="text-xs text-green-700 mt-0.5">Data from Neto API</p>
                     </div>
                     <div className="p-4 space-y-4">
-                      {/* Order Info */}
                       <DataSection title="Order Information">
                         <DataRow label="Order #" value={orderNumberDisplay} />
                         <DataRow label="Status" value={String(order?.OrderStatus ?? "—")} />
                         <DataRow label="Date Placed" value={String(order?.DatePlaced ?? "—")} />
                         <DataRow label="Sales Channel" value={String(order?.SalesChannel ?? "—")} />
                         <DataRow label="Payment Method" value={String(order?.DefaultPaymentType ?? "—")} />
-
-
                       </DataSection>
 
-                      <DataSection title="Notes">
-                        <DataRow
-                          label="Note Title"
-                          value={String(order?.StickyNotes?.Title ?? "—")}
-                        />
-                        <DataRow
-                          label="Note Description"
-                          value={String(order?.StickyNotes?.Description ?? "—")}
-                        />
+                      <DataSection title="Sticky Notes">
+                        <DataRow label="Title" value={String(order?.StickyNotes?.Title ?? "—")} />
+                        <DataRow label="Description" value={String(order?.StickyNotes?.Description ?? "—")} />
                       </DataSection>
 
-                      {/* Customer Info */}
                       <DataSection title="Customer">
                         <DataRow label="Name" value={fullName} />
                         <DataRow label="Phone" value={phone} />
                         <DataRow label="Email" value={String(order?.Email ?? "—")} />
                       </DataSection>
 
-                      {/* Totals */}
                       <DataSection title="Order Totals">
                         <DataRow label="Grand Total" value={money(order?.GrandTotal)} />
                         <DataRow label="Shipping Total" value={money(order?.ShippingTotal)} />
                       </DataSection>
-
-
-                      <DataSection title="Internal Order Notes">
-                        <DataRow label="Notes" value={String(order?.InternalOrderNotes)} />
-
-                      </DataSection>
                     </div>
                   </div>
                 </div>
+
+                {/* --- FIXED INTERNAL NOTES SECTION (Full Width) --- */}
+                {order?.InternalOrderNotes && (
+                  <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 overflow-hidden">
+                    <div className="px-4 py-3 bg-amber-100 border-b border-amber-200 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      <h3 className="font-bold text-amber-900 text-sm uppercase">Internal Order Notes</h3>
+                    </div>
+                    <div className="p-4">
+                      <div className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                        {order.InternalOrderNotes}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Items Table from Neto */}
                 <div className="rounded-2xl border-2 border-green-200 bg-white overflow-hidden">
@@ -344,18 +337,13 @@ export function OrderDetailsModal({
                       <tbody>
                         {items.map((line, idx) => {
                           const sku = pickLineField(line, "SKU", "ItemSKU", "ProductSKU") ?? "—";
-                          const name =
-                            pickLineField(line, "ProductName", "Name", "ItemName", "Title") ?? "—";
-
+                          const name = pickLineField(line, "ProductName", "Name", "ItemName", "Title") ?? "—";
                           const warehouse = pickLineField(line, "WarehouseName", "Warehouse") ?? "—";
-
-
                           const qtyRaw = pickLineField(line, "Quantity", "Qty", "OrderLineQty");
                           const priceRaw = pickLineField(line, "UnitPrice", "Price", "LinePrice");
 
                           const qty = toNumber(qtyRaw) ?? 0;
                           const price = toNumber(priceRaw);
-
                           const lineTotal =
                             toNumber(pickLineField(line, "Total", "LineTotal")) ??
                             (price !== null ? qty * price : null);
@@ -365,10 +353,7 @@ export function OrderDetailsModal({
                               <td className="px-4 py-3 font-mono text-slate-700">{String(sku)}</td>
                               <td className="px-4 py-3 text-slate-700">{String(name)}</td>
                               <td className="px-4 py-3 text-slate-700">{String(warehouse)}</td>
-
-                              <td className="px-4 py-3 text-right text-slate-700">
-                                {qtyRaw ?? "—"}
-                              </td>
+                              <td className="px-4 py-3 text-right text-slate-700">{qtyRaw ?? "—"}</td>
                               <td className="px-4 py-3 text-right text-slate-700">
                                 {priceRaw != null ? money(priceRaw) : "—"}
                               </td>
@@ -381,7 +366,7 @@ export function OrderDetailsModal({
 
                         {items.length === 0 && (
                           <tr>
-                            <td className="px-4 py-4 text-slate-500 text-center" colSpan={5}>
+                            <td className="px-4 py-4 text-slate-500 text-center" colSpan={6}>
                               No items returned by Neto.
                             </td>
                           </tr>
@@ -399,33 +384,7 @@ export function OrderDetailsModal({
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border bg-white p-4">
-      <div className="text-xs font-semibold text-slate-500">{title}</div>
-      <div className="mt-2">{children}</div>
-    </div>
-  );
-}
-
-function Row({
-  label,
-  value,
-  highlight = false
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="text-slate-600">{label}</div>
-      <div className={`font-semibold ${highlight ? 'text-amber-700' : 'text-slate-600'}`}>
-        {value}
-      </div>
-    </div>
-  );
-}
+// --- Helper Layout Components ---
 
 function DataSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -446,45 +405,22 @@ function DataRow({ label, value }: { label: string; value: string | number | und
   );
 }
 
-// Update Status Dropdown Component
-function UpdateStatusDropdown({
-  orderNumber,
-  currentStatus,
-  onUpdate
-}: {
-  orderNumber: string;
-  currentStatus: string;
-  onUpdate: () => void;
-}) {
+// --- Dropdowns ---
+
+function UpdateStatusDropdown({ orderNumber, currentStatus, onUpdate }: { orderNumber: string; currentStatus: string; onUpdate: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [displayStatus, setDisplayStatus] = useState(currentStatus);
 
-  // ✅ Sync displayStatus when currentStatus changes (from parent refresh)
-  useEffect(() => {
-    setDisplayStatus(currentStatus);
-  }, [currentStatus]);
+  useEffect(() => { setDisplayStatus(currentStatus); }, [currentStatus]);
 
-  const statuses = [
-    "Pending Verification",
-    "Pending Pickup",
-    "Endorsed to WH",
-    "Proceed to Window",
-    "Order Collected",
-    "Item Received"
-  ];
+  const statuses = ["Pending Verification", "Pending Pickup", "Endorsed to WH", "Proceed to Window", "Order Collected", "Item Received"];
 
   const handleUpdateStatus = async (newStatus: string) => {
-    if (newStatus === displayStatus) {
-      setIsOpen(false);
-      return;
-    }
-
+    if (newStatus === displayStatus) { setIsOpen(false); return; }
     setUpdating(true);
     setError(null);
-
-    // ✅ Optimistic update - immediately update the displayed value
     const previousStatus = displayStatus;
     setDisplayStatus(newStatus);
     setIsOpen(false);
@@ -493,32 +429,15 @@ function UpdateStatusDropdown({
       const res = await fetch('/api/admin/update-pickup-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderNumber,
-          status: newStatus
-        })
+        body: JSON.stringify({ orderNumber, status: newStatus })
       });
-
       const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to update status');
-      }
-
-      // ✅ Only refresh after successful update
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update status');
       setUpdating(false);
-
-      // Small delay to ensure DB write completes before refresh
-      setTimeout(() => {
-        onUpdate();
-      }, 300);
-
-      // Show success feedback
+      setTimeout(() => onUpdate(), 300);
     } catch (e: any) {
-      // ✅ Rollback on error
       setDisplayStatus(previousStatus);
       setError(e.message || 'Failed to update status');
-      console.error('Status update error:', e);
       setUpdating(false);
     }
   };
@@ -528,7 +447,7 @@ function UpdateStatusDropdown({
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={updating}
-        className="rounded-xl border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        className="rounded-xl border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2"
       >
         <span className="text-xs text-blue-600">Status:</span>
         <span>{updating ? 'Updating...' : displayStatus}</span>
@@ -536,41 +455,19 @@ function UpdateStatusDropdown({
 
       {isOpen && (
         <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-white shadow-lg z-50">
-            <div className="p-2">
-              <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase">
-                Update Status
-              </div>
-              <div className="space-y-1">
-                {statuses.map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => handleUpdateStatus(status)}
-                    disabled={updating}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100 disabled:opacity-50 ${status === displayStatus
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
-                      : 'text-slate-700'
-                      }`}
-                  >
-                    {status}
-                    {status === displayStatus && (
-                      <span className="ml-2 text-xs">(Current)</span>
-                    )}
-                  </button>
-                ))}
-              </div>
+            <div className="p-2 space-y-1">
+              {statuses.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => handleUpdateStatus(status)}
+                  className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100 ${status === displayStatus ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700'}`}
+                >
+                  {status}
+                </button>
+              ))}
             </div>
-            {error && (
-              <div className="border-t p-2">
-                <div className="text-xs text-red-600 px-3 py-2 bg-red-50 rounded">
-                  {error}
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}
@@ -578,88 +475,35 @@ function UpdateStatusDropdown({
   );
 }
 
-// Assign Agent Dropdown Component
-function AssignAgentDropdown({
-  orderNumber,
-  currentAgent,
-  onUpdate
-}: {
-  orderNumber: string;
-  currentAgent: string;
-  onUpdate: () => void;
-}) {
+function AssignAgentDropdown({ orderNumber, currentAgent, onUpdate }: { orderNumber: string; currentAgent: string; onUpdate: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [customAgent, setCustomAgent] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
   const [displayAgent, setDisplayAgent] = useState(currentAgent);
 
-  // ✅ Sync displayAgent when currentAgent changes (from parent refresh)
-  useEffect(() => {
-    setDisplayAgent(currentAgent);
-  }, [currentAgent]);
+  useEffect(() => { setDisplayAgent(currentAgent); }, [currentAgent]);
 
-  const agents = [
-    "JB",
-    "CC",
-    "KB",
-  ];
+  const agents = ["JB", "CC", "KB"];
 
   const handleAssignAgent = async (newAgent: string) => {
-    if (newAgent === displayAgent) {
-      setIsOpen(false);
-      return;
-    }
-
+    if (newAgent === displayAgent) { setIsOpen(false); return; }
     setUpdating(true);
-    setError(null);
-
-    // ✅ Optimistic update - immediately update the displayed value
     const previousAgent = displayAgent;
     setDisplayAgent(newAgent);
     setIsOpen(false);
-    setShowCustomInput(false);
-    setCustomAgent("");
 
     try {
       const res = await fetch('/api/admin/assign-agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderNumber,
-          agent: newAgent
-        })
+        body: JSON.stringify({ orderNumber, agent: newAgent })
       });
-
       const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to assign agent');
-      }
-
-      // ✅ Only refresh after successful update
+      if (!res.ok || !data.success) throw new Error('Failed');
       setUpdating(false);
-
-      // Small delay to ensure DB write completes before refresh
-      setTimeout(() => {
-        onUpdate();
-      }, 300);
-
-      // Show success feedback
-    } catch (e: any) {
-      // ✅ Rollback on error
+      setTimeout(() => onUpdate(), 300);
+    } catch (e) {
       setDisplayAgent(previousAgent);
-      setError(e.message || 'Failed to assign agent');
-      console.error('Agent assignment error:', e);
       setUpdating(false);
-    }
-  };
-
-  const handleCustomAgentSubmit = () => {
-    const trimmed = customAgent.trim();
-    if (trimmed) {
-      handleAssignAgent(trimmed);
     }
   };
 
@@ -668,7 +512,7 @@ function AssignAgentDropdown({
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={updating}
-        className="rounded-xl border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-100 active:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        className="rounded-xl border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50 flex items-center gap-2"
       >
         <span className="text-xs text-green-600">Agent:</span>
         <span>{updating ? 'Updating...' : displayAgent}</span>
@@ -676,95 +520,19 @@ function AssignAgentDropdown({
 
       {isOpen && (
         <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => {
-              setIsOpen(false);
-              setShowCustomInput(false);
-              setCustomAgent("");
-            }}
-          />
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-white shadow-lg z-50">
-            <div className="p-2">
-              <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase">
-                Assign Agent
-              </div>
-
-              {!showCustomInput ? (
-                <>
-                  <div className="space-y-1 mb-2">
-                    {agents.map((agent) => (
-                      <button
-                        key={agent}
-                        onClick={() => handleAssignAgent(agent)}
-                        disabled={updating}
-                        className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100 disabled:opacity-50 ${agent === displayAgent
-                          ? 'bg-green-50 text-green-700 font-semibold'
-                          : 'text-slate-700'
-                          }`}
-                      >
-                        {agent}
-                        {agent === displayAgent && (
-                          <span className="ml-2 text-xs">(Current)</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="border-t pt-2">
-                    <button
-                      onClick={() => setShowCustomInput(true)}
-                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100 text-blue-600 font-medium"
-                    >
-                      + Custom Agent
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={customAgent}
-                    onChange={(e) => setCustomAgent(e.target.value)}
-                    placeholder="Enter agent name"
-                    className="w-full px-3 py-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-green-500"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCustomAgentSubmit();
-                      if (e.key === 'Escape') {
-                        setShowCustomInput(false);
-                        setCustomAgent("");
-                      }
-                    }}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleCustomAgentSubmit}
-                      disabled={!customAgent.trim() || updating}
-                      className="flex-1 px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Assign
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowCustomInput(false);
-                        setCustomAgent("");
-                      }}
-                      className="flex-1 px-3 py-2 text-sm border rounded-lg hover:bg-slate-100"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="p-2 space-y-1">
+              {agents.map((agent) => (
+                <button
+                  key={agent}
+                  onClick={() => handleAssignAgent(agent)}
+                  className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100 ${agent === displayAgent ? 'bg-green-50 text-green-700 font-semibold' : 'text-slate-700'}`}
+                >
+                  {agent}
+                </button>
+              ))}
             </div>
-            {error && (
-              <div className="border-t p-2">
-                <div className="text-xs text-red-600 px-3 py-2 bg-red-50 rounded">
-                  {error}
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}
