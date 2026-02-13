@@ -15,17 +15,14 @@ const OUTPUT_SELECTOR = [
   "BillAddress",
   "GrandTotal",
   "ShippingTotal",
-
   "OrderLine",
   "OrderLine.SKU",
   "OrderLine.ProductName",
   "OrderLine.Quantity",
   "OrderLine.UnitPrice",
-
   "OrderLine.ExternalSystemIdentifier",
   "OrderLine.ExternalOrderReference",
   "OrderLine.ExternalOrderLineReference",
-
   "OrderLine.eBay.eBayTransactionID",
   "OrderLine.eBay.eBayAuctionID",
   "OrderLine.eBayTransactionID",
@@ -89,29 +86,39 @@ function lineMatches(line: any, ref: string, compact: string) {
 }
 
 async function scanEbayRecent(ref: string, compact: string) {
-  const LIMIT = 100;
-  const MAX_PAGES = 30; // tune for your volume
+  const LIMIT = 1000;
+  const MAX_PAGES = 5; // ⚡ Reduced from 30 to 5 (only scan 5000 recent orders)
+
+  // ⚡ Only scan orders from last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const dateFrom = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    // try channel-filtered first (fast if supported)
     const payload = {
       Filter: {
         Page: page,
         Limit: LIMIT,
         SalesChannel: "eBay",
+        DatePlacedFrom: dateFrom, // ⚡ Added date filter
         OutputSelector: OUTPUT_SELECTOR,
       },
     };
 
     let data: NetoGetOrderResponse;
     try {
-      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 60_000 });
+      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 30_000 }); // ⚡ Reduced timeout
     } catch {
       // if SalesChannel filter not supported, fall back to unfiltered scan for this page
       const payload2 = {
-        Filter: { Page: page, Limit: LIMIT, OutputSelector: OUTPUT_SELECTOR },
+        Filter: { 
+          Page: page, 
+          Limit: LIMIT, 
+          DatePlacedFrom: dateFrom, // ⚡ Added date filter to fallback too
+          OutputSelector: OUTPUT_SELECTOR 
+        },
       };
-      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload2, { timeoutMs: 60_000 });
+      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload2, { timeoutMs: 30_000 });
     }
 
     const orders = listOrders(data);
@@ -136,16 +143,16 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }>
   if (!ref) return NextResponse.json({ ok: false, error: "Missing ref" }, { status: 400 });
 
   try {
-    // 1) fastest: eBay Order ID format usually stored in PurchaseOrderNumber
+    // ⚡ OPTIMIZED: Try more specific filters first, avoiding the slow scan
     let order =
       (await getFirstBy({ PurchaseOrderNumber: ref })) ||
-      (await getFirstBy({ OrderID: ref })) ||
-      (await getFirstBy({ ExternalOrderLineReference: ref })) ||
-      (await getFirstBy({ ExternalOrderReference: ref })) ||
-      (await getFirstBy({ ExternalSystemIdentifier: "ebay" })); // not for lookup, but can help test access
+      (await getFirstBy({ OrderID: ref }));
 
-    // 2) if not found, scan for transaction/auction/line ref
-    if (!order) order = await scanEbayRecent(ref, compact);
+    // ⚡ Only do the expensive scan if direct lookups fail
+    if (!order) {
+      console.warn(`Direct lookup failed for ${ref}, falling back to scan (slower)`);
+      order = await scanEbayRecent(ref, compact);
+    }
 
     if (!order) {
       return NextResponse.json(
@@ -153,7 +160,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }>
           ok: false,
           error: `eBay ref not found in Neto: ${ref}`,
           hint:
-            "Enter eBay Order ID (e.g. 22-xxxxx-xxxxx) OR Transaction ID (digits) OR AuctionID-TransactionID.",
+            "Enter eBay Order ID (e.g. 22-xxxxx-xxxxx) OR Transaction ID. Note: Only searches orders from the last 30 days.",
         },
         { status: 404 }
       );
