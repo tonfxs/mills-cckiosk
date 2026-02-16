@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
@@ -52,11 +52,13 @@ async function fetchReturns(params: {
   }
 
   if (!res.ok || !json?.success) throw new Error(json?.error || "Failed to load returns");
+
   return json.data as ApiResponse;
 }
 
 export default function ReturnsClient() {
-  const [loading, setLoading] = useState(true);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [q, setQ] = useState("");
@@ -76,51 +78,18 @@ export default function ReturnsClient() {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  // ✅ Updated modal state to include orderNumber
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRma, setSelectedRma] = useState<{
     rmaKey: string;
-    orderNumber: string;  // ✅ Add this
+    orderNumber: string;
     k1Status: string;
     agent: string;
   } | null>(null);
 
-  // const load = async (next?: Partial<{ page: number }>) => {
-  //   abortRef.current?.abort();
-  //   const controller = new AbortController();
-  //   abortRef.current = controller;
-
-  //   try {
-  //     setError("");
-  //     setLoading(true);
-
-  //     const d = await fetchReturns({
-  //       q,
-  //       status,
-  //       page: next?.page ?? page,
-  //       pageSize,
-  //       signal: controller.signal,
-  //     });
-
-  //     setData(d);
-  //     setPage(d.page);
-  //   } catch (e: any) {
-  //     if (String(e?.name || "").includes("Abort")) return;
-  //     setError(e?.message || "Failed to load");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   setPage(1);
-  //   load({ page: 1 });
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [q, status, pageSize]);
-
-
-  // ------------------- load function -------------------
-  const load = async (next?: Partial<{ page: number }>, background = false) => {
+  const load = async (
+    next?: Partial<{ page: number }>,
+    background = false
+  ) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -138,7 +107,7 @@ export default function ReturnsClient() {
       });
 
       setData(d);
-      setPage(d.page);
+      if (next?.page) setPage(next.page);
     } catch (e: any) {
       if (String(e?.name || "").includes("Abort")) return;
       setError(e?.message || "Failed to load");
@@ -147,64 +116,53 @@ export default function ReturnsClient() {
     }
   };
 
-  const refreshReturns = () => load();
-
-  // ------------------- polling -------------------
+  // ------------------- SSE -------------------
   useEffect(() => {
-    let isMounted = true;
+    const es = new EventSource("/api/admin/returns-stream");
 
-    const poll = async () => {
-      if (!modalOpen && isMounted) {
-        try {
-          await load({ page }, true); // background = true
-        } catch (e) {
-          console.error("Background polling error:", e);
-        }
-      }
+    es.onmessage = (event) => {
+      const d = JSON.parse(event.data);
+      setData(d);
+      if (firstLoad) setFirstLoad(false);
     };
 
-    poll(); // initial fetch
-    const interval = setInterval(poll, 5000); // every 5s
+    es.onerror = () => console.log("Returns SSE disconnected");
 
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [page, q, status, pageSize, modalOpen]);
+    return () => es.close();
+  }, [firstLoad]);
 
-  // ------------------- sync modal data -------------------
+  // ------------------- modal sync -------------------
   useEffect(() => {
     if (modalOpen && selectedRma) {
-      const updatedRow = data.items.find(r => r.rmaID === selectedRma.rmaKey);
+      const updatedRow = data.items.find((r) => r.rmaID === selectedRma.rmaKey);
       if (updatedRow) {
-        setSelectedRma(prev => prev ? {
-          ...prev,
-          k1Status: updatedRow.status,
-          agent: updatedRow.agent || "—",
-        } : prev);
+        setSelectedRma((prev) =>
+          prev
+            ? { ...prev, k1Status: updatedRow.status, agent: updatedRow.agent || "—" }
+            : prev
+        );
       }
     }
   }, [data, modalOpen, selectedRma]);
 
-  
-
-
-
-  const sydneyTime = useMemo(() => {
-    return new Intl.DateTimeFormat("en-AU", {
-      timeZone: "Australia/Sydney",
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(new Date());
-  }, []);
+  const sydneyTime = useMemo(
+    () =>
+      new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Sydney",
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(new Date()),
+    []
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="border-b bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -212,13 +170,12 @@ export default function ReturnsClient() {
               <h1 className="text-2xl font-semibold text-gray-900">Return Orders</h1>
               <p className="text-sm text-gray-500">Sydney time: {sydneyTime}</p>
             </div>
-
             <button
               onClick={() => load()}
+              disabled={loading}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
             >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
+              <RefreshCw className="h-4 w-4" /> Refresh
             </button>
           </div>
 
@@ -227,58 +184,56 @@ export default function ReturnsClient() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search (RMA, name, phone, bay, status...)"
-              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border border-slate-300 text-slate-600"
+              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border-slate-300 text-slate-600"
+              onBlur={() => load({ page: 1 })}
             />
-
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border border-slate-300 text-slate-600"
+              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border-slate-300 text-slate-600"
+              onBlur={() => load({ page: 1 })}
             >
               <option value="">All statuses</option>
               {data.statuses.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
 
             <select
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
-              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border border-slate-300 text-slate-600"
+              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border-slate-300 text-slate-600"
+              onBlur={() => load({ page: 1 })}
             >
               {[10, 25, 50, 100].map((n) => (
-                <option key={n} value={n}>
-                  {n} / page
-                </option>
+                <option key={n} value={n}>{n} / page</option>
               ))}
             </select>
           </div>
 
-          {error ? (
+          {error && (
             <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 
+      {/* Table */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
         <div className="rounded-2xl border bg-white shadow-sm">
           <div className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-600">
-              {loading ? "Loading…" : `Showing ${data.items.length} of ${data.total} return orders`}
+              {firstLoad ? "Loading…" : `Showing ${data.items.length} of ${data.total} return orders (live)`}
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => load({ page: Math.max(1, page - 1) })}
-                disabled={loading || page <= 1}
+                disabled={firstLoad || page <= 1}
                 className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50"
               >
-                <ChevronLeft className="h-4 w-4" />
-                Prev
+                <ChevronLeft className="h-4 w-4" /> Prev
               </button>
 
               <div className="text-sm text-gray-600">
@@ -288,11 +243,10 @@ export default function ReturnsClient() {
 
               <button
                 onClick={() => load({ page: Math.min(data.totalPages, page + 1) })}
-                disabled={loading || page >= data.totalPages}
+                disabled={firstLoad || page >= data.totalPages}
                 className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50"
               >
-                Next
-                <ChevronRight className="h-4 w-4" />
+                Next <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -312,30 +266,24 @@ export default function ReturnsClient() {
               </thead>
 
               <tbody>
-                {loading ? (
+                {firstLoad ? (
                   <tr>
-                    <td className="px-5 py-4 text-gray-500" colSpan={7}>
-                      Loading…
-                    </td>
+                    <td colSpan={7} className="px-5 py-4 text-gray-500">Loading…</td>
                   </tr>
                 ) : data.items.length === 0 ? (
                   <tr>
-                    <td className="px-5 py-4 text-gray-500" colSpan={7}>
-                      No return orders found.
-                    </td>
+                    <td colSpan={7} className="px-5 py-4 text-gray-500">No return orders found.</td>
                   </tr>
                 ) : (
                   data.items.map((r, idx) => (
                     <tr key={`${r.rmaID}-${idx}`} className="border-t hover:bg-gray-50">
                       <td className="px-5 py-3 text-gray-700">{r.timestamp}</td>
-
-                      {/* ✅ Clickable RMA - Pass orderNumber */}
                       <td
                         className="px-5 py-3 font-medium text-gray-900 cursor-pointer hover:underline"
                         onClick={() => {
                           setSelectedRma({
                             rmaKey: r.rmaID,
-                            orderNumber: r.rmaID,  // ✅ Add this - rmaID has the full prefix
+                            orderNumber: r.rmaID,
                             k1Status: r.status,
                             agent: r.agent || "—"
                           });
@@ -344,13 +292,10 @@ export default function ReturnsClient() {
                       >
                         {r.rmaID}
                       </td>
-
                       <td className="px-5 py-3 text-gray-700">{r.fullName}</td>
                       <td className="px-5 py-3 text-gray-700">{r.phone}</td>
                       <td className="px-5 py-3 text-gray-700">{r.carParkBay}</td>
-                      <td className="px-5 py-3">
-                        <StatusPill status={r.status} />
-                      </td>
+                      <td className="px-5 py-3"><StatusPill status={r.status} /></td>
                       <td className="px-5 py-3 text-gray-700">{r.agent || "—"}</td>
                     </tr>
                   ))
@@ -361,16 +306,15 @@ export default function ReturnsClient() {
         </div>
       </div>
 
-      {/* ✅ Updated modal to pass orderNumber */}
       {modalOpen && selectedRma && (
         <RmaDetailsModal
           open={modalOpen}
           rmaKey={selectedRma.rmaKey}
-          orderNumber={selectedRma.orderNumber}  // ✅ Add this prop
+          orderNumber={selectedRma.orderNumber}
           initialK1Status={selectedRma.k1Status}
           initialAgent={selectedRma.agent}
           onClose={() => setModalOpen(false)}
-          onRefresh={() => load()}  // ✅ Add refresh
+          onRefresh={() => load()}
         />
       )}
     </div>
