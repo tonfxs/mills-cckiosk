@@ -51,7 +51,7 @@ function compactify(v: any) {
   return String(v ?? "").trim().replace(/[\s-]/g, "");
 }
 
-async function getFirstBy(filter: Record<string, any>, timeoutMs = 25_000) {
+async function getFirstBy(filter: Record<string, any>, timeoutMs = 12_000) {
   const payload = { Filter: { ...filter, OutputSelector: OUTPUT_SELECTOR } };
   const data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs });
   return firstOrder(data);
@@ -60,6 +60,29 @@ async function getFirstBy(filter: Record<string, any>, timeoutMs = 25_000) {
 function normalize(raw: string) {
   const ref = decodeURIComponent(raw || "").replace(/\/+$/, "").trim();
   return { ref, compact: compactify(ref) };
+}
+
+// ⚡ Generate all possible variants of the reference
+function buildVariants(ref: string): string[] {
+  const variants = new Set([ref]);
+  const compact = compactify(ref);
+
+  if (compact !== ref) {
+    variants.add(compact);
+  }
+
+  // If it's all digits and 11+ chars, try adding eBay format hyphens (XX-XXXXX-XXXXX)
+  if (/^\d{11,}$/.test(compact)) {
+    const formatted = `${compact.slice(0, 2)}-${compact.slice(2, 7)}-${compact.slice(7)}`;
+    variants.add(formatted);
+  }
+
+  // If it has hyphens, also try without them
+  if (ref.includes('-')) {
+    variants.add(ref.replace(/-/g, ''));
+  }
+
+  return Array.from(variants);
 }
 
 function isEbayOrder(order: any) {
@@ -85,14 +108,14 @@ function lineMatches(line: any, ref: string, compact: string) {
   return false;
 }
 
-async function scanEbayRecent(ref: string, compact: string) {
+// ⚡ Smart scan that also checks PurchaseOrderNumber in the results
+async function scanEbayRecent(ref: string, compact: string, variants: string[]) {
   const LIMIT = 1000;
-  const MAX_PAGES = 5; // ⚡ Reduced from 30 to 5 (only scan 5000 recent orders)
+  const MAX_PAGES = 3; // Reduced for speed
 
-  // ⚡ Only scan orders from last 30 days
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const dateFrom = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  const dateFrom = thirtyDaysAgo.toISOString().split('T')[0];
 
   for (let page = 1; page <= MAX_PAGES; page++) {
     const payload = {
@@ -100,36 +123,43 @@ async function scanEbayRecent(ref: string, compact: string) {
         Page: page,
         Limit: LIMIT,
         SalesChannel: "eBay",
-        DatePlacedFrom: dateFrom, // ⚡ Added date filter
+        DatePlacedFrom: dateFrom,
         OutputSelector: OUTPUT_SELECTOR,
       },
     };
 
     let data: NetoGetOrderResponse;
     try {
-      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 30_000 }); // ⚡ Reduced timeout
+      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 20_000 });
     } catch {
-      // if SalesChannel filter not supported, fall back to unfiltered scan for this page
       const payload2 = {
-        Filter: { 
-          Page: page, 
-          Limit: LIMIT, 
-          DatePlacedFrom: dateFrom, // ⚡ Added date filter to fallback too
-          OutputSelector: OUTPUT_SELECTOR 
+        Filter: {
+          Page: page,
+          Limit: LIMIT,
+          DatePlacedFrom: dateFrom,
+          OutputSelector: OUTPUT_SELECTOR
         },
       };
-      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload2, { timeoutMs: 30_000 });
+      data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload2, { timeoutMs: 20_000 });
     }
 
     const orders = listOrders(data);
     if (orders.length === 0) break;
 
-    // prefer ebay orders if SalesChannel is present
     const sorted = orders.slice().sort((a, b) => (isEbayOrder(a) ? 0 : 1) - (isEbayOrder(b) ? 0 : 1));
 
     for (const order of sorted) {
+      // ⚡ Check PurchaseOrderNumber against all variants
+      const po = String(order?.PurchaseOrderNumber ?? "").trim();
+      if (po && variants.some(v => v === po || compactify(po) === compactify(v))) {
+        return order;
+      }
+
+      // Check line-level matches
       const lines = extractLines(order);
-      if (lines.some((l: any) => lineMatches(l, ref, compact))) return order;
+      if (lines.some((l: any) => lineMatches(l, ref, compact))) {
+        return order;
+      }
     }
   }
 
@@ -143,15 +173,38 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }>
   if (!ref) return NextResponse.json({ ok: false, error: "Missing ref" }, { status: 400 });
 
   try {
-    // ⚡ OPTIMIZED: Try more specific filters first, avoiding the slow scan
-    let order =
-      (await getFirstBy({ PurchaseOrderNumber: ref })) ||
-      (await getFirstBy({ OrderID: ref }));
+    // ⚡ Build all possible variants (with/without hyphens)
+    const variants = buildVariants(ref);
+    console.log(`[NETO] Searching for variants:`, variants);
 
-    // ⚡ Only do the expensive scan if direct lookups fail
+    let order: any | null = null;
+    let matchedWith: string | null = null;
+
+    // ⚡ Try all variants in parallel for both PurchaseOrderNumber and OrderID
+    const lookupPromises = variants.flatMap(variant => [
+      getFirstBy({ PurchaseOrderNumber: variant }).then(o => ({ order: o, variant, field: 'PurchaseOrderNumber' })),
+      getFirstBy({ OrderID: variant }).then(o => ({ order: o, variant, field: 'OrderID' })),
+    ]);
+
+    const results = await Promise.allSettled(lookupPromises);
+
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value.order) {
+        order = result.value.order;
+        matchedWith = `${result.value.field}=${result.value.variant}`;
+        console.log(`[NETO] Found via direct lookup:`, matchedWith);
+        break;
+      }
+    }
+
+    // ⚡ Only scan if direct lookups fail
     if (!order) {
-      console.warn(`Direct lookup failed for ${ref}, falling back to scan (slower)`);
-      order = await scanEbayRecent(ref, compact);
+      console.warn(`[NETO] Direct lookup failed for all variants, falling back to scan`);
+      order = await scanEbayRecent(ref, compact, variants);
+      if (order) {
+        matchedWith = 'scan';
+        console.log(`[NETO] Found via scan`);
+      }
     }
 
     if (!order) {
@@ -159,8 +212,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }>
         {
           ok: false,
           error: `eBay ref not found in Neto: ${ref}`,
-          hint:
-            "Enter eBay Order ID (e.g. 22-xxxxx-xxxxx) OR Transaction ID. Note: Only searches orders from the last 30 days.",
+          hint: "Enter eBay Order ID (e.g. 22-xxxxx-xxxxx or 22xxxxxxxxxxx) OR Transaction ID. Note: Only searches orders from the last 30 days.",
+          tried: variants,
         },
         { status: 404 }
       );
@@ -173,8 +226,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }>
       order,
       items,
       itemsCount: items.length,
+      matchedWith,
+      variants,
     });
   } catch (e: any) {
+    console.error(`[NETO] Error:`, e);
     return NextResponse.json({ ok: false, error: e?.message ?? "Failed" }, { status: 502 });
   }
 }

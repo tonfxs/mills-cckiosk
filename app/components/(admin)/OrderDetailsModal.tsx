@@ -160,6 +160,28 @@ export function OrderDetailsModal({
 
   if (!open) return null;
 
+
+  const getShippingDisplay = (option: string) => {
+    const warningOptions = [
+      "Assembled Delivery", "E-Bike assembly Fee", "Express Delivery",
+      "EXPRESS SHIPPING", "Large Service Items", "On Demand - Afternoon",
+      "On Demand - Tonight", "Standard Delivery", "zoom2u same day", "Zoom2u Upgrade"
+    ];
+
+    const needsWarning = warningOptions.includes(option);
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {needsWarning && (
+          <span title="Special Handling Required" style={{ color: '#FFA500', display: 'flex' }}>
+            ⚠️
+          </span>
+        )}
+        <span>{option || "—"}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
@@ -277,6 +299,14 @@ export function OrderDetailsModal({
                         <DataRow label="Date Placed" value={String(order?.DatePlaced ?? "—")} />
                         <DataRow label="Sales Channel" value={String(order?.SalesChannel ?? "—")} />
                         <DataRow label="Payment Method" value={String(order?.DefaultPaymentType ?? "—")} />
+
+                        {/* With this: */}
+                        <div className="flex justify-between items-start gap-3 text-sm">
+                          <span className="text-slate-600 font-medium">Shipping Method:</span>
+                          <span className="text-slate-900 font-semibold text-right">
+                            {getShippingDisplay(order?.ShippingOption ?? "")}
+                          </span>
+                        </div>
                       </DataSection>
 
                       <DataSection title="Sticky Notes">
