@@ -383,7 +383,7 @@ export default function ReturnAProductForm() {
                 <div>
                   <label className="my-6 block text-4xl font-semibold mb-4 text-gray-700">Phone Number</label>
                   <div className="flex gap-4">
-                    <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">AU</div>
+                    <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">+61</div>
                     <input
                       type="text"
                       name="phone"

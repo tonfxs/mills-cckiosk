@@ -6,28 +6,6 @@ import StatusPill from "@/app/components/(admin)/StatusPill";
 import { OrderDetailsModal } from "@/app/components/(admin)/OrderDetailsModal";
 import type { PickupRow } from "@/app/types/pickup";
 
-
-// export type PickupRow = {
-//   timestamp: string;
-//   fullName: string;
-//   phone: string;
-
-//   // kiosk ref (e.g. E9703418)
-//   orderNumber: string;
-
-//   creditCard: string;
-//   validId: string;
-//   paymentMethod: string;
-//   carParkBay: string;
-//   status: string;
-//   agent: string;
-//   type: string;
-
-//   // From MASTER LIST L/M if you updated datatable route to A:M
-//   notes?: string;
-//   netoOrderId?: string; // ✅ may be blank for older rows
-// };
-
 type ApiResponse = {
   items: PickupRow[];
   total: number;
@@ -63,16 +41,15 @@ async function fetchPickups(params: {
     throw new Error(`API returned non-JSON: ${text.slice(0, 200)}`);
   }
 
-  if (!res.ok || !json?.success) {
-    throw new Error(json?.error || "Failed to load pickups");
-  }
+  if (!res.ok || !json?.success) throw new Error(json?.error || "Failed to load pickups");
 
   return json.data as ApiResponse;
 }
 
 export default function PickupOrdersClient() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
+  const [firstLoad, setFirstLoad] = useState(true); // ✅ track first SSE message
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
@@ -89,184 +66,98 @@ export default function PickupOrdersClient() {
     statuses: [],
   });
 
-  // ✅ modal state: store both the key and the full row data
+  const abortRef = useRef<AbortController | null>(null);
+
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [selectedRowData, setSelectedRowData] = useState<PickupRow | null>(null);
 
-  const abortRef = useRef<AbortController | null>(null);
+  const load = async (
+    next?: Partial<{ page: number }>,
+    background = false
+  ) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-  const refreshOrders = () => {
-    load();
+    try {
+      if (!background) setLoading(true);
+      setError("");
+
+      const d = await fetchPickups({
+        q,
+        status,
+        page: next?.page ?? page,
+        pageSize,
+        signal: controller.signal,
+      });
+
+      setData(d);
+      if (next?.page) setPage(next.page);
+    } catch (e: any) {
+      if (String(e?.name || "").includes("Abort")) return;
+      setError(e?.message || "Failed to load");
+    } finally {
+      if (!background) setLoading(false);
+    }
   };
 
-  // const load = async (next?: Partial<{ page: number }>) => {
-  //   abortRef.current?.abort();
-  //   const controller = new AbortController();
-  //   abortRef.current = controller;
+  // ------------------- SSE -------------------
+  useEffect(() => {
+    const es = new EventSource("/api/admin/pickups-stream");
 
-  //   try {
-  //     setError("");
-  //     setLoading(true);
+    es.onmessage = (event) => {
+      const d = JSON.parse(event.data);
+      setData(d);
+      if (firstLoad) setFirstLoad(false);
+    };
 
-  //     const d = await fetchPickups({
-  //       q,
-  //       status,
-  //       page: next?.page ?? page,
-  //       pageSize,
-  //       signal: controller.signal,
-  //     });
+    es.onerror = () => console.log("Pickups SSE disconnected");
 
-  //     setData(d);
-  //     setPage(d.page);
-  //   } catch (e: any) {
-  //     if (String(e?.name || "").includes("Abort")) return;
-  //     setError(e?.message || "Failed to load");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+    return () => es.close();
+  }, [firstLoad]);
 
-  // useEffect(() => {
-  //   setPage(1);
-  //   load({ page: 1 });
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [q, status, pageSize]);
-
-  // useEffect(() => {
-  // // Initial load whenever filters change
-  // setPage(1);
-  // load({ page: 1 });
-
-  // // Set up polling
-  // const interval = setInterval(() => {
-  //   // Only auto-refresh if modal is not open
-  //   if (!selectedKey) {
-  //     load({ page });
-  //   }
-  // }, 5000); // 5 seconds, adjust as needed
-
-  // return () => clearInterval(interval);
-  // }, [q, status, pageSize, page, selectedKey]); // re-run if filters, page, or modal state changes
-
-  // // Keep modal data in sync with table updates
-  // useEffect(() => {
-  //   if (selectedKey && selectedRowData) {
-  //     const updatedRow = data.items.find(
-  //       (r) => (r.netoOrderId || r.orderNumber) === selectedKey
-  //     );
-  //     if (updatedRow) {
-  //       setSelectedRowData((prev) => ({
-  //         ...prev,
-  //         ...updatedRow, // merge latest changes
-  //       }));
-  //     }
-  //   }
-  // }, [data, selectedKey]);
-
-  // ------------------- load function -------------------
-const load = async (next?: Partial<{ page: number }>, background = false) => {
-  // Abort any previous request
-  abortRef.current?.abort();
-  const controller = new AbortController();
-  abortRef.current = controller;
-
-  try {
-    if (!background) setLoading(true); // show spinner only for manual loads
-    setError("");
-
-    const d = await fetchPickups({
-      q,
-      status,
-      page: next?.page ?? page,
-      pageSize,
-      signal: controller.signal,
-    });
-
-    setData(d);
-    setPage(d.page);
-  } catch (e: any) {
-    // ignore aborted requests
-    if (String(e?.name || "").includes("Abort")) return;
-    setError(e?.message || "Failed to load");
-  } finally {
-    if (!background) setLoading(false);
-  }
-};
-
-// ------------------- polling useEffect -------------------
-useEffect(() => {
-  let isMounted = true;
-
-  const poll = async () => {
-    if (!selectedKey && isMounted) { // don't poll while modal is open
-      try {
-        await load({ page }, true); // background = true
-      } catch (e) {
-        console.error("Background polling error:", e);
+  // ------------------- Modal sync -------------------
+  useEffect(() => {
+    if (selectedKey && selectedRowData) {
+      const updatedRow = data.items.find(
+        (r) => (r.netoOrderId || r.orderNumber) === selectedKey
+      );
+      if (updatedRow) {
+        setSelectedRowData((prev) => ({ ...prev, ...updatedRow }));
       }
     }
-  };
+  }, [data, selectedKey]);
 
-  // initial load
-  poll();
+  const sydneyTime = useMemo(
+    () =>
+      new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Sydney",
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(new Date()),
+    []
+  );
 
-  // start interval
-  const interval = setInterval(poll, 5000); // every 5s, adjust as needed
-
-  return () => {
-    isMounted = false;
-    clearInterval(interval);
-  };
-}, [page, q, status, pageSize, selectedKey]);
-
-// ------------------- sync modal data with table -------------------
-useEffect(() => {
-  if (selectedKey && selectedRowData) {
-    const updatedRow = data.items.find(
-      (r) => (r.netoOrderId || r.orderNumber) === selectedKey
-    );
-    if (updatedRow) {
-      setSelectedRowData((prev) => ({
-        ...prev,
-        ...updatedRow, // merge latest changes from table
-      }));
-    }
-  }
-}, [data, selectedKey]);
-
-
-
-  const sydneyTime = useMemo(() => {
-    return new Intl.DateTimeFormat("en-AU", {
-      timeZone: "Australia/Sydney",
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(new Date());
-  }, []);
-
-  function openDetails(row: PickupRow) {
-    // ✅ If we have NetoOrderID use it, otherwise fallback to kiosk ref
+  const openDetails = (row: PickupRow) => {
     const key = (row.netoOrderId?.trim() || row.orderNumber?.trim() || "").trim();
-    if (!key) {
-      setError("Missing order reference.");
-      return;
-    }
+    if (!key) return setError("Missing order reference.");
     setSelectedKey(key);
-    setSelectedRowData(row); // ✅ Store the entire row for comparison
-  }
+    setSelectedRowData(row);
+  };
 
-  function closeModal() {
+  const closeModal = () => {
     setSelectedKey(null);
     setSelectedRowData(null);
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="border-b bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -274,9 +165,9 @@ useEffect(() => {
               <h1 className="text-2xl font-semibold text-gray-900">Pickup Orders</h1>
               <p className="text-sm text-gray-500">Sydney time: {sydneyTime}</p>
             </div>
-
             <button
               onClick={() => load()}
+              disabled={loading}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
             >
               <RefreshCw className="h-4 w-4" />
@@ -289,13 +180,14 @@ useEffect(() => {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search (order #, name, phone, bay, status...)"
-              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border border-slate-300 text-slate-600"
+              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border-slate-300 text-slate-600"
+              onBlur={() => load({ page: 1 })}
             />
-
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border border-slate-300 text-slate-600"
+              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border-slate-300 text-slate-600"
+              onBlur={() => load({ page: 1 })}
             >
               <option value="">All statuses</option>
               {data.statuses.map((s) => (
@@ -308,7 +200,8 @@ useEffect(() => {
             <select
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
-              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border border-slate-300 text-slate-600"
+              className="rounded-xl border bg-white px-4 py-2 text-sm shadow-sm outline-none border-slate-300 text-slate-600"
+              onBlur={() => load({ page: 1 })}
             >
               {[10, 25, 50, 100].map((n) => (
                 <option key={n} value={n}>
@@ -318,29 +211,29 @@ useEffect(() => {
             </select>
           </div>
 
-          {error ? (
+          {error && (
             <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 
+      {/* Table */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
         <div className="rounded-2xl border bg-white shadow-sm">
           <div className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-600">
-              {loading ? "Loading…" : `Showing ${data.items.length} of ${data.total} pickup orders`}
+              {firstLoad ? "Loading…" : `Showing ${data.items.length} of ${data.total} pickup orders (live)`}
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => load({ page: Math.max(1, page - 1) })}
-                disabled={loading || page <= 1}
+                disabled={firstLoad || page <= 1}
                 className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50"
               >
-                <ChevronLeft className="h-4 w-4" />
-                Prev
+                <ChevronLeft className="h-4 w-4" /> Prev
               </button>
 
               <div className="text-sm text-gray-600">
@@ -350,11 +243,10 @@ useEffect(() => {
 
               <button
                 onClick={() => load({ page: Math.min(data.totalPages, page + 1) })}
-                disabled={loading || page >= data.totalPages}
+                disabled={firstLoad || page >= data.totalPages}
                 className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50"
               >
-                Next
-                <ChevronRight className="h-4 w-4" />
+                Next <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -374,19 +266,14 @@ useEffect(() => {
                   <th className="px-5 py-3 font-medium text-right">Action</th>
                 </tr>
               </thead>
-
               <tbody>
-                {loading ? (
+                {firstLoad ? (
                   <tr>
-                    <td className="px-5 py-4 text-gray-500" colSpan={9}>
-                      Loading…
-                    </td>
+                    <td colSpan={9} className="px-5 py-4 text-gray-500">Loading…</td>
                   </tr>
                 ) : data.items.length === 0 ? (
                   <tr>
-                    <td className="px-5 py-4 text-gray-500" colSpan={9}>
-                      No pickup orders found.
-                    </td>
+                    <td colSpan={9} className="px-5 py-4 text-gray-500">No pickup orders found.</td>
                   </tr>
                 ) : (
                   data.items.map((r, idx) => (
@@ -394,11 +281,6 @@ useEffect(() => {
                       key={`${r.orderNumber}-${idx}`}
                       className="border-t hover:bg-gray-50 cursor-pointer"
                       onClick={() => openDetails(r)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") openDetails(r);
-                      }}
                     >
                       <td className="px-5 py-3 text-gray-700">{r.timestamp}</td>
                       <td className="px-5 py-3 font-medium text-gray-900">{r.orderNumber}</td>
@@ -406,17 +288,12 @@ useEffect(() => {
                       <td className="px-5 py-3 text-gray-700">{r.phone}</td>
                       <td className="px-5 py-3 text-gray-700">{r.paymentMethod}</td>
                       <td className="px-5 py-3 text-gray-700">{r.carParkBay}</td>
-                      <td className="px-5 py-3">
-                        <StatusPill status={r.status} />
-                      </td>
+                      <td className="px-5 py-3"><StatusPill status={r.status} /></td>
                       <td className="px-5 py-3 text-gray-700">{r.agent || "—"}</td>
                       <td className="px-5 py-3 text-right">
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDetails(r);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); openDetails(r); }}
                           className="rounded-xl border px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
                         >
                           View
@@ -431,17 +308,14 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* ✅ Pass both orderKey and rowData to the modal */}
       <OrderDetailsModal
         open={!!selectedKey}
         orderKey={selectedKey}
         rowData={selectedRowData}
         onClose={closeModal}
-        onRefresh={refreshOrders}
+        onRefresh={() => load()}
         onPatchRow={(patch) => {
-          setSelectedRowData((prev) =>
-            prev ? { ...prev, ...patch } : prev
-          );
+          setSelectedRowData(prev => prev ? { ...prev, ...patch } : prev);
         }}
       />
     </div>
