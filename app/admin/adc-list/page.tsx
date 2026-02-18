@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import AdcCurrentModal from "@/app/components/(admin)/AdcCurrentModal";
 
 type AdcRow = {
   date: string;
@@ -75,6 +76,14 @@ export default function AdcClient() {
     totalPages: 1,
     statuses: [],
   });
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState("");
+
+  const handleSave = (modalData:any) => {
+  console.log("Order:", selectedOrder);
+  console.log("Modal Data:", modalData);
+  };
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -215,7 +224,11 @@ export default function AdcClient() {
                 </tr>
               ) : (
                 data.items.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50 border">
+                  <tr key={i} className="hover:bg-gray-50 border"
+                  onClick={() => {
+                    setSelectedOrder(row.orderNumber);
+                    setModalOpen(true);
+                  }}>
                     <td className="px-4 py-3 text-gray-900">{row.date || "-"}</td>
                     <td className="px-4 py-3 text-gray-900">{row.age || "-"}</td>
                     <td className="px-4 py-3">
@@ -269,6 +282,12 @@ export default function AdcClient() {
           </div>
         </div>
       </div>
+      <AdcCurrentModal
+           open={modalOpen}
+           orderNumber={selectedOrder}
+           onClose={() => setModalOpen(false)}
+           onSave={handleSave}
+           />
     </div>
   );
 }
