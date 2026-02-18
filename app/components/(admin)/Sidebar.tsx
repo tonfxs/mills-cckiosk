@@ -46,8 +46,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     // { id: "users", icon: Users, label: "Users", href: "/admin/users", match: "startsWith" },
     // { id: "alerts", icon: Bell, label: "Alerts", href: "/admin/alerts", match: "startsWith" },
     // { id: "settings", icon: Settings, label: "Settings", href: "/admin/settings", match: "startsWith" },
-    { id: "adc-list", icon: ListPlus, label: "ADC List", href: "/admin/adc-list", match: "startsWith" },
-    { id: "adc-current", icon: ListCheck, label: "ADC Current Orders", href: "/admin/adc-current-orders", match: "startsWith" },
+    { id: "adc-list", icon: ListCheck, label: "ADC Completed List", href: "/admin/adc-list", match: "startsWith" },
+    { id: "adc-current", icon: ListPlus, label: "ADC Current Orders", href: "/admin/adc-current-orders", match: "startsWith" },
     { id: "adc", icon: BarChart3, label: "ADC Lookup", href: "/admin/neto-lookup", match: "startsWith" },
     { id: "user-guide", icon: UserCog, label: "User Guide", href: "/admin/user-guide", match: "startsWith" },
   ];
