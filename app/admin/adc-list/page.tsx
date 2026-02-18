@@ -79,10 +79,10 @@ export default function AdcClient() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState("");
+  const [selectedRow, setSelectedRow] = useState<AdcRow | null>(null);
 
-  const handleSave = (modalData:any) => {
-  console.log("Order:", selectedOrder);
-  console.log("Modal Data:", modalData);
+  const handleSave = (modalData: any) => {
+    console.log("Saved order:", selectedOrder, modalData);
   };
 
   const abortRef = useRef<AbortController | null>(null);
@@ -212,8 +212,14 @@ export default function AdcClient() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={11} className="px-4 py-6 text-center text-gray-500">
                     Loading...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={11} className="px-4 py-6 text-center text-red-500">
+                    {error}
                   </td>
                 </tr>
               ) : data.items.length === 0 ? (
@@ -224,11 +230,15 @@ export default function AdcClient() {
                 </tr>
               ) : (
                 data.items.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50 border"
-                  onClick={() => {
-                    setSelectedOrder(row.orderNumber);
-                    setModalOpen(true);
-                  }}>
+                  <tr
+                    key={i}
+                    className="hover:bg-gray-50 border cursor-pointer"
+                    onClick={() => {
+                      setSelectedRow(row);
+                      setSelectedOrder(row.orderNumber);
+                      setModalOpen(true);
+                    }}
+                  >
                     <td className="px-4 py-3 text-gray-900">{row.date || "-"}</td>
                     <td className="px-4 py-3 text-gray-900">{row.age || "-"}</td>
                     <td className="px-4 py-3">
@@ -282,12 +292,14 @@ export default function AdcClient() {
           </div>
         </div>
       </div>
+
       <AdcCurrentModal
-           open={modalOpen}
-           orderNumber={selectedOrder}
-           onClose={() => setModalOpen(false)}
-           onSave={handleSave}
-           />
+        open={modalOpen}
+        orderNumber={selectedOrder}
+        rowData={selectedRow}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
+      />
     </div>
   );
 }

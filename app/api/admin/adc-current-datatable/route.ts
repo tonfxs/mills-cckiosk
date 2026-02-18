@@ -85,7 +85,7 @@ export async function GET(request: Request) {
 
     const resp = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "'Current Orders'!A3:K",
+      range: "'Copy of Current Orders'!A3:K",
 
     });
 

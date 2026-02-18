@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
 type AdcRow = {
-  date: string;          // A
-  age: string;           // B
-  collected: string;     // C
-  orderNumber: string;   // D
-  externalSku: string;   // E
-  name: string;          // F
-  itemName: string;      // G
-  orderDetails: string;  // H
-  salesChannel: string;  // I
-  location: string;      // J
-  notes: string;         // K
+  date: string;
+  age: string;
+  collected: string;
+  orderNumber: string;
+  externalSku: string;
+  name: string;
+  itemName: string;
+  orderDetails: string;
+  salesChannel: string;
+  location: string;
+  notes: string;
 };
 
 async function getGoogleAuth() {
@@ -25,7 +25,7 @@ async function getGoogleAuth() {
 
   return new google.auth.GoogleAuth({
     credentials: { client_email: clientEmail, private_key: privateKey },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"], // ← was readonly
   });
 }
 
@@ -49,11 +49,6 @@ function toAdcRow(row: any[]): AdcRow {
   };
 }
 
-
-
-/**
- * GET /api/admin/adc-datatable?status=Yes&q=123&page=1&pageSize=25
- */
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
@@ -73,36 +68,22 @@ export async function GET(request: Request) {
     const auth = await getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    const meta = await sheets.spreadsheets.get({
-  spreadsheetId,
-});
-
-// console.log(
-//   "Available sheets:",
-//   meta.data.sheets?.map((s) => s.properties?.title)
-// );
-
-
     const resp = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "'Completed ADC orders'!A3:K",
-
+      range: "'Copy of Completed ADC orders'!A3:K",
     });
 
     const rows = resp.data.values ?? [];
 
     let data = rows
-      // .slice(1) // ✅ skip header row
       .map(toAdcRow)
-      .filter((r) => r.orderNumber); // ignore blank rows
+      .filter((r) => r.orderNumber);
 
-    // ✅ Status filter (Collected? column)
     if (statusFilter) {
       const s = norm(statusFilter);
       data = data.filter((r) => norm(r.collected) === s);
     }
 
-    // ✅ Search filter
     if (q) {
       data = data.filter((r) =>
         [
@@ -124,16 +105,7 @@ export async function GET(request: Request) {
       );
     }
 
-    console.log("row 3:", rows[0]);
-    console.log("row 4:", rows[1]);
-    console.log("First 5 rows raw:", rows.slice(0, 5));
-
-
-
-    // Latest first (since sheet appends at bottom)
     data = data.reverse();
-    // data = data.filter(r => !["in progress", "order in progress"].includes(r.collected.toLowerCase()));
-
 
     const total = data.length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -144,7 +116,6 @@ export async function GET(request: Request) {
 
     const items = data.slice(start, end);
 
-    // For dropdown filters (Collected? values)
     const statuses = Array.from(
       new Set(data.map((r) => r.collected).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b));
