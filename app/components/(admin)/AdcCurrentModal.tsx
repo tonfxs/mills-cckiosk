@@ -146,10 +146,10 @@ export default function AdcCurrentModal({
         </h2>
 
         {/* Debug banner — remove once working */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-xs text-yellow-800 font-mono break-all">
+        {/* <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-xs text-yellow-800 font-mono break-all">
           <p className="font-bold mb-1">🐛 Debug — rowData:</p>
           <p>{rowData ? JSON.stringify(rowData, null, 2) : "⚠️ NULL / UNDEFINED"}</p>
-        </div>
+        </div> */}
 
         {/* Read-only order info */}
         {rowData && (
