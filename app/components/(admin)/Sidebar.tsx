@@ -18,11 +18,11 @@ import {
   LogOut,
   Users,
   ShieldCheck,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRole } from "../../hooks/useRole";
 import { UserRole } from "../../types/user";
-import UserSettings from "../../admin/user-settings/page";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -152,6 +152,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       href: "/admin/users",
       match: "startsWith",
       allowedRoles: ["superadmin", "admin"], // staff cannot see this
+    },
+    {
+      id: "settings",
+      icon: Settings,
+      label: "Settings",
+      href: "/admin/settings",
+      match: "startsWith",
+      allowedRoles: ["superadmin", "admin"],
     },
   ];
 
