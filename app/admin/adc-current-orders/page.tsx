@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 
 type AdcRow = {
-  date: string;
-  age: string;
+  timeStamp: string;
+  bayNumber: string;
   collected: string;
   orderNumber: string;
   externalSku: string;
@@ -188,8 +188,8 @@ export default function AdcClient() {
           <table className="min-w-full divide-y divide-gray-200 table-fixed text-sm">
             <thead className="bg-gray-50">
               <tr className="text-left text-gray-600">
-                <th className="px-4 py-3 w-[120px]">Date</th>
-                <th className="px-4 py-3 w-[60px]">Age</th>
+                <th className="px-4 py-3 w-[120px]">Time</th>
+                <th className="px-4 py-3 w-[60px]">Bay Number</th>
                 <th className="px-4 py-3 w-[100px]">Collected?</th>
                 <th className="px-4 py-3 w-[140px]">Order #</th>
                 <th className="px-4 py-3 w-[120px]">SKU</th>
@@ -218,8 +218,8 @@ export default function AdcClient() {
               ) : (
                 data.items.map((row, i) => (
                   <tr key={i} className="hover:bg-gray-50 border">
-                    <td className="px-4 py-3 text-gray-900">{row.date || "-"}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.age || "-"}</td>
+                    <td className="px-4 py-3 text-gray-900">{row.timeStamp || "-"}</td>
+                    <td className="px-4 py-3 text-gray-900">{row.bayNumber || "-"}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${

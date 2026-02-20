@@ -12,7 +12,9 @@ import {
   UserCog,
   ListPlus,
   ListCheck,
+  ChevronDown,
   ChevronUp,
+  ChevronRight,
   LogOut,
   Users,
   ShieldCheck,
@@ -20,6 +22,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useRole } from "../../hooks/useRole";
 import { UserRole } from "../../types/user";
+import UserSettings from "../../admin/user-settings/page";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -30,9 +33,10 @@ type MenuItem = {
   id: string;
   label: string;
   icon: any;
-  href: string;
+  href?: string;
   match?: "exact" | "startsWith";
   allowedRoles?: UserRole[]; // undefined = visible to all roles
+  children?: MenuItem[];
 };
 
 // Role badge styles
@@ -50,6 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const { role, isSuperAdmin, isAdmin } = useRole();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>("adc");
+
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -97,29 +103,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       href: "/admin/returns",
       match: "startsWith",
     },
-    {
-      id: "adc-list",
-      icon: ListCheck,
-      label: "ADC Completed List",
-      href: "/admin/adc-list",
-      match: "startsWith",
-      allowedRoles: ["superadmin", "admin"], 
-    },
-    {
-      id: "adc-current",
-      icon: ListPlus,
-      label: "ADC Current Orders",
-      href: "/admin/adc-current-orders",
-      match: "startsWith",
-      allowedRoles: ["superadmin", "admin"], 
-    },
+
+    // ADC GROUP
     {
       id: "adc",
       icon: BarChart3,
-      label: "ADC Lookup",
-      href: "/admin/neto-lookup",
-      match: "startsWith",
-      allowedRoles: ["superadmin", "admin"], // staff cannot see this
+      label: "ADC",
+      children: [
+        {
+          id: "adc-list",
+          icon: ListCheck,
+          label: "ADC Completed List",
+          href: "/admin/adc-list",
+          allowedRoles: ["superadmin", "admin"],
+          match: "startsWith",
+        },
+
+        {
+          id: "adc-current",
+          icon: ListPlus,
+          label: "ADC Current Orders",
+          href: "/admin/adc-current-orders",
+          allowedRoles: ["superadmin", "admin"],
+          match: "startsWith",
+        },
+
+        {
+          id: "adc-lookup",
+          icon: BarChart3,
+          label: "ADC Lookup",
+          href: "/admin/neto-lookup",
+          allowedRoles: ["superadmin", "admin"],
+          match: "startsWith",
+        },
+      ],
     },
     {
       id: "user-guide",
@@ -146,9 +163,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   });
 
   const isItemActive = (item: MenuItem) => {
-    if (!pathname) return false;
+    if (!pathname || !item.href) return false;
+
     if (item.match === "exact") return pathname === item.href;
     return pathname === item.href || pathname.startsWith(item.href + "/");
+  };
+
+  const isDropdownActive = (item: MenuItem) => {
+    if (!item.children) return false;
+    return item.children.some(isItemActive);
+  };
+
+  const toggleDropdown = (id: string) => {
+    setOpenDropdown(openDropdown === id ? null : id);
   };
 
   return (
@@ -162,16 +189,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           <button
             type="button"
             onClick={onToggle}
-            className="shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            aria-label={isCollapsed ? "Open sidebar" : "Collapse sidebar"}
-            title={isCollapsed ? "Open" : "Collapse"}
+            className="h-10 w-10 flex items-center justify-center rounded-lg text-gray-700 hover:bg-gray-50"
           >
             <Menu className="w-6 h-6" />
           </button>
 
           {!isCollapsed && (
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-gray-900 truncate">
+            <div>
+              <div className="text-sm font-semibold text-slate-900">
                 Shopfront Kiosk
               </div>
               <div className="text-xs text-gray-500 truncate">Mills Brands</div>
@@ -185,12 +210,89 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <ul className="space-y-1">
           {visibleItems.map((item) => {
             const Icon = item.icon;
+
+            // ✅ Dropdown item
+            if (item.children) {
+
+              const active = isDropdownActive(item);
+              const open = openDropdown === item.id;
+
+              return (
+                <li key={item.id}>
+
+                  {/* Parent */}
+                  <button
+                    onClick={() => toggleDropdown(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg ${
+                      active
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-50"
+                    } ${isCollapsed ? "justify-center" : ""}`}
+                  >
+
+                    <Icon className="w-5 h-5" />
+
+                    {!isCollapsed && (
+                      <>
+                        <span className="flex-1 text-left font-medium">
+                          {item.label}
+                        </span>
+
+                        {open
+                          ? <ChevronDown size={18} />
+                          : <ChevronRight size={18} />
+                        }
+                      </>
+                    )}
+                  </button>
+
+
+                  {/* Children */}
+                  {!isCollapsed && open && (
+
+                    <ul className="ml-9 mt-1 space-y-1">
+
+                      {item.children.map((child) => {
+
+                        const ChildIcon = child.icon;
+                        const active = isItemActive(child);
+
+                        return (
+                          <li key={child.id}>
+
+                            <Link
+                              href={child.href!}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                                active
+                                  ? "bg-blue-50 text-blue-700"
+                                  : "text-gray-600 hover:bg-gray-50"
+                              }`}
+                            >
+
+                              <ChildIcon className="w-4 h-4" />
+
+                              {child.label}
+
+                            </Link>
+
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                  )}
+
+                </li>
+              );
+            }
+
+            // ✅ Normal item
             const active = isItemActive(item);
 
             return (
               <li key={item.id}>
                 <Link
-                  href={item.href}
+                  href={item.href!}
                   className={`group w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${active
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-700 hover:bg-gray-50"
@@ -215,7 +317,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 </Link>
               </li>
             );
+
           })}
+
         </ul>
       </nav>
 
@@ -240,6 +344,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 </span>
               )}
             </div>
+
+            <Link href="/admin/user-settings">
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  User Settings
+                </button>
+
+            </Link>
 
             {/* Sign out */}
             <button

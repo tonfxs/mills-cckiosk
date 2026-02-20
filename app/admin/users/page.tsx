@@ -328,7 +328,7 @@ export default function UsersPage() {
                         placeholder="Search by name or email..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-400"
                     />
                 </div>
                 <div className="relative">
@@ -406,7 +406,7 @@ export default function UsersPage() {
                                                             <select
                                                                 value={u.role ?? "staff"}
                                                                 onChange={(e) => handleRoleChange(u.uid, e.target.value as UserRole)}
-                                                                className="pl-2 pr-7 py-1.5 border border-gray-200 rounded-lg text-xs appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                                                                className="pl-2 pr-7 py-1.5 border  text-slate-400 border-gray-200 rounded-lg text-xs appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
                                                             >
                                                                 {assignableRoles.map((r) => (
                                                                     <option key={r.value} value={r.value}>{r.label}</option>
