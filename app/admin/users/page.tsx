@@ -117,7 +117,7 @@ function InviteModal({
                             onChange={(e) => setName(e.target.value)}
                             placeholder="John Smith"
                             required
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -129,7 +129,7 @@ function InviteModal({
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="john@mills.com"
                             required
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -141,7 +141,7 @@ function InviteModal({
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Min. 6 characters"
                             required
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -151,7 +151,7 @@ function InviteModal({
                             <select
                                 value={role}
                                 onChange={(e) => setRole(e.target.value as UserRole)}
-                                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-slate-600 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                             >
                                 {allowedRoles.map((r) => (
                                     <option key={r.value} value={r.value}>{r.label}</option>

@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import DashboardHeader from '@/app/components/(admin)/DashboardHeader';
 import SectionShell from '@/app/components/(admin)/SectionShell';
 import SettingsShell from '@/app/components/(settings)/SettingsShell';
+import SettingsSection from '@/app/components/(settings)/SettingsSection';
 
 interface SectionShellProps {
   title: string;
@@ -27,7 +28,7 @@ export default function SettingsPage() {
     />
 
       <div className="px-8 pb-10 py-6">
-        <SectionShell title="Kiosk Settings" subtitle="Applies to this kiosk device/browser.">
+        <SectionShell title="Shopfront Kiosk Admin Settings" subtitle="Manage kiosk data, archive records, and Google Sheets storage.">
           <SettingsShell />
         </SectionShell>
       </div>

@@ -19,6 +19,7 @@ import {
   Users,
   ShieldCheck,
   Settings,
+  TextSearch,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRole } from "../../hooks/useRole";
@@ -130,7 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
         {
           id: "adc-lookup",
-          icon: BarChart3,
+          icon: TextSearch,
           label: "ADC Lookup",
           href: "/admin/neto-lookup",
           allowedRoles: ["superadmin", "admin"],
