@@ -45,7 +45,6 @@ const ROLE_BADGE: Record<UserRole, { label: string; classes: string }> = {
   superadmin: { label: "Super Admin", classes: "bg-purple-100 text-purple-700" },
   admin: { label: "Admin", classes: "bg-blue-100 text-blue-700" },
   staff: { label: "Staff", classes: "bg-green-100 text-green-700" },
-  viewer: { label: "Viewer", classes: "bg-gray-100 text-gray-600" },
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
@@ -232,11 +231,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                   {/* Parent */}
                   <button
                     onClick={() => toggleDropdown(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg ${
-                      active
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg ${active
                         ? "bg-blue-50 text-blue-700"
                         : "text-gray-700 hover:bg-gray-50"
-                    } ${isCollapsed ? "justify-center" : ""}`}
+                      } ${isCollapsed ? "justify-center" : ""}`}
                   >
 
                     <Icon className="w-5 h-5" />
@@ -271,11 +269,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
                             <Link
                               href={child.href!}
-                              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
-                                active
+                              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${active
                                   ? "bg-blue-50 text-blue-700"
                                   : "text-gray-600 hover:bg-gray-50"
-                              }`}
+                                }`}
                             >
 
                               <ChildIcon className="w-4 h-4" />
@@ -355,11 +352,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </div>
 
             <Link href="/admin/user-settings">
-                <button
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
-                >
-                  User Settings
-                </button>
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+              >
+                User Settings
+              </button>
 
             </Link>
 

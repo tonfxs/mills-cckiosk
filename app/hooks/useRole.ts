@@ -10,7 +10,6 @@ export function useRole() {
     isSuperAdmin: role === "superadmin",
     isAdmin: role === "superadmin" || role === "admin",
     isStaff: role === "superadmin" || role === "admin" || role === "staff",
-    isViewer: role === "viewer",
     hasRole: (r: UserRole) => role === r,
   };
 }

@@ -1,98 +1,197 @@
 "use client";
 
-import { useState } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Send, Loader2, Save, User } from "lucide-react";
+import { auth, db } from "../../lib/firebase/config";
+import { onAuthStateChanged, updateProfile, User as FirebaseUser } from "firebase/auth";
+import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 export default function UserSettings() {
 
-  const [reason, setReason] = useState("");
+  const [user, setUser]               = useState<FirebaseUser | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail]             = useState("");
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
+  const [profileError, setProfileError]     = useState("");
+
+  const [reason, setReason]   = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
 
+  // ── Fetch current user on mount ──
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        setEmail(currentUser.email || "");
+
+        // Pull displayName from Firestore (source of truth)
+        const snap = await getDoc(doc(db, "users", currentUser.uid));
+        if (snap.exists()) {
+          setDisplayName(snap.data().displayName || currentUser.displayName || "");
+        } else {
+          setDisplayName(currentUser.displayName || "");
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ── Save display name only ──
+  async function saveProfile() {
+    if (!user) return;
+    setProfileLoading(true);
+    setProfileMessage("");
+    setProfileError("");
+
+    try {
+      await updateProfile(user, { displayName });
+      await updateDoc(doc(db, "users", user.uid), { displayName });
+      setProfileMessage("Profile updated successfully!");
+    } catch (err) {
+      const e = err as Error;
+      setProfileError(e.message || "Failed to update profile.");
+    }
+
+    setProfileLoading(false);
+  }
+
+  // ── Password change request ──
   async function submitRequest() {
-
+    if (!user) return;
     setLoading(true);
     setError("");
     setMessage("");
 
-    const res = await fetch(" ", {
-      method: "POST",
-      body: JSON.stringify({ reason })
-    });
+    try {
+      await addDoc(collection(db, "passwordChangeRequests"), {
+        uid: user.uid,
+        email: user.email,
+        displayName,
+        reason,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
 
-    const data = await res.json();
-
-    if (!res.ok) setError(data.message);
-    else {
-      setMessage("Request sent to admin");
+      setMessage("Request sent to admin.");
       setReason("");
+    } catch (err) {
+      const e = err as Error;
+      setError(e.message || "Failed to send request.");
     }
 
     setLoading(false);
   }
 
   return (
-
     <div className="px-8 py-6">
-
-      {/* This wrapper fixes sidebar spacing */}
       <div className="max-w-2xl">
 
-        <h1 className="text-2xl text-slate-900 font-semibold mb-6">
+        <h1 className="text-2xl font-semibold mb-6 text-slate-900 dark:text-white">
           User Settings
         </h1>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        {/* ── Profile Card ── */}
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow mb-6">
 
-          <h2 className="font-medium mb-2 text-slate-600">
+          <div className="flex items-center gap-2 mb-1">
+            <User size={18} className="text-slate-500 dark:text-slate-400" />
+            <h2 className="font-medium text-slate-600 dark:text-slate-300">
+              Profile Information
+            </h2>
+          </div>
+
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
+            Update your display name below. Email cannot be changed here.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+
+            <div>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Display Name
+              </label>
+              <input
+                type="text"
+                placeholder="Juan dela Cruz"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-3 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                disabled
+                className="w-full bg-slate-200 dark:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded px-3 py-2 text-slate-400 dark:text-slate-400 text-sm cursor-not-allowed"
+              />
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                Email cannot be changed.
+              </p>
+            </div>
+
+          </div>
+
+          <button
+            onClick={saveProfile}
+            disabled={profileLoading}
+            className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-600 dark:hover:bg-slate-500 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
+          >
+            {profileLoading
+              ? <Loader2 className="animate-spin" size={16} />
+              : <Save size={16} />
+            }
+            Save Changes
+          </button>
+
+          {profileMessage && <p className="text-green-500 mt-4 text-sm">{profileMessage}</p>}
+          {profileError   && <p className="text-red-500 mt-4 text-sm">{profileError}</p>}
+
+        </div>
+
+        {/* ── Password Request Card ── */}
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
+
+          <h2 className="font-medium mb-2 text-slate-600 dark:text-slate-300">
             Request Password Change
           </h2>
 
-          <p className="text-sm text-slate-500 mb-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
             Send a request to admin to change your password.
           </p>
 
           <textarea
             placeholder="Reason (optional)"
             value={reason}
-            onChange={(e)=>setReason(e.target.value)}
-            className="w-full bg-slate-100 border border-slate-200 rounded px-3 py-2 mb-4 text-slate-600"
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-3 py-2 mb-4 text-slate-600 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm"
           />
 
           <button
             onClick={submitRequest}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
           >
-
             {loading
-              ? <Loader2 className="animate-spin" size={18}/>
-              : <Send size={18}/>
+              ? <Loader2 className="animate-spin" size={16} />
+              : <Send size={16} />
             }
-
             Send Request
-
           </button>
 
-          {message &&
-            <p className="text-green-600 mt-4">
-              {message}
-            </p>
-          }
-
-          {error &&
-            <p className="text-red-600 mt-4">
-              {error}
-            </p>
-          }
+          {message && <p className="text-green-500 mt-4 text-sm">{message}</p>}
+          {error   && <p className="text-red-500 mt-4 text-sm">{error}</p>}
 
         </div>
 
       </div>
-
     </div>
-
   );
-
 }
