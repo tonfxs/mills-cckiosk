@@ -279,6 +279,7 @@ export function OrderDetailsModal({
                         </DataSection>
 
                         <DataSection title="Pickup Details">
+                          <DataRow label="Last 4 Digits" value={rowData.creditCard} />
                           <DataRow label="Payment" value={rowData.paymentMethod} />
                           <DataRow label="Car Park Bay" value={rowData.carParkBay} />
                         </DataSection>
