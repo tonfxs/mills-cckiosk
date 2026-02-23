@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Archive, Calendar, Trash2, RefreshCw, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Archive, Calendar, Trash2, RefreshCw, Loader2, CheckCircle, XCircle, ArrowUpDown } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 type SheetKey = "master" | "pickups" | "returns";
 
@@ -42,20 +43,25 @@ function saveHistory(history: ArchiveHistoryEntry[]) {
 }
 
 export default function KioskSettingsPage() {
+  const { user } = useAuth();
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Unknown";
+
   const [selectedRange, setSelectedRange] = useState("last7days");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [selectedSheets, setSelectedSheets] = useState<SheetKey[]>(["master", "pickups", "returns"]);
   const [loading, setLoading] = useState(false);
+  const [sorting, setSorting] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [history, setHistory] = useState<ArchiveHistoryEntry[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sortConfirmOpen, setSortConfirmOpen] = useState(false);
 
   useEffect(() => { setHistory(loadHistory()); }, []);
 
   function showToast(type: "success" | "error", message: string) {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), 5000);
   }
 
   function toggleSheet(key: SheetKey) {
@@ -75,17 +81,20 @@ export default function KioskSettingsPage() {
           range: selectedRange,
           customStart: customStart || undefined,
           customEnd: customEnd || undefined,
-          archivedBy: "Admin",
+          archivedBy: displayName,
           sheets: selectedSheets,
         }),
       });
 
-      const data = await res.json();
-
-      if (!data.success) {
-        showToast("error", data.message ?? "Archive failed.");
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("[Archive] Server error:", res.status, text);
+        showToast("error", `Server error ${res.status} — check console for details.`);
         return;
       }
+
+      const data = await res.json();
+      if (!data.success) { showToast("error", data.message ?? "Archive failed."); return; }
 
       const newHistory = [data.history, ...history];
       setHistory(newHistory);
@@ -95,6 +104,38 @@ export default function KioskSettingsPage() {
       showToast("error", err.message ?? "Network error.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSort() {
+    setSortConfirmOpen(false);
+    setSorting(true);
+    try {
+      const res = await fetch("/api/admin/archive-sort", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("[Sort] Server error:", res.status, text);
+        showToast("error", `Server error ${res.status} — check console for details.`);
+        return;
+      }
+
+      const data = await res.json();
+      if (!data.success) { showToast("error", data.message ?? "Sort failed."); return; }
+
+      const sorted   = data.results.filter((r: any) => !r.skipped);
+      const skipped  = data.results.filter((r: any) => r.skipped);
+      const summary  = sorted.map((r: any) => `${r.sheet} (${r.sorted} rows)`).join(", ");
+      const skipNote = skipped.length > 0 ? ` · ${skipped.length} skipped (empty)` : "";
+
+      showToast("success", `Sorted: ${summary || "nothing to sort"}${skipNote}`);
+    } catch (err: any) {
+      showToast("error", err.message ?? "Network error.");
+    } finally {
+      setSorting(false);
     }
   }
 
@@ -124,7 +165,7 @@ export default function KioskSettingsPage() {
         </div>
       )}
 
-      {/* Confirm Modal */}
+      {/* Archive Confirm Modal */}
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
@@ -132,7 +173,7 @@ export default function KioskSettingsPage() {
             <p className="text-sm text-slate-500 mb-3">
               This will move matching records from the selected sheets into their archive tabs and permanently delete them from the source.
             </p>
-            <div className="bg-slate-50 rounded-xl p-3 mb-5 flex flex-col gap-1">
+            <div className="bg-slate-50 rounded-xl p-3 mb-4 flex flex-col gap-1">
               <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Sheets to archive</p>
               {SHEET_OPTIONS.filter((s) => selectedSheets.includes(s.key)).map((s) => (
                 <div key={s.key} className="text-xs text-slate-600">
@@ -146,14 +187,34 @@ export default function KioskSettingsPage() {
                   <span className="text-slate-500"> ({customStart} → {customEnd})</span>
                 )}
               </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Archived by: <span className="font-medium text-slate-600">{displayName}</span>
+              </p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmOpen(false)} className="flex-1 border border-slate-300 text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-50 text-sm">
-                Cancel
-              </button>
-              <button onClick={handleArchive} className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium">
-                Yes, Archive
-              </button>
+              <button onClick={() => setConfirmOpen(false)} className="flex-1 border border-slate-300 text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-50 text-sm">Cancel</button>
+              <button onClick={handleArchive} className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium">Yes, Archive</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sort Confirm Modal */}
+      {sortConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Sort Archive Sheets</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              This will re-sort all 3 archive tabs by Timestamp ascending:
+            </p>
+            <div className="bg-slate-50 rounded-xl p-3 mb-5 flex flex-col gap-1 text-xs text-slate-600">
+              <p>• <span className="font-medium">Copy of ARCHIVE</span></p>
+              <p>• <span className="font-medium">Archive Pickups</span></p>
+              <p>• <span className="font-medium">Archive Returns</span></p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setSortConfirmOpen(false)} className="flex-1 border border-slate-300 text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-50 text-sm">Cancel</button>
+              <button onClick={handleSort} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Yes, Sort</button>
             </div>
           </div>
         </div>
@@ -161,18 +222,31 @@ export default function KioskSettingsPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow">
+        {/* <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow">
           <RefreshCw size={16} />
           Sync Google Sheet
-        </button>
+        </button> */}
       </div>
 
       {/* Archive Section */}
       <div className="bg-white rounded-2xl shadow p-6 border border-slate-200">
-        <div className="flex items-center gap-3 mb-1">
-          <Archive className="text-blue-600" />
-          <h2 className="text-lg font-semibold text-slate-800">Archive Data</h2>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-3">
+            <Archive className="text-blue-600" />
+            <h2 className="text-lg font-semibold text-slate-800">Archive Data</h2>
+          </div>
+          {/* Sort button */}
+          <button
+            onClick={() => setSortConfirmOpen(true)}
+            disabled={sorting}
+            title="Re-sort all archive tabs by date ascending"
+            className="flex items-center gap-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-800 px-3 py-1.5 rounded-xl text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {sorting ? <Loader2 size={13} className="animate-spin" /> : <ArrowUpDown size={13} />}
+            {sorting ? "Sorting..." : "Sort Archives"}
+          </button>
         </div>
+
         <p className="text-sm text-slate-500 mb-6">
           Select which sheets to archive and the date range. Archived rows are moved to their respective archive tabs and removed from the source.
         </p>
@@ -188,9 +262,7 @@ export default function KioskSettingsPage() {
                   key={key}
                   onClick={() => toggleSheet(key)}
                   className={`flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
-                    checked
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                    checked ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                   }`}
                 >
                   <div className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border flex-shrink-0 ${checked ? "bg-blue-500 border-blue-500" : "border-slate-300"}`}>
@@ -209,7 +281,7 @@ export default function KioskSettingsPage() {
         {/* Date range + action */}
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <Calendar size={18} className="text-slate-400" />
+            {/* <Calendar size={18} className="text-slate-400" /> */}
             <select
               value={selectedRange}
               onChange={(e) => setSelectedRange(e.target.value)}
@@ -220,7 +292,6 @@ export default function KioskSettingsPage() {
               <option value="last30days">Last 30 days</option>
               <option value="custom">Custom Range</option>
             </select>
-
             {selectedRange === "custom" && (
               <div className="flex items-center gap-2">
                 <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
@@ -231,7 +302,6 @@ export default function KioskSettingsPage() {
               </div>
             )}
           </div>
-
           <button
             onClick={() => setConfirmOpen(true)}
             disabled={loading || !canArchive}
@@ -251,7 +321,6 @@ export default function KioskSettingsPage() {
             <span className="text-xs text-slate-400">{history.length} record{history.length !== 1 ? "s" : ""}</span>
           )}
         </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50">
