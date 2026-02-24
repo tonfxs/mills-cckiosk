@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
-import AdcCurrentModal from "@/app/components/(admin)/AdcCurrentModal";
 
 type AdcRow = {
-  date: string;
-  age: string;
+  timeStamp: string;
+  bayNumber: string;
   collected: string;
   orderNumber: string;
   externalSku: string;
@@ -40,7 +39,7 @@ async function fetchAdc(params: {
   sp.set("page", String(params.page));
   sp.set("pageSize", String(params.pageSize));
 
-  const res = await fetch(`/api/admin/adc-datatable?${sp.toString()}`, {
+  const res = await fetch(`/api/admin/adc-current-datatable?${sp.toString()}`, {
     cache: "no-store",
     signal: params.signal,
   });
@@ -77,13 +76,7 @@ export default function AdcClient() {
     statuses: [],
   });
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState("");
-  const [selectedRow, setSelectedRow] = useState<AdcRow | null>(null);
 
-  const handleSave = (modalData: any) => {
-    console.log("Saved order:", selectedOrder, modalData);
-  };
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -139,7 +132,7 @@ export default function AdcClient() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
-              ADC Completed List
+              ADC Ready to Pickup List
             </h1>
             <p className="text-sm text-gray-500">Sydney time: {sydneyTime}</p>
           </div>
@@ -195,8 +188,8 @@ export default function AdcClient() {
           <table className="min-w-full divide-y divide-gray-200 table-fixed text-sm">
             <thead className="bg-gray-50">
               <tr className="text-left text-gray-600">
-                <th className="px-4 py-3 w-[120px]">Date</th>
-                <th className="px-4 py-3 w-[60px]">Age</th>
+                <th className="px-4 py-3 w-[120px]">Time</th>
+                <th className="px-4 py-3 w-[60px]">Bay Number</th>
                 <th className="px-4 py-3 w-[100px]">Collected?</th>
                 <th className="px-4 py-3 w-[140px]">Order #</th>
                 <th className="px-4 py-3 w-[120px]">SKU</th>
@@ -212,14 +205,8 @@ export default function AdcClient() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={10} className="px-4 py-6 text-center text-gray-500">
                     Loading...
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={11} className="px-4 py-6 text-center text-red-500">
-                    {error}
                   </td>
                 </tr>
               ) : data.items.length === 0 ? (
@@ -230,17 +217,9 @@ export default function AdcClient() {
                 </tr>
               ) : (
                 data.items.map((row, i) => (
-                  <tr
-                    key={i}
-                    className="hover:bg-gray-50 border cursor-pointer"
-                    onClick={() => {
-                      setSelectedRow(row);
-                      setSelectedOrder(row.orderNumber);
-                      setModalOpen(true);
-                    }}
-                  >
-                    <td className="px-4 py-3 text-gray-900">{row.date || "-"}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.age || "-"}</td>
+                  <tr key={i} className="hover:bg-gray-50 border">
+                    <td className="px-4 py-3 text-gray-900">{row.timeStamp || "-"}</td>
+                    <td className="px-4 py-3 text-gray-900">{row.bayNumber || "-"}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
@@ -292,14 +271,8 @@ export default function AdcClient() {
           </div>
         </div>
       </div>
-
-      <AdcCurrentModal
-        open={modalOpen}
-        orderNumber={selectedOrder}
-        rowData={selectedRow}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSave}
-      />
     </div>
+    
   );
 }
+

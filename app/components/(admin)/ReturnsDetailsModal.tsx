@@ -301,6 +301,13 @@ export function RmaDetailsModal({
 
             {!loading && !error && rma && (
               <>
+                {/* Customer */}
+                <Section title="Customer">
+                  <Row label="Name" value={customerName} />
+                  <Row label="Phone" value={rma.CustomerPhone} />
+                  <Row label="Email" value={rma.CustomerEmail} />
+                </Section>
+                
                 {/* RMA Info */}
                 <Section title="RMA Information">
                   <Row label="RMA #" value={rma.RmaNumber} />
@@ -310,13 +317,6 @@ export function RmaDetailsModal({
                     label="Original Order"
                     value={rma.OriginalOrderNumber}
                   />
-                </Section>
-
-                {/* Customer */}
-                <Section title="Customer">
-                  <Row label="Name" value={customerName} />
-                  <Row label="Phone" value={rma.CustomerPhone} />
-                  <Row label="Email" value={rma.CustomerEmail} />
                 </Section>
 
                 {/* Refund */}

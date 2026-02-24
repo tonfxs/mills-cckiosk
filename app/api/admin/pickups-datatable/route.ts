@@ -1,3 +1,4 @@
+// // app/api/admin/pickups-datatable/route.ts
 // import { NextResponse } from "next/server";
 // import { google } from "googleapis";
 
@@ -5,14 +6,16 @@
 //   timestamp: string;     // A
 //   fullName: string;      // B
 //   phone: string;         // C
-//   orderNumber: string;   // D
+//   orderNumber: string;   // D (kiosk ref, e.g. E9701943)
 //   creditCard: string;    // E
 //   validId: string;       // F
 //   paymentMethod: string; // G
 //   carParkBay: string;    // H
 //   status: string;        // I
 //   agent: string;         // J
-//   type: string;          // K
+//   type: string;          // K  ("Order Pickup")
+//   notes: string;         // L  (existing Notes)
+//   netoOrderId: string;   // M  ✅ NEW (Neto internal ID)
 // };
 
 // async function getGoogleAuth() {
@@ -44,11 +47,13 @@
 //     status: String(row?.[8] ?? ""),
 //     agent: String(row?.[9] ?? ""),
 //     type: String(row?.[10] ?? ""),
+//     notes: String(row?.[11] ?? ""),       // ✅ L
+//     netoOrderId: String(row?.[12] ?? ""), // ✅ M
 //   };
 // }
 
 // /**
-//  * GET /api/pickups?status=Pending%20Pickup&q=123&page=1&pageSize=25
+//  * GET /api/admin/pickups-datatable?status=Pending%20Pickup&q=123&page=1&pageSize=25
 //  */
 // export async function GET(request: Request) {
 //   try {
@@ -66,9 +71,10 @@
 //     const auth = await getGoogleAuth();
 //     const sheets = google.sheets({ version: "v4", auth });
 
+//     // ✅ Read through M now (because L=Notes, M=NetoOrderID)
 //     const resp = await sheets.spreadsheets.values.get({
 //       spreadsheetId,
-//       range: "MASTER LIST!A:K",
+//       range: "MASTER LIST!A:M",
 //     });
 
 //     const rows = resp.data.values ?? [];
@@ -97,6 +103,8 @@
 //           r.carParkBay,
 //           r.status,
 //           r.agent,
+//           r.notes,
+//           r.netoOrderId, // ✅ searchable too
 //         ]
 //           .join(" ")
 //           .toLowerCase()
@@ -117,9 +125,169 @@
 //     const items = pickups.slice(start, end);
 
 //     // For dropdown filters
-//     const statuses = Array.from(
-//       new Set(pickups.map((r) => r.status).filter(Boolean))
-//     ).sort((a, b) => a.localeCompare(b));
+//     const statuses = Array.from(new Set(pickups.map((r) => r.status).filter(Boolean))).sort((a, b) =>
+//       a.localeCompare(b)
+//     );
+
+//     return NextResponse.json({
+//       success: true,
+//       data: {
+//         items,
+//         total,
+//         page: safePage,
+//         pageSize,
+//         totalPages,
+//         statuses,
+//       },
+//     });
+//   } catch (err: any) {
+//     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+//   }
+// }
+
+
+// import { NextResponse } from "next/server";
+// import { google } from "googleapis";
+
+// type PickupRow = {
+//   timestamp: string;
+//   fullName: string;
+//   phone: string;
+//   orderNumber: string;
+//   creditCard: string;
+//   validId: string;
+//   paymentMethod: string;
+//   carParkBay: string;
+//   status: string;
+//   agent: string;
+//   type: string;
+//   notes: string;
+//   netoOrderId: string;
+// };
+
+// // ✅ CACHE VARIABLES
+// let cacheData: any[] | null = null;
+// let cacheTime = 0;
+// const CACHE_DURATION = 60000; // 60 seconds
+
+// async function getGoogleAuth() {
+//   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+//   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+
+//   if (!clientEmail || !privateKey) throw new Error("Missing Google credentials");
+
+//   return new google.auth.GoogleAuth({
+//     credentials: { client_email: clientEmail, private_key: privateKey },
+//     scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+//   });
+// }
+
+// function norm(s: string) {
+//   return String(s ?? "").trim().toLowerCase();
+// }
+
+// function toPickupRow(row: any[]): PickupRow {
+//   return {
+//     timestamp: String(row?.[0] ?? ""),
+//     fullName: String(row?.[1] ?? ""),
+//     phone: String(row?.[2] ?? ""),
+//     orderNumber: String(row?.[3] ?? ""),
+//     creditCard: String(row?.[4] ?? ""),
+//     validId: String(row?.[5] ?? ""),
+//     paymentMethod: String(row?.[6] ?? ""),
+//     carParkBay: String(row?.[7] ?? ""),
+//     status: String(row?.[8] ?? ""),
+//     agent: String(row?.[9] ?? ""),
+//     type: String(row?.[10] ?? ""),
+//     notes: String(row?.[11] ?? ""),
+//     netoOrderId: String(row?.[12] ?? ""),
+//   };
+// }
+
+// // ✅ NEW FUNCTION: fetch with cache
+// async function getSheetRows(spreadsheetId: string) {
+//   const now = Date.now();
+
+//   if (cacheData && now - cacheTime < CACHE_DURATION) {
+//     return cacheData;
+//   }
+
+//   console.log("Fetching Google Sheets...");
+
+//   const auth = await getGoogleAuth();
+//   const sheets = google.sheets({ version: "v4", auth });
+
+//   const resp = await sheets.spreadsheets.values.get({
+//     spreadsheetId,
+//     range: "MASTER LIST!A:M",
+//   });
+
+//   cacheData = resp.data.values ?? [];
+//   cacheTime = now;
+
+//   return cacheData;
+// }
+
+// export async function GET(request: Request) {
+//   try {
+//     const url = new URL(request.url);
+
+//     const statusFilter = url.searchParams.get("status") || "";
+//     const q = (url.searchParams.get("q") || "").trim().toLowerCase();
+
+//     const page = Math.max(1, Number(url.searchParams.get("page") || "1"));
+//     const pageSize = Math.min(200, Math.max(10, Number(url.searchParams.get("pageSize") || "25")));
+
+//     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+//     if (!spreadsheetId) throw new Error("GOOGLE_SHEET_ID missing");
+
+//     // ✅ USE CACHED DATA INSTEAD
+//     const rows = await getSheetRows(spreadsheetId);
+
+//     const TYPE_PICKUP = "order pickup";
+
+//     let pickups = rows
+//       .map(toPickupRow)
+//       .filter((r) => norm(r.type) === TYPE_PICKUP)
+//       .filter((r) => r.orderNumber);
+
+//     if (statusFilter) {
+//       const s = norm(statusFilter);
+//       pickups = pickups.filter((r) => norm(r.status) === s);
+//     }
+
+//     if (q) {
+//       pickups = pickups.filter((r) =>
+//         [
+//           r.timestamp,
+//           r.fullName,
+//           r.phone,
+//           r.orderNumber,
+//           r.paymentMethod,
+//           r.carParkBay,
+//           r.status,
+//           r.agent,
+//           r.notes,
+//           r.netoOrderId,
+//         ]
+//           .join(" ")
+//           .toLowerCase()
+//           .includes(q)
+//       );
+//     }
+
+//     pickups = pickups.reverse();
+
+//     const total = pickups.length;
+//     const totalPages = Math.max(1, Math.ceil(total / pageSize));
+//     const safePage = Math.min(page, totalPages);
+
+//     const start = (safePage - 1) * pageSize;
+//     const end = start + pageSize;
+
+//     const items = pickups.slice(start, end);
+
+//     const statuses = Array.from(new Set(pickups.map((r) => r.status).filter(Boolean))).sort();
 
 //     return NextResponse.json({
 //       success: true,
@@ -141,37 +309,24 @@
 // }
 
 
-// app/api/admin/pickups-datatable/route.ts
 import { NextResponse } from "next/server";
-import { google } from "googleapis";
+import { getMasterSheetRows } from "@/app/lib/googleSheetCache";
 
 type PickupRow = {
-  timestamp: string;     // A
-  fullName: string;      // B
-  phone: string;         // C
-  orderNumber: string;   // D (kiosk ref, e.g. E9701943)
-  creditCard: string;    // E
-  validId: string;       // F
-  paymentMethod: string; // G
-  carParkBay: string;    // H
-  status: string;        // I
-  agent: string;         // J
-  type: string;          // K  ("Order Pickup")
-  notes: string;         // L  (existing Notes)
-  netoOrderId: string;   // M  ✅ NEW (Neto internal ID)
+  timestamp: string;
+  fullName: string;
+  phone: string;
+  orderNumber: string;
+  creditCard: string;
+  validId: string;
+  paymentMethod: string;
+  carParkBay: string;
+  status: string;
+  agent: string;
+  type: string;
+  notes: string;
+  netoOrderId: string;
 };
-
-async function getGoogleAuth() {
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-
-  if (!clientEmail || !privateKey) throw new Error("Missing Google credentials");
-
-  return new google.auth.GoogleAuth({
-    credentials: { client_email: clientEmail, private_key: privateKey },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-  });
-}
 
 function norm(s: string) {
   return String(s ?? "").trim().toLowerCase();
@@ -190,52 +345,67 @@ function toPickupRow(row: any[]): PickupRow {
     status: String(row?.[8] ?? ""),
     agent: String(row?.[9] ?? ""),
     type: String(row?.[10] ?? ""),
-    notes: String(row?.[11] ?? ""),       // ✅ L
-    netoOrderId: String(row?.[12] ?? ""), // ✅ M
+    notes: String(row?.[11] ?? ""),
+    netoOrderId: String(row?.[12] ?? ""),
   };
 }
 
 /**
- * GET /api/admin/pickups-datatable?status=Pending%20Pickup&q=123&page=1&pageSize=25
+ * GET /api/admin/pickups-datatable
  */
 export async function GET(request: Request) {
+
   try {
+
     const url = new URL(request.url);
 
-    const statusFilter = url.searchParams.get("status") || ""; // exact match (case-insensitive)
-    const q = (url.searchParams.get("q") || "").trim().toLowerCase();
+    const statusFilter = url.searchParams.get("status") || "";
 
-    const page = Math.max(1, Number(url.searchParams.get("page") || "1"));
-    const pageSize = Math.min(200, Math.max(10, Number(url.searchParams.get("pageSize") || "25")));
+    const q = (url.searchParams.get("q") || "")
+      .trim()
+      .toLowerCase();
+
+    const page = Math.max(
+      1,
+      Number(url.searchParams.get("page") || "1")
+    );
+
+    const pageSize = Math.min(
+      200,
+      Math.max(
+        10,
+        Number(url.searchParams.get("pageSize") || "25")
+      )
+    );
 
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-    if (!spreadsheetId) throw new Error("GOOGLE_SHEET_ID missing");
 
-    const auth = await getGoogleAuth();
-    const sheets = google.sheets({ version: "v4", auth });
+    if (!spreadsheetId)
+      throw new Error("GOOGLE_SHEET_ID missing");
 
-    // ✅ Read through M now (because L=Notes, M=NetoOrderID)
-    const resp = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: "MASTER LIST!A:M",
-    });
-
-    const rows = resp.data.values ?? [];
+    // ✅ SHARED CACHE CALL
+    const rows = await getMasterSheetRows(spreadsheetId);
 
     const TYPE_PICKUP = "order pickup";
 
-    // Map + filter
     let pickups = rows
       .map(toPickupRow)
       .filter((r) => norm(r.type) === TYPE_PICKUP)
-      .filter((r) => r.orderNumber); // ignore blank lines
+      .filter((r) => r.orderNumber);
 
+    // Status filter
     if (statusFilter) {
+
       const s = norm(statusFilter);
-      pickups = pickups.filter((r) => norm(r.status) === s);
+
+      pickups = pickups.filter(
+        (r) => norm(r.status) === s
+      );
     }
 
+    // Search filter
     if (q) {
+
       pickups = pickups.filter((r) =>
         [
           r.timestamp,
@@ -247,7 +417,7 @@ export async function GET(request: Request) {
           r.status,
           r.agent,
           r.notes,
-          r.netoOrderId, // ✅ searchable too
+          r.netoOrderId,
         ]
           .join(" ")
           .toLowerCase()
@@ -255,25 +425,39 @@ export async function GET(request: Request) {
       );
     }
 
-    // Latest first (simple: reverse because sheet is appended)
+    // Latest first
     pickups = pickups.reverse();
 
     const total = pickups.length;
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
-    const safePage = Math.min(page, totalPages);
+
+    const totalPages = Math.max(
+      1,
+      Math.ceil(total / pageSize)
+    );
+
+    const safePage = Math.min(
+      page,
+      totalPages
+    );
 
     const start = (safePage - 1) * pageSize;
+
     const end = start + pageSize;
 
     const items = pickups.slice(start, end);
 
-    // For dropdown filters
-    const statuses = Array.from(new Set(pickups.map((r) => r.status).filter(Boolean))).sort((a, b) =>
-      a.localeCompare(b)
-    );
+    const statuses = Array.from(
+      new Set(
+        pickups
+          .map((r) => r.status)
+          .filter(Boolean)
+      )
+    ).sort();
 
     return NextResponse.json({
+
       success: true,
+
       data: {
         items,
         total,
@@ -282,8 +466,19 @@ export async function GET(request: Request) {
         totalPages,
         statuses,
       },
+
     });
+
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: err.message,
+      },
+      { status: 500 }
+    );
+
   }
+
 }
