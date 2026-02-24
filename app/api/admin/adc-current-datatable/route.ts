@@ -281,7 +281,7 @@ async function refreshCache() {
   const resp =
     await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "'Copy of Current Orders'!A3:K",
+      range: "'Current Orders'!A3:K",
     });
 
   const rows = resp.data.values ?? [];

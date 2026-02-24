@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           id: "adc-lookup",
           icon: TextSearch,
           label: "ADC Lookup",
-          href: "/admin/neto-lookup",
+          href: "/admin/adc-lookup",
           allowedRoles: ["superadmin", "admin"],
           match: "startsWith",
         },

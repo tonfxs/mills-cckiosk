@@ -89,28 +89,28 @@ export default function UserSettings() {
     <div className="px-8 py-6">
       <div className="max-w-2xl">
 
-        <h1 className="text-2xl font-semibold mb-6 text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-semibold mb-6 text-slate-900 ">
           User Settings
         </h1>
 
         {/* ── Profile Card ── */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
 
           <div className="flex items-center gap-2 mb-1">
-            <User size={18} className="text-slate-500 dark:text-slate-400" />
-            <h2 className="font-medium text-slate-600 dark:text-slate-300">
+            <User size={18} className="text-slate-500 " />
+            <h2 className="font-medium text-slate-600 ">
               Profile Information
             </h2>
           </div>
 
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
+          <p className="text-sm text-slate-500  mb-5">
             Update your display name below. Email cannot be changed here.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
 
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-500  mb-1">
                 Display Name
               </label>
               <input
@@ -118,21 +118,21 @@ export default function UserSettings() {
                 placeholder="Juan dela Cruz"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-3 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm"
+                className="w-full bg-slate-100  border border-slate-200 rounded px-3 py-2 text-slate-700 placeholder:text-slate-400  text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-500 mb-1">
                 Email Address
               </label>
               <input
                 type="email"
                 value={email}
                 disabled
-                className="w-full bg-slate-200 dark:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded px-3 py-2 text-slate-400 dark:text-slate-400 text-sm cursor-not-allowed"
+                className="w-full bg-slate-200  border border-slate-200  rounded px-3 py-2 text-slate-400  text-sm cursor-not-allowed"
               />
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Email cannot be changed.
               </p>
             </div>
@@ -142,7 +142,7 @@ export default function UserSettings() {
           <button
             onClick={saveProfile}
             disabled={profileLoading}
-            className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-600 dark:hover:bg-slate-500 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
           >
             {profileLoading
               ? <Loader2 className="animate-spin" size={16} />
@@ -157,13 +157,13 @@ export default function UserSettings() {
         </div>
 
         {/* ── Password Request Card ── */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
+        <div className="bg-white  p-6 rounded-lg shadow">
 
-          <h2 className="font-medium mb-2 text-slate-600 dark:text-slate-300">
+          <h2 className="font-medium mb-2 text-slate-600 ">
             Request Password Change
           </h2>
 
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          <p className="text-sm text-slate-500  mb-4">
             Send a request to admin to change your password.
           </p>
 
@@ -171,13 +171,13 @@ export default function UserSettings() {
             placeholder="Reason (optional)"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-3 py-2 mb-4 text-slate-600 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm"
+            className="w-full bg-slate-100  border border-slate-200 rounded px-3 py-2 mb-4 text-slate-600 placeholder:text-slate-400 text-sm"
           />
 
           <button
             onClick={submitRequest}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
           >
             {loading
               ? <Loader2 className="animate-spin" size={16} />

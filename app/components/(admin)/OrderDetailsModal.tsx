@@ -266,16 +266,18 @@ export function OrderDetailsModal({
                         <h3 className="font-bold text-green-900">Kiosk Input Data</h3>
                         <p className="text-xs text-green-700 mt-0.5">Data from table/user input</p>
                       </div>
+
                       <div className="p-4 space-y-4">
-                        <DataSection title="Order Information">
-                          <DataRow label="Order #" value={rowData.orderNumber} />
-                          <DataRow label="Status" value={rowData.status} />
-                          <DataRow label="Time" value={rowData.timestamp} />
-                        </DataSection>
 
                         <DataSection title="Customer">
                           <DataRow label="Name" value={rowData.fullName} />
                           <DataRow label="Phone" value={rowData.phone} />
+                        </DataSection>
+
+                        <DataSection title="Order Information">
+                          <DataRow label="Order #" value={rowData.orderNumber} />
+                          <DataRow label="Status" value={rowData.status} />
+                          <DataRow label="Time" value={rowData.timestamp} />
                         </DataSection>
 
                         <DataSection title="Pickup Details">
@@ -294,7 +296,14 @@ export function OrderDetailsModal({
                       <p className="text-xs text-green-700 mt-0.5">Data from Neto API</p>
                     </div>
                     <div className="p-4 space-y-4">
-                      <DataSection title="Order Information">
+
+                      <DataSection title="Customer">
+                        <DataRow label="Name" value={fullName} />
+                        <DataRow label="Phone" value={phone} />
+                        <DataRow label="Email" value={String(order?.Email ?? "—")} />
+                      </DataSection>
+
+                        <DataSection title="Order Information">
                         <DataRow label="Order #" value={orderNumberDisplay} />
                         <DataRow label="Status" value={String(order?.OrderStatus ?? "—")} />
                         <DataRow label="Date Placed" value={String(order?.DatePlaced ?? "—")} />
@@ -313,12 +322,6 @@ export function OrderDetailsModal({
                       <DataSection title="Sticky Notes">
                         <DataRow label="Title" value={String(order?.StickyNotes?.Title ?? "—")} />
                         <DataRow label="Description" value={String(order?.StickyNotes?.Description ?? "—")} />
-                      </DataSection>
-
-                      <DataSection title="Customer">
-                        <DataRow label="Name" value={fullName} />
-                        <DataRow label="Phone" value={phone} />
-                        <DataRow label="Email" value={String(order?.Email ?? "—")} />
                       </DataSection>
 
                       <DataSection title="Order Totals">

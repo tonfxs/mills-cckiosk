@@ -53,11 +53,11 @@ export async function POST(request: Request) {
 
     const colA = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "'Copy of Current Orders'!A:A",
+      range: "'Current Orders'!A:A",
     });
 
     const nextRow = (colA.data.values?.length ?? 0) + 1;
-    const targetRange = `'Copy of Current Orders'!A${nextRow}`;
+    const targetRange = `'Current Orders'!A${nextRow}`;
     console.log(`📍 Writing to: ${targetRange}`);
 
     const newRow = [
@@ -114,7 +114,7 @@ export async function DELETE(request: Request) {
     // Search column D (Order Number) in source sheet
     const colD = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "'Copy of Completed ADC orders'!D:D",
+      range: "'Completed ADC orders'!D:D",
     });
 
     const rows = colD.data.values ?? [];
@@ -135,7 +135,7 @@ export async function DELETE(request: Request) {
     const sheetRow = rowIndex + 1;
 
     // Clear from column A to Z (entire row)
-    const clearRange = `'Copy of Completed ADC orders'!A${sheetRow}:Z${sheetRow}`;
+    const clearRange = `'Completed ADC orders'!A${sheetRow}:Z${sheetRow}`;
     console.log(`🗑️ Clearing range: ${clearRange}`);
 
     await sheets.spreadsheets.values.clear({
