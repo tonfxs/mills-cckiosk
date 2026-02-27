@@ -321,7 +321,7 @@ async function saveToSheet(orderData: OrderData) {
   // ----------------------------
   const pickupResp = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Pickupsv1!A:A",
+    range: "Copy of Pickupsv1!A:A",
   });
 
   const pickupRows = pickupResp.data.values || [];
@@ -329,7 +329,7 @@ async function saveToSheet(orderData: OrderData) {
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `Pickupsv1!A${pickupRow}:K${pickupRow}`,
+    range: `Copy of Pickupsv1!A${pickupRow}:K${pickupRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [

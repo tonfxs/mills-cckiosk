@@ -17,6 +17,7 @@ import DashboardStatCard from '@/app/components/(admin)/DashboardStatCard';
 import SectionShell from '@/app/components/(admin)/SectionShell';
 import DataTable, { Column } from '@/app/components/(admin)/DataTable';
 import DashboardHeader from '@/app/components/(admin)/DashboardHeader';
+import SheetHealthWidget, { SheetHealth } from '@/app/components/(admin)/SheetHealthWidget';
 
 import TodayVsTotalFunnelPanel from '@/app/components/(admin)/Funnel';
 import DuplicatesPanel from '@/app/components/(admin)/DuplicatesPanel';
@@ -77,7 +78,6 @@ type FunnelSummary = {
   total: { started?: number; submitted?: number; verified?: number; completed?: number };
 };
 
-/** Panel drilldown shapes (match your panel components) */
 type StuckItem = {
   timestamp: string;
   fullName: string;
@@ -124,13 +124,11 @@ type MetricsResponse = {
   uniqueCustomersToday: number;
   uniqueCustomersTotal: number;
 
-  // widgets
   stuckAging?: StuckAgingSummary;
   dataQuality?: DataQualitySummary;
   duplicates?: DuplicateSummary;
   successFunnel?: FunnelSummary;
 
-  // drilldowns from API (THIS is what fixes your empty panels)
   stuckOrders?: StuckItem[];
   missingInvalidRows?: MissingItem[];
   duplicateGroups?: DuplicateGroup[];
@@ -139,22 +137,17 @@ type MetricsResponse = {
 async function fetchMetrics(signal?: AbortSignal): Promise<MetricsResponse> {
   const res = await fetch('/api/admin/kiosk-metrics', { signal, cache: 'no-store' });
   const text = await res.text();
-
   let json: any;
   try {
     json = JSON.parse(text);
   } catch {
     throw new Error(`API returned non-JSON: ${text.slice(0, 200)}`);
   }
-
-  if (!res.ok || !json?.success) {
-    throw new Error(json?.error || 'Failed to load kiosk metrics');
-  }
-
+  if (!res.ok || !json?.success) throw new Error(json?.error || 'Failed to load kiosk metrics');
   return json.data as MetricsResponse;
 }
 
-/** ---------- helpers (fallback computations) ---------- */
+/** ---------- helpers ---------- */
 
 function isLikelyPhone(s: string) {
   const digits = (s || '').replace(/\D/g, '');
@@ -184,7 +177,6 @@ function calcDataQualityFromRecent(
 ): DataQualitySummary {
   let missing = 0;
   let invalid = 0;
-
   const issueMap = new Map<string, number>();
   const bump = (k: string) => issueMap.set(k, (issueMap.get(k) || 0) + 1);
 
@@ -195,10 +187,8 @@ function calcDataQualityFromRecent(
     if (!r.paymentMethod?.trim()) (missing++, bump('Pickup: missing paymentMethod'));
     if (!r.carParkBay?.trim()) (missing++, bump('Pickup: missing carParkBay'));
     if (!r.status?.trim()) (missing++, bump('Pickup: missing status'));
-
     if (r.phone?.trim() && !isLikelyPhone(r.phone)) (invalid++, bump('Pickup: invalid phone'));
-    if (r.orderNumber?.trim() && !isLikelyOrderNumber(r.orderNumber))
-      (invalid++, bump('Pickup: invalid orderNumber'));
+    if (r.orderNumber?.trim() && !isLikelyOrderNumber(r.orderNumber)) (invalid++, bump('Pickup: invalid orderNumber'));
   }
 
   for (const r of returns) {
@@ -207,7 +197,6 @@ function calcDataQualityFromRecent(
     if (!r.rmaID?.trim()) (missing++, bump('Return: missing rmaID'));
     if (!r.carParkBay?.trim()) (missing++, bump('Return: missing carParkBay'));
     if (!r.status?.trim()) (missing++, bump('Return: missing status'));
-
     if (r.phone?.trim() && !isLikelyPhone(r.phone)) (invalid++, bump('Return: invalid phone'));
     if (r.rmaID?.trim() && !isLikelyRma(r.rmaID)) (invalid++, bump('Return: invalid rmaID'));
   }
@@ -218,10 +207,8 @@ function calcDataQualityFromRecent(
     if (!r.orderNumber?.trim()) (missing++, bump('Parts: missing orderNumber'));
     if (!r.carParkBay?.trim()) (missing++, bump('Parts: missing carParkBay'));
     if (!r.status?.trim()) (missing++, bump('Parts: missing status'));
-
     if (r.phone?.trim() && !isLikelyPhone(r.phone)) (invalid++, bump('Parts: invalid phone'));
-    if (r.orderNumber?.trim() && !isLikelyOrderNumber(r.orderNumber))
-      (invalid++, bump('Parts: invalid orderNumber'));
+    if (r.orderNumber?.trim() && !isLikelyOrderNumber(r.orderNumber)) (invalid++, bump('Parts: invalid orderNumber'));
   }
 
   const topIssues = [...issueMap.entries()]
@@ -239,7 +226,6 @@ function calcDuplicatesFromRecent(
 ): DuplicateSummary {
   const seen = new Map<string, number>();
   const keys: string[] = [];
-
   const add = (prefix: string, raw: string) => {
     const k = `${prefix}:${normalizeKey(raw)}`;
     if (k.endsWith(':')) return;
@@ -247,11 +233,9 @@ function calcDuplicatesFromRecent(
     seen.set(k, next);
     if (next === 2) keys.push(k);
   };
-
   for (const r of pickups) add('order', r.orderNumber);
   for (const r of parts) add('order', r.orderNumber);
   for (const r of returns) add('rma', r.rmaID);
-
   return { duplicateCount: keys.length, duplicateKeys: keys.slice(0, 10) };
 }
 
@@ -260,30 +244,26 @@ function pct(n: number, d: number) {
   return Math.round((n / d) * 100);
 }
 
-/** Which drilldown is currently open */
 type WidgetKey = 'stuck' | 'missing' | 'duplicates' | 'funnel' | null;
 
 export default function DashboardClient() {
   const [now, setNow] = useState(() => new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-
   const [query, setQuery] = useState('');
   const queryNorm = query.trim().toLowerCase();
-
   const [activeWidget, setActiveWidget] = useState<WidgetKey>(null);
   const toggleWidget = (key: Exclude<WidgetKey, null>) => {
     setActiveWidget((prev) => (prev === key ? null : key));
   };
-
   const [mounted, setMounted] = useState(false);
 
-    useEffect(() => {
-      setMounted(true);
-    }, []);
+  // Sheet health state
+  const [sheetHealth, setSheetHealth] = useState<SheetHealth | null>(null);
+  const [sheetHealthLoading, setSheetHealthLoading] = useState(true);
 
+  useEffect(() => { setMounted(true); }, []);
 
   const [data, setData] = useState<MetricsResponse>({
     ordersPickedUpToday: 0,
@@ -322,6 +302,19 @@ export default function DashboardClient() {
     }).format(now);
   }, [now]);
 
+  const loadSheetHealth = async () => {
+    try {
+      setSheetHealthLoading(true);
+      const res = await fetch('/api/admin/sheet-health', { cache: 'no-store' });
+      const json = await res.json();
+      if (json.success) setSheetHealth(json.data);
+    } catch {
+      // silently fail — non-critical
+    } finally {
+      setSheetHealthLoading(false);
+    }
+  };
+
   const load = async () => {
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -330,9 +323,7 @@ export default function DashboardClient() {
     try {
       setError('');
       setLoading(true);
-
       const d = await fetchMetrics(controller.signal);
-
       setData({
         ...d,
         recentPickups: d.recentPickups ?? [],
@@ -348,31 +339,28 @@ export default function DashboardClient() {
     } finally {
       setLoading(false);
     }
+
+    loadSheetHealth();
   };
 
   useEffect(() => {
     load();
+    loadSheetHealth();
 
     if (!autoRefresh) return;
-
     const interval = setInterval(() => load(), 30_000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh]);
 
-  // Optional: close panel when searching/filtering
-  useEffect(() => {
-    setActiveWidget(null);
-  }, [queryNorm]);
+  useEffect(() => { setActiveWidget(null); }, [queryNorm]);
 
   const pickups = useMemo(() => {
     const list = data.recentPickups ?? [];
     if (!queryNorm) return list;
     return list.filter((r) =>
       [r.timestamp, r.fullName, r.phone, r.orderNumber, r.paymentMethod, r.carParkBay, r.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(queryNorm)
+        .join(' ').toLowerCase().includes(queryNorm)
     );
   }, [data.recentPickups, queryNorm]);
 
@@ -381,9 +369,7 @@ export default function DashboardClient() {
     if (!queryNorm) return list;
     return list.filter((r) =>
       [r.timestamp, r.fullName, r.phone, r.rmaID, r.carParkBay, r.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(queryNorm)
+        .join(' ').toLowerCase().includes(queryNorm)
     );
   }, [data.recentReturns, queryNorm]);
 
@@ -392,13 +378,10 @@ export default function DashboardClient() {
     if (!queryNorm) return list;
     return list.filter((r) =>
       [r.timestamp, r.fullName, r.phone, r.orderNumber, r.carParkBay, r.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(queryNorm)
+        .join(' ').toLowerCase().includes(queryNorm)
     );
   }, [data.recentParts, queryNorm]);
 
-  // Fallback computations if API doesn’t provide them yet
   const computedQuality = useMemo(
     () => calcDataQualityFromRecent(data.recentPickups ?? [], data.recentReturns ?? [], data.recentParts ?? []),
     [data.recentPickups, data.recentReturns, data.recentParts]
@@ -413,19 +396,14 @@ export default function DashboardClient() {
   const duplicates = data.duplicates ?? computedDuplicates;
   const stuck = data.stuckAging;
 
-  // Funnel fallback: show completed totals even if started isn’t present
   const funnelTodayCompleted =
     (data.successFunnel?.today?.completed ?? 0) ||
     (data.ordersPickedUpToday + data.returnItemsReceivedToday + data.partsCompletedToday);
-
   const funnelTodayStarted = data.successFunnel?.today?.started ?? 0;
-
   const funnelTotalCompleted =
     (data.successFunnel?.total?.completed ?? 0) ||
     (data.ordersPickedUpTotal + data.returnItemsReceivedTotal + data.partsCompletedTotal);
-
   const funnelTotalStarted = data.successFunnel?.total?.started ?? 0;
-
   const todayFunnelRate = funnelTodayStarted ? pct(funnelTodayCompleted, funnelTodayStarted) : null;
   const totalFunnelRate = funnelTotalStarted ? pct(funnelTotalCompleted, funnelTotalStarted) : null;
 
@@ -457,10 +435,9 @@ export default function DashboardClient() {
     { header: 'Status', accessor: (r) => r.status, pill: true, minWidth: 140 },
   ];
 
-  /** ✅ DRILLDOWN ITEMS (NOW USING API OUTPUT DIRECTLY) */
   const stuckPanelItems = useMemo(() => (data.stuckOrders ?? []) as StuckItem[], [data.stuckOrders]);
-
   const missingPanelItems = useMemo(() => (data.missingInvalidRows ?? []) as MissingItem[], [data.missingInvalidRows]);
+<<<<<<< Updated upstream
 
   // const duplicatePanelGroups = useMemo(
   //   () => (data.duplicateGroups ?? []) as DuplicateGroup[],
@@ -520,6 +497,9 @@ useEffect(() => {
 }, [duplicatePanelData]);
 
 
+=======
+  const duplicatePanelGroups = useMemo(() => (data.duplicateGroups ?? []) as DuplicateGroup[], [data.duplicateGroups]);
+>>>>>>> Stashed changes
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -541,28 +521,24 @@ useEffect(() => {
             subtitle={loading ? 'Loading…' : `Today • Total ${data.ordersPickedUpTotal}`}
             icon={<ShoppingCart className="h-5 w-5" />}
           />
-
           <DashboardStatCard
             title="Returned Items"
             value={loading ? '—' : data.returnItemsReceivedToday}
             subtitle={loading ? 'Loading…' : `Today • Total ${data.returnItemsReceivedTotal}`}
             icon={<PackageCheck className="h-5 w-5" />}
           />
-
           <DashboardStatCard
             title="Parts Assistance"
             value={loading ? '—' : data.partsCompletedToday}
             subtitle={loading ? 'Loading…' : `Today • Total ${data.partsCompletedTotal}`}
             icon={<Wrench className="h-5 w-5" />}
           />
-
           <DashboardStatCard
             title="Customers"
             value={loading ? '—' : data.uniqueCustomersToday}
             subtitle={loading ? 'Loading…' : `Today • Total ${data.uniqueCustomersTotal}`}
             icon={<Users className="h-5 w-5" />}
           />
-
           <DashboardStatCard
             title="Last Updated"
             value={loading ? '—' : 'Now'}
@@ -583,11 +559,9 @@ useEffect(() => {
               title="Stuck / Aging Orders"
               value={loading ? '—' : stuck ? stuck.stuckCount : '—'}
               subtitle={
-                loading
-                  ? 'Loading…'
-                  : stuck
-                    ? `>30m: ${stuck.agingOver30m} • >2h: ${stuck.agingOver2h}`
-                    : 'Requires API (pending statuses)'
+                loading ? 'Loading…' : stuck
+                  ? `>30m: ${stuck.agingOver30m} • >2h: ${stuck.agingOver2h}`
+                  : 'Requires API (pending statuses)'
               }
               icon={<AlertTriangle className="h-5 w-5" />}
             />
@@ -617,11 +591,7 @@ useEffect(() => {
               title="Duplicate Alerting"
               value={loading ? '—' : duplicates.duplicateCount}
               subtitle={
-                loading
-                  ? 'Loading…'
-                  : duplicates.duplicateCount
-                    ? 'Duplicates detected'
-                    : 'No duplicates detected'
+                loading ? 'Loading…' : duplicates.duplicateCount ? 'Duplicates detected' : 'No duplicates detected'
               }
               icon={<Copy className="h-5 w-5" />}
             />
@@ -637,16 +607,18 @@ useEffect(() => {
               title="Today vs Total Funnel"
               value={loading ? '—' : todayFunnelRate !== null ? `${todayFunnelRate}%` : '—'}
               subtitle={
-                loading
-                  ? 'Loading…'
-                  : todayFunnelRate !== null
-                    ? `Today: ${funnelTodayCompleted}/${funnelTodayStarted} • Total: ${totalFunnelRate ?? '—'}%`
-                    : `Today completed: ${funnelTodayCompleted}`
+                loading ? 'Loading…' : todayFunnelRate !== null
+                  ? `Today: ${funnelTodayCompleted}/${funnelTodayStarted} • Total: ${totalFunnelRate ?? '—'}%`
+                  : `Today completed: ${funnelTodayCompleted}`
               }
               icon={<TrendingUp className="h-5 w-5" />}
             />
           </button>
+
         </div>
+
+        {/* Floating Sheet Health Button */}
+        {/* <SheetHealthWidget data={sheetHealth} loading={sheetHealthLoading} /> */}
 
         {/* Drill-down panels */}
         {/* <div className="mt-6 space-y-6">
@@ -725,20 +697,14 @@ useEffect(() => {
           )}
         </div>
 
-        {/* Existing tables */}
+        {/* Tables */}
         <div className="mt-6 space-y-6">
           <SectionShell
             title="Recent Pickups"
             subtitle='Latest "Order Collected" rows from MASTER LIST'
             right={<div className="text-xs text-gray-500">{queryNorm ? `Filtered: ${pickups.length}` : `Rows: ${pickups.length}`}</div>}
           >
-            <DataTable
-              loading={loading}
-              rows={pickups}
-              columns={pickupCols}
-              emptyText="No pickups found yet."
-              minWidthClass="min-w-[880px]"
-            />
+            <DataTable loading={loading} rows={pickups} columns={pickupCols} emptyText="No pickups found yet." minWidthClass="min-w-[880px]" />
           </SectionShell>
 
           <SectionShell
@@ -746,13 +712,7 @@ useEffect(() => {
             subtitle='Latest "Item Received" rows from MASTER LIST'
             right={<div className="text-xs text-gray-500">{queryNorm ? `Filtered: ${returns.length}` : `Rows: ${returns.length}`}</div>}
           >
-            <DataTable
-              loading={loading}
-              rows={returns}
-              columns={returnCols}
-              emptyText="No returns found yet."
-              minWidthClass="min-w-[760px]"
-            />
+            <DataTable loading={loading} rows={returns} columns={returnCols} emptyText="No returns found yet." minWidthClass="min-w-[760px]" />
           </SectionShell>
 
           <SectionShell
@@ -760,19 +720,10 @@ useEffect(() => {
             subtitle="Latest completed Parts Assistance rows from MASTER LIST"
             right={<div className="text-xs text-gray-500">{queryNorm ? `Filtered: ${parts.length}` : `Rows: ${parts.length}`}</div>}
           >
-            <DataTable
-              loading={loading}
-              rows={parts}
-              columns={partsCols}
-              emptyText="No parts records found yet."
-              minWidthClass="min-w-[760px]"
-            />
+            <DataTable loading={loading} rows={parts} columns={partsCols} emptyText="No parts records found yet." minWidthClass="min-w-[760px]" />
           </SectionShell>
 
-          <div className="text-xs text-gray-400">
-            {mounted ? headerTime : '—'}
-          </div>
-
+          <div className="text-xs text-gray-400">{mounted ? headerTime : '—'}</div>
         </div>
       </div>
     </div>

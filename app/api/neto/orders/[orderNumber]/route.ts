@@ -26,8 +26,6 @@ const OUTPUT_SELECTOR = [
   "DeliveryInstruction",
   "ShippingOption",
 
-
-
   "OrderLine",
   "OrderLine.SKU",
   "OrderLine.ProductName",
@@ -36,6 +34,9 @@ const OUTPUT_SELECTOR = [
   "OrderLine.WarehouseName",
   "OrderLine.PickQuantity",
   "OrderLine.BackorderQuantity",
+  "OrderLine.ItemNotes",
+  "OrderLine.KitItemSKU",    // parent kit SKU — present on component lines
+  "OrderLine.IsKitItem",     // flag indicating this line is a kit component
 
   "OrderLine.ExternalSystemIdentifier",
   "OrderLine.ExternalOrderReference",
@@ -47,6 +48,62 @@ const OUTPUT_SELECTOR = [
   "OrderLine.eBayAuctionID",
 ] as const;
 
+// ---------- Kit definitions ----------
+// When Neto returns a kit SKU, expand it into its component lines.
+// Add new kits here as you discover them.
+// Each component can optionally override name/price; otherwise they show as "—".
+// qty is multiplied by the parent line's quantity.
+
+// ---------- Kit definitions ----------
+// Only define SKU + Quantity here. Name and price are fetched live from Neto GetItem.
+// Add new kits here as you discover them.
+
+type KitComponent = {
+  SKU: string;
+  Quantity: number; // per kit unit
+};
+
+const KIT_DEFINITIONS: Record<string, KitComponent[]> = {
+  "PRWPTLJETA770-KIT": [
+    { SKU: "PRWPTLJETA770", Quantity: 1 },
+    { SKU: "PRWACSJETA20D", Quantity: 1 },
+  ],
+  // Add more kits below as needed:
+  // "SOME-OTHER-KIT": [
+  //   { SKU: "COMP-A", Quantity: 1 },
+  //   { SKU: "COMP-B", Quantity: 2 },
+  // ],
+};
+
+// Fetch live item details (name + price) from Neto for a list of SKUs
+async function fetchItemDetails(skus: string[]): Promise<Record<string, { name: string; price: string | null }>> {
+  if (skus.length === 0) return {};
+  try {
+    const payload = {
+      Filter: {
+        SKU: skus,
+        OutputSelector: ["SKU", "Name", "DefaultPrice", "SellPrice", "RRP"],
+      },
+    };
+    console.log("[NETO GetItem REQUEST]", JSON.stringify(payload, null, 2));
+    const data = await netoRequest<{ Ack?: string; Item?: any[] }>("GetItem", payload, { timeoutMs: 15_000 });
+    console.log("[NETO GetItem RAW RESPONSE]", JSON.stringify(data, null, 2));
+    const items: any[] = Array.isArray(data?.Item) ? data.Item : [];
+    const map: Record<string, { name: string; price: string | null }> = {};
+    for (const item of items) {
+      const sku = String(item?.SKU ?? "").trim();
+      if (!sku) continue;
+      const price = String(item?.DefaultPrice ?? item?.SellPrice ?? item?.RRP ?? "").trim() || null;
+      const name = String(item?.Name ?? "").trim();
+      map[sku] = { name, price };
+    }
+    return map;
+  } catch (e: any) {
+    console.error("[NETO GetItem ERROR]", e?.message ?? e);
+    return {};
+  }
+}
+
 // ---------- helpers ----------
 function listOrders(data: NetoGetOrderResponse): any[] {
   const arr = (data?.Order ?? data?.Orders ?? []) as any[];
@@ -57,16 +114,82 @@ function firstOrder(data: NetoGetOrderResponse) {
   return listOrders(data)[0] ?? null;
 }
 
-function extractLines(order: any): any[] {
+function getRawLines(order: any): any[] {
   if (!order) return [];
   if (Array.isArray(order.OrderLine)) return order.OrderLine;
-
   const ol = order.OrderLine;
   if (ol && Array.isArray(ol.OrderLine)) return ol.OrderLine;
   if (ol && Array.isArray(ol.Line)) return ol.Line;
   if (ol && typeof ol === "object") return [ol];
-
   return [];
+}
+
+// Collect all component SKUs that need live price/name lookup
+function collectKitComponentSKUs(order: any): string[] {
+  const raw = getRawLines(order);
+  const skus = new Set<string>();
+  for (const line of raw) {
+    const sku = String(line?.SKU ?? "").trim();
+    const kitDef = KIT_DEFINITIONS[sku];
+    if (kitDef) kitDef.forEach((c) => skus.add(c.SKU));
+  }
+  return Array.from(skus);
+}
+
+// Expand order lines, injecting live item details for kit components
+function extractLines(order: any, _itemDetails: Record<string, { name: string; price: string | null }> = {}): any[] {
+  const raw = getRawLines(order);
+
+  // Check if Neto already returned component lines natively (KitItemSKU populated)
+  const hasNativeKitLines = raw.some(
+    (l) => String(l?.KitItemSKU ?? "").trim() !== "" || String(l?.IsKitItem ?? "").trim() !== ""
+  );
+
+  if (hasNativeKitLines) {
+    // Neto returned all lines including components — just tag them for display
+    // Group: kit header = line where IsKitItem is falsy but its SKU is a known kit
+    //        component  = line where KitItemSKU is set
+    return raw.map((line) => {
+      const kitParent = String(line?.KitItemSKU ?? "").trim();
+      const isKitHeader = !kitParent && !!KIT_DEFINITIONS[String(line?.SKU ?? "").trim()];
+      const isKitComponent = !!kitParent;
+      return { ...line, isKitHeader, isKitComponent, kitParentSKU: kitParent || undefined };
+    });
+  }
+
+  // Fallback: Neto did not return component lines — expand manually using KIT_DEFINITIONS
+  // (name comes from KIT_DEFINITIONS SKU itself since no detail available;
+  //  price will be blank — this is the best we can do without a separate GetItem call)
+  const expanded: any[] = [];
+
+  for (const line of raw) {
+    const sku = String(line?.SKU ?? "").trim();
+    const kitDef = KIT_DEFINITIONS[sku];
+
+    if (kitDef) {
+      const parentQty = Number(line?.Quantity ?? 1);
+      expanded.push({ ...line, isKitHeader: true });
+
+      for (const component of kitDef) {
+        expanded.push({
+          SKU: component.SKU,
+          ProductName: component.SKU, // Neto didn't give us the name — show SKU
+          Quantity: String(component.Quantity * parentQty),
+          UnitPrice: null,            // Neto didn't give us the price
+          WarehouseName: line?.WarehouseName ?? "—",
+          PickQuantity: null,
+          BackorderQuantity: null,
+          isKitComponent: true,
+          kitParentSKU: sku,
+          OrderLineID: `${line?.OrderLineID ?? sku}-component-${component.SKU}`,
+        });
+      }
+    } else {
+      expanded.push(line);
+    }
+  }
+
+  return expanded;
 }
 
 function compactify(v: any) {
@@ -89,12 +212,10 @@ function eqNorm(a: any, b: any) {
   return aa && bb && aa === bb;
 }
 
-// Detect eBay PurchaseOrderNumber format: NN-NNNNN-NNNNN
 function isEbayPurchaseOrderNumber(ref: string) {
   return /^\d{2}-\d{5}-\d{5}$/.test(ref);
 }
 
-// Detect transaction/auction ids
 function isDigitsId(ref: string) {
   return /^\d{8,}$/.test(ref);
 }
@@ -144,8 +265,6 @@ async function getFirstBy(filter: Record<string, any>, timeoutMs = 25_000) {
   return firstOrder(data);
 }
 
-// ✅ scan recent orders (1-week span) and match top-level PurchaseOrderNumber
-// ✅ ALWAYS tries SalesChannel="eBay" first, then falls back if unsupported
 async function resolveByPurchaseOrderScan(ref: string) {
   const WINDOW_DAYS = 7;
   const LIMIT = 100;
@@ -154,7 +273,6 @@ async function resolveByPurchaseOrderScan(ref: string) {
   const from = isoDateNDaysAgo(WINDOW_DAYS);
   const to = isoDateNDaysFromNow(0);
 
-  // Strategy 1: scan eBay channel (preferred)
   for (let page = 1; page <= MAX_PAGES; page++) {
     try {
       const payload = {
@@ -163,15 +281,13 @@ async function resolveByPurchaseOrderScan(ref: string) {
           Limit: LIMIT,
           DatePlacedFrom: from,
           DatePlacedTo: to,
-          SalesChannel: "eBay", // ✅ eBay filter
+          SalesChannel: "eBay",
           OutputSelector: OUTPUT_SELECTOR,
         },
       };
 
       console.log("[NETO PO-SCAN REQUEST - eBay]", JSON.stringify(payload, null, 2));
-
       const data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 60_000 });
-
       console.log("[NETO PO-SCAN RAW RESPONSE - eBay]", JSON.stringify(data, null, 2));
 
       const orders = listOrders(data);
@@ -185,7 +301,6 @@ async function resolveByPurchaseOrderScan(ref: string) {
     }
   }
 
-  // Strategy 2: fallback scan without SalesChannel (still date-bounded)
   for (let page = 1; page <= MAX_PAGES; page++) {
     const payload = {
       Filter: {
@@ -198,9 +313,7 @@ async function resolveByPurchaseOrderScan(ref: string) {
     };
 
     console.log("[NETO PO-SCAN REQUEST - Fallback]", JSON.stringify(payload, null, 2));
-
     const data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 60_000 });
-
     console.log("[NETO PO-SCAN RAW RESPONSE - Fallback]", JSON.stringify(data, null, 2));
 
     const orders = listOrders(data);
@@ -213,8 +326,6 @@ async function resolveByPurchaseOrderScan(ref: string) {
   return null;
 }
 
-// ✅ scan recent orders (1-week span) for line-level ids (Txn/Auction/etc)
-// ✅ ALWAYS tries SalesChannel="eBay" first, then falls back if unsupported
 async function resolveEbayByScan(ref: string, compact: string) {
   const WINDOW_DAYS = 7;
   const LIMIT = 100;
@@ -223,7 +334,6 @@ async function resolveEbayByScan(ref: string, compact: string) {
   const from = isoDateNDaysAgo(WINDOW_DAYS);
   const to = isoDateNDaysFromNow(0);
 
-  // Strategy 1: scan eBay channel (preferred)
   for (let page = 1; page <= MAX_PAGES; page++) {
     try {
       const payload = {
@@ -232,15 +342,13 @@ async function resolveEbayByScan(ref: string, compact: string) {
           Limit: LIMIT,
           DatePlacedFrom: from,
           DatePlacedTo: to,
-          SalesChannel: "eBay", // ✅ eBay filter
+          SalesChannel: "eBay",
           OutputSelector: OUTPUT_SELECTOR,
         },
       };
 
       console.log("[NETO LINE-SCAN REQUEST - eBay]", JSON.stringify(payload, null, 2));
-
       const data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 60_000 });
-
       console.log("[NETO LINE-SCAN RAW RESPONSE - eBay]", JSON.stringify(data, null, 2));
 
       const orders = listOrders(data);
@@ -256,7 +364,6 @@ async function resolveEbayByScan(ref: string, compact: string) {
     }
   }
 
-  // Strategy 2: fallback scan without SalesChannel (still date-bounded)
   for (let page = 1; page <= MAX_PAGES; page++) {
     const payload = {
       Filter: {
@@ -269,9 +376,7 @@ async function resolveEbayByScan(ref: string, compact: string) {
     };
 
     console.log("[NETO LINE-SCAN REQUEST - Fallback]", JSON.stringify(payload, null, 2));
-
     const data = await netoRequest<NetoGetOrderResponse>("GetOrder", payload, { timeoutMs: 60_000 });
-
     console.log("[NETO LINE-SCAN RAW RESPONSE - Fallback]", JSON.stringify(data, null, 2));
 
     const orders = listOrders(data);
@@ -301,69 +406,44 @@ export async function GET(_req: Request, ctx: { params: Promise<{ orderNumber: s
 
     const preferPO = isEbayPurchaseOrderNumber(ref);
 
-    // ✅ 1) Prefer PurchaseOrderNumber for eBay-style IDs
     if (preferPO) {
       for (const key of candidates) {
         order = await getFirstBy({ PurchaseOrderNumber: key });
-        if (order) {
-          matchedQuery = "PurchaseOrderNumber";
-          break;
-        }
+        if (order) { matchedQuery = "PurchaseOrderNumber"; break; }
       }
     }
 
-    // ✅ 2) Neto OrderID
     if (!order) {
       for (const key of candidates) {
         order = await getFirstBy({ OrderID: key });
-        if (order) {
-          matchedQuery = "OrderID";
-          break;
-        }
+        if (order) { matchedQuery = "OrderID"; break; }
       }
     }
 
-    // ✅ 3) PurchaseOrderNumber fallback
     if (!order && !preferPO) {
       for (const key of candidates) {
         order = await getFirstBy({ PurchaseOrderNumber: key });
-        if (order) {
-          matchedQuery = "PurchaseOrderNumber";
-          break;
-        }
+        if (order) { matchedQuery = "PurchaseOrderNumber"; break; }
       }
     }
 
-    // ✅ 4) Optional external refs
     if (!order) {
       for (const key of candidates) {
         order = await getFirstBy({ ExternalOrderLineReference: key });
-        if (order) {
-          matchedQuery = "ExternalOrderLineReference";
-          break;
-        }
+        if (order) { matchedQuery = "ExternalOrderLineReference"; break; }
 
         order = await getFirstBy({ ExternalOrderReference: key });
-        if (order) {
-          matchedQuery = "ExternalOrderReference";
-          break;
-        }
+        if (order) { matchedQuery = "ExternalOrderReference"; break; }
       }
     }
 
-    // ✅ 5) Scan recent eBay orders (date-bounded) to match PurchaseOrderNumber if filtering doesn't work
     if (!order) {
       for (const key of candidates) {
         const found = await resolveByPurchaseOrderScan(key);
-        if (found) {
-          order = found;
-          matchedQuery = "resolveByPurchaseOrderScan";
-          break;
-        }
+        if (found) { order = found; matchedQuery = "resolveByPurchaseOrderScan"; break; }
       }
     }
 
-    // ✅ 6) Scan line-level ids (Txn/Auction) within recent eBay orders (date-bounded)
     const looksEbayLineId = isDigitsId(ref) || isAuctionTxnCombo(ref);
     if (!order && looksEbayLineId) {
       order = await resolveEbayByScan(ref, compact);

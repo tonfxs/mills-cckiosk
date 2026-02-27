@@ -18,8 +18,6 @@ async function getGoogleAuth() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log("📥 Body received:", JSON.stringify(body, null, 2));
-
     const {
       bayNumber,
       agent,
@@ -31,37 +29,21 @@ export async function POST(request: Request) {
       notes,
       salesChannel,
       location,
+      date, // existing date from the sheet row
     } = body;
 
-    const timeWithAgent = `${new Intl.DateTimeFormat("en-AU", {
-      timeZone: "Australia/Sydney",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    }).format(new Date())} - ${String(agent).trim().toUpperCase()}`;
-
-    console.log("🕐 timeWithAgent:", timeWithAgent);
+    // Use the date already in the sheet row, just append the agent
+    const dateWithAgent = `${String(date ?? "").trim()} - ${String(agent).trim().toUpperCase()}`;
 
     const completeValue = status === "Completed";
-    console.log("☑️ completeValue:", completeValue);
-
     const spreadsheetId = process.env.GOOGLE_SHEET_ID_ADC;
     if (!spreadsheetId) throw new Error("GOOGLE_SHEET_ID_ADC missing");
 
     const auth = await getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    const colA = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: "'Current Orders'!A:A",
-    });
-
-    const nextRow = (colA.data.values?.length ?? 0) + 1;
-    const targetRange = `'Current Orders'!A${nextRow}`;
-    console.log(`📍 Writing to: ${targetRange}`);
-
     const newRow = [
-      timeWithAgent,  // A - Time
+      dateWithAgent,  // A - Date - Agent
       bayNumber,      // B - Bay #
       completeValue,  // C - Complete (checkbox)
       orderNumber,    // D - Order ID
@@ -73,27 +55,21 @@ export async function POST(request: Request) {
       location,       // J - LOCATION
     ];
 
-    console.log("📝 Row to write:", newRow);
-
-    const result = await sheets.spreadsheets.values.update({
+    const result = await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: targetRange,
+      range: "'Copy of Current Orders'!A1",
       valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
       requestBody: { values: [newRow] },
     });
 
-    console.log("✅ Written to:", result.data.updatedRange);
-
     return NextResponse.json({
       success: true,
-      updatedRange: result.data.updatedRange,
+      updatedRange: result.data.updates?.updatedRange,
     });
   } catch (err: any) {
     console.error("❌ POST error:", err.message);
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
 
@@ -102,7 +78,6 @@ export async function DELETE(request: Request) {
     const body = await request.json();
     const { orderNumber } = body;
 
-    console.log("🗑️ DELETE request for orderNumber:", orderNumber);
     if (!orderNumber) throw new Error("orderNumber is required");
 
     const spreadsheetId = process.env.GOOGLE_SHEET_ID_ADC;
@@ -111,45 +86,28 @@ export async function DELETE(request: Request) {
     const auth = await getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Search column D (Order Number) in source sheet
     const colD = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: "'Completed ADC orders'!D:D",
     });
 
     const rows = colD.data.values ?? [];
-    console.log("🔍 Searching col D for:", orderNumber, "— total rows:", rows.length);
-
     const rowIndex = rows.findIndex(
       (row) => String(row[0]).trim() === String(orderNumber).trim()
     );
 
     if (rowIndex === -1) {
-      console.warn("⚠️ Order not found:", orderNumber);
-      return NextResponse.json(
-        { success: false, error: "Order not found in Completed ADC orders" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
     }
 
     const sheetRow = rowIndex + 1;
-
-    // Clear from column A to Z (entire row)
-    const clearRange = `'Completed ADC orders'!A${sheetRow}:Z${sheetRow}`;
-    console.log(`🗑️ Clearing range: ${clearRange}`);
-
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: clearRange,
+      range: `'Copy of Completed ADC orders'!A${sheetRow}:Z${sheetRow}`,
     });
 
-    console.log("✅ Cleared:", clearRange);
-    return NextResponse.json({ success: true, clearedRange: clearRange });
+    return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error("❌ DELETE error:", err.message);
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

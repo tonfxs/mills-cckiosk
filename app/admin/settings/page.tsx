@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Archive, Calendar, Trash2, RefreshCw, Loader2, CheckCircle, XCircle, ArrowUpDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import SheetHealthPanel from "@/app/components/(admin)/SheetHealthPanel";
 
 type SheetKey = "master" | "pickups" | "returns";
 
@@ -43,8 +44,9 @@ function saveHistory(history: ArchiveHistoryEntry[]) {
 }
 
 export default function KioskSettingsPage() {
-  const { user } = useAuth();
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Unknown";
+  const { user, profile, role } = useAuth();
+  const displayName = profile?.displayName || user?.displayName || user?.email?.split("@")[0] || "Unknown";
+  const isSuperAdmin = role === "superadmin";
 
   const [selectedRange, setSelectedRange] = useState("last7days");
   const [customStart, setCustomStart] = useState("");
@@ -227,6 +229,9 @@ export default function KioskSettingsPage() {
           Sync Google Sheet
         </button> */}
       </div>
+
+      {/* ── Sheet Health Panel (superadmin only) ── */}
+      {isSuperAdmin && <SheetHealthPanel />}
 
       {/* Archive Section */}
       <div className="bg-white rounded-2xl shadow p-6 border border-slate-200">

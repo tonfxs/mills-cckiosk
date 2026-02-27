@@ -16,26 +16,24 @@ type AdcRow = {
   notes: string;
 };
 
+type SaveData = {
+  bayNumber: string;
+  agent: string;
+  status: string;
+  timestamp: string;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (data: {
-    bayNumber: string;
-    agent: string;
-    status: string;
-    timestamp: string;
-  }) => void;
+  onSave: (data: SaveData) => void;
   orderNumber?: string;
   rowData?: AdcRow | null;
 };
 
-export default function AdcCurrentModal({
-  open,
-  onClose,
-  onSave,
-  orderNumber,
-  rowData,
-}: Props) {
+const AGENTS = ["KB", "CC", "JB", "SA"];
+
+export default function AdcCurrentModal({ open, onClose, onSave, rowData }: Props) {
   const [bayNumber, setBayNumber] = useState("");
   const [agent, setAgent] = useState("KB");
   const [status, setStatus] = useState("Completed");
@@ -45,180 +43,164 @@ export default function AdcCurrentModal({
 
   useEffect(() => {
     if (open) {
-      console.log("🟢 Modal opened");
-      console.log("📦 rowData received:", rowData);
-      console.log("🔢 orderNumber received:", orderNumber);
-
-      const time = new Intl.DateTimeFormat("en-AU", {
-        timeZone: "Australia/Sydney",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }).format(new Date());
-      setTimestamp(time);
+      setTimestamp(
+        new Intl.DateTimeFormat("en-AU", {
+          timeZone: "Australia/Sydney",
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", hour12: true,
+        }).format(new Date())
+      );
       setSaveError("");
+      setBayNumber("");
     }
-  }, [open, rowData]);
+  }, [open]);
 
   if (!open) return null;
 
   const handleSave = async () => {
-    if (!rowData) {
-      setSaveError("No order data available. Please close and reopen.");
-      return;
-    }
+    if (!rowData) { setSaveError("No order data available."); return; }
 
-    const payload = {
-      timestamp,
-      bayNumber,
-      agent,
-      status,
-      orderNumber: rowData.orderNumber,
-      externalSku: rowData.externalSku,
-      name: rowData.name,
-      itemName: rowData.itemName,
-      notes: rowData.notes,
-      salesChannel: rowData.salesChannel,
-      location: rowData.location,
-    };
-
-    console.log("📤 Saving payload:", payload);
     setSaving(true);
     setSaveError("");
 
     try {
-      // Step 1 — Write to Current Orders
+      const formData: SaveData = { bayNumber, agent, status, timestamp };
+      const payload = { ...formData, ...rowData };
+
       const saveRes = await fetch("/api/admin/adc-current-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const saveJson = await saveRes.json();
-      console.log("📡 Save response:", saveJson);
       if (!saveJson.success) throw new Error(saveJson.error || "Failed to save");
 
-      console.log("✅ Saved to Current Orders:", saveJson.updatedRange);
-
-      // Step 2 — Clear from Completed Orders
-      const clearRes = await fetch("/api/admin/adc-current-orders", {
+      const deleteRes = await fetch("/api/admin/adc-current-orders", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderNumber: rowData.orderNumber }),
       });
+      const deleteJson = await deleteRes.json();
+      if (!deleteJson.success) throw new Error(deleteJson.error || "Failed to remove from source");
 
-      const clearJson = await clearRes.json();
-      console.log("📡 Clear response:", clearJson);
-
-      if (!clearJson.success) {
-        // Don't block the user — just warn, data was already saved
-        console.warn("⚠️ Saved OK but failed to clear source row:", clearJson.error);
-      } else {
-        console.log("🗑️ Cleared from Completed Orders:", clearJson.clearedRange);
-      }
-
-      onSave({ bayNumber, agent, status, timestamp });
+      onSave(formData);
       onClose();
-      setBayNumber("");
     } catch (e: any) {
-      console.error("❌ Save error:", e);
-      setSaveError(e.message || "Something went wrong");
+      setSaveError(e.message || "Something went wrong during the move.");
     } finally {
       setSaving(false);
     }
   };
 
-  const Field = ({ label, value }: { label: string; value?: string }) => (
-    <div className="flex gap-2 text-sm">
-      <span className="text-gray-400 w-28 shrink-0">{label}</span>
-      <span className="text-gray-700 font-medium">{value || "—"}</span>
-    </div>
-  );
-
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl p-6 w-[480px] max-h-[90vh] overflow-y-auto">
-        <h2 className="text-lg text-slate-600 font-semibold mb-4">
-          Order {orderNumber}
-        </h2>
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
 
-        {/* Debug banner — remove once working */}
-        {/* <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-xs text-yellow-800 font-mono break-all">
-          <p className="font-bold mb-1">🐛 Debug — rowData:</p>
-          <p>{rowData ? JSON.stringify(rowData, null, 2) : "⚠️ NULL / UNDEFINED"}</p>
-        </div> */}
+        {/* Header */}
+        <div className="flex justify-between items-start mb-4 shrink-0">
+          <h2 className="text-xl text-slate-900 font-bold">Move Order</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <XIcon />
+          </button>
+        </div>
 
-        {/* Read-only order info */}
-        {rowData && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-2 border border-gray-100">
-            <Field label="Date" value={rowData.date} />
-            <Field label="Age" value={rowData.age} />
-            <Field label="Collected?" value={rowData.collected} />
-            <Field label="SKU" value={rowData.externalSku} />
-            <Field label="Customer" value={rowData.name} />
-            <Field label="Item" value={rowData.itemName} />
-            <Field label="Order Details" value={rowData.orderDetails} />
-            <Field label="Channel" value={rowData.salesChannel} />
-            <Field label="Location" value={rowData.location} />
-            <Field label="Notes" value={rowData.notes} />
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 space-y-4 pr-1">
+
+          {/* Order info */}
+          {rowData && (
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
+              <Field label="Order ID" value={rowData.orderNumber} />
+              <Field label="Customer" value={rowData.name} />
+              <Field label="Item" value={rowData.itemName} />
+              <Field label="SKU" value={rowData.externalSku} />
+            </div>
+          )}
+
+          {/* Bay number */}
+          <div>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">
+              Bay Assignment
+            </label>
+            <input
+              autoFocus
+              placeholder="e.g. 12 or A4"
+              value={bayNumber}
+              onChange={(e) => setBayNumber(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl p-3 text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+            />
+          </div>
+
+          {/* Agent + status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Agent</label>
+              <select
+                value={agent}
+                onChange={(e) => setAgent(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl p-3 bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {AGENTS.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Initial Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl p-3 bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Not yet">Not yet</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Error */}
+        {saveError && (
+          <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium shrink-0">
+            {saveError}
           </div>
         )}
 
-        {/* Editable fields */}
-        <input
-          placeholder="Bay Number"
-          value={bayNumber}
-          onChange={(e) => setBayNumber(e.target.value)}
-          className="w-full border border-slate-200 rounded-lg p-2 mb-3 text-slate-600"
-        />
-
-        <select
-          value={agent}
-          onChange={(e) => setAgent(e.target.value)}
-          className="w-full border rounded-lg p-2 mb-3 text-slate-600 border-slate-200"
-        >
-          <option value=" "></option>
-          <option value="KB">KB</option>
-          <option value="CC">CC</option>
-          <option value="JB">JB</option>
-        </select>
-
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="w-full border rounded-lg p-2 mb-3 border-slate-200 text-slate-600"
-        >
-          <option value=" "></option>
-          <option value="Completed">Completed</option>
-          <option value="Not yet">Not yet</option>
-        </select>
-
-        <div className="text-sm text-gray-500 mb-4">Time: {timestamp}</div>
-
-        {saveError && (
-          <p className="text-sm text-red-500 mb-3 bg-red-50 p-2 rounded-lg">{saveError}</p>
-        )}
-
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            disabled={saving}
-            className="border px-4 py-2 rounded-lg border-red-400 text-red-600 hover:bg-red-500 hover:text-white disabled:opacity-40"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-800 disabled:opacity-40"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 shrink-0">
+          <p className="text-[10px] text-gray-400 font-mono italic">TS: {timestamp}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              disabled={saving}
+              className="px-4 py-2 text-gray-500 font-semibold text-sm hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || !bayNumber}
+              className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 active:scale-95 disabled:opacity-50 transition-all shadow-md shadow-blue-200"
+            >
+              {saving ? "Processing..." : "Move Now"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="flex gap-2 text-sm">
+      <span className="text-gray-400 w-24 shrink-0">{label}</span>
+      <span className="text-gray-700 font-medium truncate">{value || "—"}</span>
+    </div>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
   );
 }
