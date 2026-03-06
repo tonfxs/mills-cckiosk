@@ -86,6 +86,16 @@ export default function ReturnsClient() {
     agent: string;
   } | null>(null);
 
+  const openModal = (r: ReturnRow) => {
+    setSelectedRma({
+      rmaKey: r.rmaID,
+      orderNumber: r.rmaID,
+      k1Status: r.status,
+      agent: r.agent || "—",
+    });
+    setModalOpen(true);
+  };
+
   const load = async (
     next?: Partial<{ page: number }>,
     background = false
@@ -133,18 +143,26 @@ export default function ReturnsClient() {
 
   // ------------------- modal sync -------------------
   useEffect(() => {
-    if (modalOpen && selectedRma) {
-      const updatedRow = data.items.find((r) => r.rmaID === selectedRma.rmaKey);
-      if (updatedRow) {
+    if (!selectedRma) return;
+
+    const updatedRow = data.items.find((r) => r.rmaID === selectedRma.rmaKey);
+
+    if (updatedRow) {
+      // 1. Check if the values are actually different from what we currently have
+      const hasChanged =
+        selectedRma.k1Status !== updatedRow.status ||
+        selectedRma.agent !== (updatedRow.agent || "—");
+
+      // 2. Only update if there is a real change
+      if (hasChanged) {
         setSelectedRma((prev) =>
-          prev
-            ? { ...prev, k1Status: updatedRow.status, agent: updatedRow.agent || "—" }
-            : prev
+          prev ? { ...prev, k1Status: updatedRow.status, agent: updatedRow.agent || "—" } : prev
         );
       }
     }
-  }, [data, modalOpen, selectedRma]);
-
+  }, [data.items, selectedRma?.rmaKey, selectedRma?.k1Status, selectedRma?.agent]);
+  // ^ Notice: Use specific primitive properties in the dependency array, 
+  // NOT the whole selectedRma object.
   const sydneyTime = useMemo(
     () =>
       new Intl.DateTimeFormat("en-AU", {
@@ -262,41 +280,37 @@ export default function ReturnsClient() {
                   <th className="px-5 py-3 font-medium">Bay</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                   <th className="px-5 py-3 font-medium">Agent</th>
+                  <th className="px-5 py-3 font-medium w-20" />
                 </tr>
               </thead>
 
               <tbody>
                 {firstLoad ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-4 text-gray-500">Loading…</td>
+                    <td colSpan={8} className="px-5 py-4 text-gray-500">Loading…</td>
                   </tr>
                 ) : data.items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-4 text-gray-500">No return orders found.</td>
+                    <td colSpan={8} className="px-5 py-4 text-gray-500">No return orders found.</td>
                   </tr>
                 ) : (
                   data.items.map((r, idx) => (
                     <tr key={`${r.rmaID}-${idx}`} className="border-t hover:bg-gray-50">
                       <td className="px-5 py-3 text-gray-700">{r.timestamp}</td>
-                      <td
-                        className="px-5 py-3 font-medium text-gray-900 cursor-pointer hover:underline"
-                        onClick={() => {
-                          setSelectedRma({
-                            rmaKey: r.rmaID,
-                            orderNumber: r.rmaID,
-                            k1Status: r.status,
-                            agent: r.agent || "—"
-                          });
-                          setModalOpen(true);
-                        }}
-                      >
-                        {r.rmaID}
-                      </td>
+                      <td className="px-5 py-3 font-medium text-gray-900">{r.rmaID}</td>
                       <td className="px-5 py-3 text-gray-700">{r.fullName}</td>
                       <td className="px-5 py-3 text-gray-700">{r.phone}</td>
                       <td className="px-5 py-3 text-gray-700">{r.carParkBay}</td>
                       <td className="px-5 py-3"><StatusPill status={r.status} /></td>
                       <td className="px-5 py-3 text-gray-700">{r.agent || "—"}</td>
+                      <td className="px-5 py-3">
+                        <button
+                          onClick={() => openModal(r)}
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 transition-colors"
+                        >
+                          View
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

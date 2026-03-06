@@ -7,7 +7,7 @@ const SPREADSHEET_ID = "1e6qfGbAfYjPxUmJ2MXZLZlu7qZqcxZ9-poFZ60C32hM";
 const SHEET_CONFIG = {
   master: {
     source: "MASTER LIST",
-    archive: "Copy of ARCHIVE",
+    archive: "ARCHIVE",
     label: "Master List",
   },
   pickups: {

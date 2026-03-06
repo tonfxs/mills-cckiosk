@@ -13,13 +13,15 @@ import {
   createUserProfile,
   getUserProfile,
   updateLastLogin,
+  setUserOnline,
+  setUserOffline,
 } from "../services/userService";
 import { UserProfile, UserRole } from "../types/user";
 
 interface AuthContextType {
   user: User | null;
-  profile: UserProfile | null;   // full Firestore profile
-  role: UserRole | null;         // quick access to role
+  profile: UserProfile | null;
+  role: UserRole | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string, name?: string) => Promise<User>;
@@ -31,15 +33,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser]       = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch Firestore profile whenever auth user changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-
       if (firebaseUser) {
         try {
           const userProfile = await getUserProfile(firebaseUser.uid);
@@ -51,14 +51,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
       }
-
       setLoading(false);
     });
-
     return unsubscribe;
   }, []);
 
-  // ─── Register: create Auth user + Firestore doc ──────────────────────────
+  // ─── Mark offline on tab close (best-effort safety net) ──────────────────
+  // Primary offline call is in logOut(). This covers hard tab closes.
+  useEffect(() => {
+    const handleUnload = () => {
+      if (user?.uid) setUserOffline(user.uid).catch(() => {});
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [user]);
+
+  // ─── Register ────────────────────────────────────────────────────────────
   const register = async (email: string, password: string, name?: string) => {
     const user = await registerWithEmail(email, password, name);
     await createUserProfile(user.uid, email, name ?? email.split("@")[0]);
@@ -67,22 +75,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user;
   };
 
-  // ─── Login: sign in + fetch profile + update lastLogin ───────────────────
+  // ─── Login: sign in + set online
+  //     LoginForm handles updateLastLogin separately ───────────────────────
   const login = async (email: string, password: string) => {
     const user = await loginWithEmail(email, password);
-    await updateLastLogin(user.uid);
+    await setUserOnline(user.uid);
     const userProfile = await getUserProfile(user.uid);
     setProfile(userProfile);
     return user;
   };
 
-  // ─── Google login: create profile if first time ──────────────────────────
+  // ─── Google login ─────────────────────────────────────────────────────────
   const loginGoogle = async () => {
     const user = await loginWithGoogle();
     const existing = await getUserProfile(user.uid);
-
     if (!existing) {
-      // First time Google login — create their Firestore doc
       await createUserProfile(
         user.uid,
         user.email ?? "",
@@ -91,33 +98,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       await updateLastLogin(user.uid);
     }
-
+    await setUserOnline(user.uid);
     const userProfile = await getUserProfile(user.uid);
     setProfile(userProfile);
     return user;
   };
 
-  // ─── Logout: clear everything ────────────────────────────────────────────
+  // ─── Logout: mark offline first, then sign out ───────────────────────────
   const logOut = async () => {
+    if (user?.uid) await setUserOffline(user.uid);
     await logout();
     setUser(null);
     setProfile(null);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        role: profile?.role ?? null,
-        loading,
-        login,
-        register,
-        loginGoogle,
-        logOut,
-        forgotPassword: resetPassword,
-      }}
-    >
+    <AuthContext.Provider value={{
+      user, profile,
+      role: profile?.role ?? null,
+      loading, login, register, loginGoogle, logOut,
+      forgotPassword: resetPassword,
+    }}>
       {children}
     </AuthContext.Provider>
   );

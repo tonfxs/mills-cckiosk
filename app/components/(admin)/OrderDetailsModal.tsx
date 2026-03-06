@@ -63,6 +63,30 @@ function pickLineField(line: any, ...keys: string[]) {
   return undefined;
 }
 
+function StatusPill({ label }: { label: any }) {
+  const text = String(label ?? "").trim();
+  if (!text || text === "undefined" || text === "null" || text === "—") return null;
+
+  const lower = text.toLowerCase();
+
+  const colors =
+    lower.includes("complet") || lower.includes("collect") || lower.includes("paid") || lower.includes("shipped")
+      ? "bg-green-100 text-green-700 border-green-200"
+      : lower.includes("pending") || lower.includes("processing")
+        ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+        : lower.includes("cancel") || lower.includes("fail") || lower.includes("refund")
+          ? "bg-red-100 text-red-700 border-red-200"
+          : lower.includes("dispatch") || lower.includes("transit") || lower.includes("partial")
+            ? "bg-blue-100 text-blue-700 border-blue-200"
+            : "bg-slate-100 text-slate-600 border-slate-200";
+
+  return (
+    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold border ${colors}`}>
+      {text}
+    </span>
+  );
+}
+
 export function OrderDetailsModal({
   open,
   orderKey,
@@ -159,7 +183,6 @@ export function OrderDetailsModal({
   const orderNumberDisplay = String(order?.OrderID ?? order?.OrderNumber ?? "—");
 
   if (!open) return null;
-
 
   const getShippingDisplay = (option: string) => {
     const warningOptions = [
@@ -285,15 +308,30 @@ export function OrderDetailsModal({
                           <DataRow label="Payment" value={rowData.paymentMethod} />
                           <DataRow label="Car Park Bay" value={rowData.carParkBay} />
                         </DataSection>
+
+                        <AgentNotesInline
+                          orderNumber={rowData.orderNumber}
+                          currentNotes={rowData.notes || ""}
+                          onUpdate={(newNotes) => {
+                            onPatchRow?.({ notes: newNotes });
+                            onRefresh?.();
+                          }}
+                        />
                       </div>
                     </div>
                   )}
 
-                  {/* Neto API Data */}
+                  {/* Neto Source Data */}
                   <div className="rounded-2xl border-2 border-green-200 bg-green-50 overflow-hidden">
-                    <div className="px-4 py-3 bg-green-100 border-b border-green-200">
-                      <h3 className="font-bold text-green-900">Neto Source Data</h3>
-                      <p className="text-xs text-green-700 mt-0.5">Data from Neto API</p>
+                    <div className="px-4 py-3 bg-green-100 border-b border-green-200 flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-bold text-green-900">Neto Source Data</h3>
+                        <p className="text-xs text-green-700 mt-0.5">Data from Neto API</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <StatusPill label={order?.OrderStatus} />
+                        <StatusPill label={order?.ShippingOption ?? order?.ShippingMethod} />
+                      </div>
                     </div>
                     <div className="p-4 space-y-4">
 
@@ -305,17 +343,11 @@ export function OrderDetailsModal({
 
                         <DataSection title="Order Information">
                         <DataRow label="Order #" value={orderNumberDisplay} />
-                        <DataRow label="Status" value={String(order?.OrderStatus ?? "—")} />
                         <DataRow label="Date Placed" value={String(order?.DatePlaced ?? "—")} />
                         <DataRow label="Sales Channel" value={String(order?.SalesChannel ?? "—")} />
                         <DataRow label="Payment Method" value={String(order?.DefaultPaymentType ?? "—")} />
-
-                        {/* With this: */}
                         <div className="flex justify-between items-start gap-3 text-sm">
-                          <span className="text-slate-600 font-medium">Shipping Method:</span>
-                          <span className="text-slate-900 font-semibold text-right">
-                            {getShippingDisplay(order?.ShippingOption ?? "")}
-                          </span>
+
                         </div>
                       </DataSection>
 
@@ -323,6 +355,12 @@ export function OrderDetailsModal({
                         <DataRow label="Title" value={String(order?.StickyNotes?.Title ?? "—")} />
                         <DataRow label="Description" value={String(order?.StickyNotes?.Description ?? "—")} />
                       </DataSection>
+
+                      <DataSection title="Customer">
+                        <DataRow label="Name" value={fullName} />
+                        <DataRow label="Phone" value={phone} />
+                        <DataRow label="Email" value={String(order?.Email ?? "—")} />
+                      </DataSection> 
 
                       <DataSection title="Order Totals">
                         <DataRow label="Grand Total" value={money(order?.GrandTotal)} />
@@ -332,7 +370,7 @@ export function OrderDetailsModal({
                   </div>
                 </div>
 
-                {/* --- FIXED INTERNAL NOTES SECTION (Full Width) --- */}
+                {/* Internal Notes (Full Width) */}
                 {order?.InternalOrderNotes && (
                   <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 overflow-hidden">
                     <div className="px-4 py-3 bg-amber-100 border-b border-amber-200 flex items-center gap-2">
@@ -349,7 +387,7 @@ export function OrderDetailsModal({
                   </div>
                 )}
 
-                {/* Items Table from Neto */}
+                {/* Items Table */}
                 <div className="rounded-2xl border-2 border-green-200 bg-white overflow-hidden">
                   <div className="px-4 py-3 bg-green-50 border-b border-green-200">
                     <h3 className="font-semibold text-green-900">Order Items (from Neto)</h3>
@@ -382,6 +420,49 @@ export function OrderDetailsModal({
                             toNumber(pickLineField(line, "Total", "LineTotal")) ??
                             (price !== null ? qty * price : null);
 
+                          // Kit header row — the original kit SKU line
+                          if (line.isKitHeader) {
+                            return (
+                              <tr key={idx} className="border-t bg-amber-50">
+                                <td className="px-4 py-2.5 font-mono text-amber-700 text-xs font-bold">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="rounded bg-amber-200 text-amber-800 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">Kit</span>
+                                    {String(sku)}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2.5 text-amber-800 text-xs font-semibold" colSpan={3}>{String(name)}</td>
+                                <td className="px-4 py-2.5 text-right text-amber-700 text-xs">
+                                  {priceRaw != null ? money(priceRaw) : "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-amber-700 text-xs font-semibold">
+                                  {lineTotal != null ? money(lineTotal) : "—"}
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          // Kit component row — indented, subtle
+                          if (line.isKitComponent) {
+                            return (
+                              <tr key={idx} className="border-t bg-slate-50 hover:bg-slate-100">
+                                <td className="pl-8 pr-4 py-2.5 font-mono text-slate-500 text-xs">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-slate-300">↳</span>
+                                    {String(sku)}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-600 text-xs">{String(name)}</td>
+                                <td className="px-4 py-2.5 text-slate-500 text-xs">{String(warehouse)}</td>
+                                <td className="px-4 py-2.5 text-right text-slate-600 text-xs">{qtyRaw ?? "—"}</td>
+                                <td className="px-4 py-2.5 text-right text-slate-400 text-xs">
+                                  {priceRaw != null ? money(priceRaw) : "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-slate-400 text-xs">—</td>
+                              </tr>
+                            );
+                          }
+
+                          // Normal row
                           return (
                             <tr key={idx} className="border-t hover:bg-green-50">
                               <td className="px-4 py-3 font-mono text-slate-700">{String(sku)}</td>
@@ -414,6 +495,118 @@ export function OrderDetailsModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// --- Agent Notes Inline (collapsible, inside Kiosk card) ---
+
+function AgentNotesInline({
+  orderNumber,
+  currentNotes,
+  onUpdate,
+}: {
+  orderNumber: string;
+  currentNotes: string;
+  onUpdate: (newNotes: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [notes, setNotes] = useState(currentNotes);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    setNotes(currentNotes);
+  }, [currentNotes]);
+
+  const isDirty = notes !== currentNotes;
+
+  const handleSave = async () => {
+    if (!isDirty || saving) return;
+    setSaving(true);
+    setSaveStatus("idle");
+    try {
+      const res = await fetch("/api/admin/update-notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderNumber, notes }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed");
+      setSaveStatus("saved");
+      onUpdate(notes);
+      setTimeout(() => setSaveStatus("idle"), 2500);
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-green-200 pt-3 mt-1">
+      {/* Toggle row */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 text-left group"
+      >
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide group-hover:text-slate-700 transition-colors">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Agent Notes
+          {currentNotes && !open && (
+            <span className="ml-1 rounded-full bg-slate-200 px-1.5 py-0.5 text-slate-500 font-normal normal-case tracking-normal" style={{ fontSize: "10px" }}>
+              {currentNotes.length > 28 ? currentNotes.slice(0, 28) + "…" : currentNotes}
+            </span>
+          )}
+        </span>
+        <svg
+          className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Expandable area */}
+      {open && (
+        <div className="mt-2 space-y-2">
+          <textarea
+            value={notes}
+            onChange={(e) => { setNotes(e.target.value); setSaveStatus("idle"); }}
+            placeholder="Add notes for this order…"
+            rows={3}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none resize-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200 transition-all"
+          />
+          <div className="flex items-center justify-between gap-2">
+            {saveStatus === "saved" && (
+              <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                Saved
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="text-xs text-red-500 font-medium">Failed to save</span>
+            )}
+            {saveStatus === "idle" && <span />}
+            <button
+              onClick={handleSave}
+              disabled={!isDirty || saving}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all
+                ${isDirty && !saving
+                  ? "bg-slate-700 text-white hover:bg-slate-800"
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                }`}
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
