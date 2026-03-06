@@ -477,8 +477,8 @@ export default function PickupKiosk() {
 
                   <div>
                     <label className="block text-4xl font-semibold mb-4 text-gray-700">
-                      Payment Method
-                      <p className="text-red-600 text-3xl my-4">(Note: Only select the payment method used during purchase. This is for verification purposes only.)</p>
+                      What Payment Method did you use?
+                      <p className="text-red-600 text-3xl my-4">(Note: Please select from the options below. This is for verification purposes only)</p>
                     </label>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -644,10 +644,15 @@ export default function PickupKiosk() {
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
+                <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                  <p className="text-3xl font-semibold text-yellow-800">
+                    <span className="font-bold">DISCLAIMER:</span> Please scroll down or tap outside the fields to see Continue button.
+                  </p>
+                </div>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-4xl font-semibold mb-4 text-gray-700">First Name</label>
+                    <label className="block text-4xl font-semibold mb-4 text-gray-700 pt-10">First Name</label>
                     <input
                       type="text"
                       name="firstName"
