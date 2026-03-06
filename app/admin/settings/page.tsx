@@ -26,7 +26,7 @@ const RANGE_LABELS: Record<string, string> = {
 };
 
 const SHEET_OPTIONS: { key: SheetKey; label: string; description: string }[] = [
-  { key: "master",  label: "Master List",  description: "MASTER LIST → Copy of ARCHIVE" },
+  { key: "master",  label: "Master List",  description: "MASTER LIST → ARCHIVE" },
   { key: "pickups", label: "Pickups",      description: "Copy of Pickupsv1 → Archive Pickups" },
   { key: "returns", label: "Returns",      description: "Copy of Returns → Archive Returns" },
 ];
@@ -210,7 +210,7 @@ export default function KioskSettingsPage() {
               This will re-sort all 3 archive tabs by Timestamp ascending:
             </p>
             <div className="bg-slate-50 rounded-xl p-3 mb-5 flex flex-col gap-1 text-xs text-slate-600">
-              <p>• <span className="font-medium">Copy of ARCHIVE</span></p>
+              <p>• <span className="font-medium">ARCHIVE</span></p>
               <p>• <span className="font-medium">Archive Pickups</span></p>
               <p>• <span className="font-medium">Archive Returns</span></p>
             </div>
