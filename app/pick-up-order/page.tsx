@@ -235,7 +235,7 @@ export default function PickupKiosk() {
 
         if (!formData.phone.trim()) {
           stepErrors.push("Phone number is required");
-        }  else if (!isValidAuMobile(formData.phone)) {
+        } else if (!isValidAuMobile(formData.phone)) {
           stepErrors.push("Phone number must be a valid Australian mobile (10 digits starting with 04)");
         }
         break;
@@ -256,10 +256,10 @@ export default function PickupKiosk() {
 
   // const canProceed = () => validateStep(step).length === 0;
   const canProceed = () => {
-  const errors = validateStep(step);
-  if (step === 2 && !isValidAuMobile(formData.phone)) return false;
-  return errors.length === 0;
-};
+    const errors = validateStep(step);
+    if (step === 2 && !isValidAuMobile(formData.phone)) return false;
+    return errors.length === 0;
+  };
 
   const handleContinue = () => {
     const stepErrors = validateStep(step);
@@ -295,7 +295,6 @@ export default function PickupKiosk() {
       allErrors.push("Phone number must be a valid Australian mobile (10 digits starting with 04)");
     }
 
-    // ✅ Use the SAME parser rule on submit too
     const parsed = parseOrderNumbers(formData.orderNumber);
     if (parsed.error) allErrors.push(parsed.error);
 
@@ -312,9 +311,8 @@ export default function PickupKiosk() {
     if (!formData.validId) allErrors.push("Please select a valid ID");
     if (!formData.paymentMethod) allErrors.push("Please select a payment method");
     if (!formData.carParkBay.trim()) allErrors.push("Car park bay is required");
-    if (!formData.confirmed) allErrors.push("You must confirm the data");
+    if (!formData.confirmed) allErrors.push("Please sign to confirm all information is accurate");
 
-    // Duplicate check on submit (only when parse succeeded)
     if (!parsed.error) {
       const unique = new Set(parsed.list);
       if (unique.size !== parsed.list.length) {
@@ -337,6 +335,13 @@ export default function PickupKiosk() {
         const k = key as keyof FormData;
         formDataToSend.append(k, formData[k].toString());
       });
+
+      // ✅ Export signature canvas as base64 PNG and append to form
+      const canvas = document.querySelector("canvas") as HTMLCanvasElement | null;
+      if (canvas) {
+        const signatureBase64 = canvas.toDataURL("image/png").split(",")[1];
+        formDataToSend.append("signature", signatureBase64);
+      }
 
       const response = await fetch("/api/pickup-order", {
         method: "POST",
@@ -369,7 +374,6 @@ export default function PickupKiosk() {
 
     setIsSubmitting(false);
   };
-
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
 
@@ -425,9 +429,8 @@ export default function PickupKiosk() {
           ].map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
               <div
-                className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${
-                  step >= num ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
-                }`}
+                className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${step >= num ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+                  }`}
               >
                 {step > num ? "✓" : <Icon size={40} />}
               </div>
@@ -521,11 +524,10 @@ export default function PickupKiosk() {
 
                             if (stepValidationErrors.length > 0) setStepValidationErrors([]);
                           }}
-                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${
-                            formData.paymentMethod === value
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-                          }`}
+                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.paymentMethod === value
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                            }`}
                         >
                           {label}
                         </button>
@@ -739,11 +741,10 @@ export default function PickupKiosk() {
                             setFormData((prev) => ({ ...prev, validId: value }));
                             if (stepValidationErrors.length > 0) setStepValidationErrors([]);
                           }}
-                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${
-                            formData.validId === value
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-                          }`}
+                          className={`text-3xl p-8 rounded-2xl border-4 font-semibold transition-all ${formData.validId === value
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                            }`}
                         >
                           {label}
                         </button>
@@ -797,13 +798,13 @@ export default function PickupKiosk() {
                     ["paypal", "ebay", "zippay", "stripe", "storecredit", "electronictransfer", "afterpay", "overthephone", "cardatwindow"].includes(
                       formData.paymentMethod
                     )) && (
-                    <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
-                      <p className="text-xl font-semibold text-yellow-800">
-                        <span className="font-bold">DISCLAIMER:</span> Your payment and valid ID will undergo verification to ensure the payment details
-                        match the name on the order.
-                      </p>
-                    </div>
-                  )}
+                      <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                        <p className="text-xl font-semibold text-yellow-800">
+                          <span className="font-bold">DISCLAIMER:</span> Your payment and valid ID will undergo verification to ensure the payment details
+                          match the name on the order.
+                        </p>
+                      </div>
+                    )}
 
                   {formData.paymentMethod === "cash" && (
                     <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
@@ -856,12 +857,71 @@ export default function PickupKiosk() {
                 </div>
               </div>
 
-              <label className="flex items-start gap-6 p-6 bg-blue-50 border-4 border-blue-300 rounded-2xl cursor-pointer">
-                <input type="checkbox" name="confirmed" checked={formData.confirmed} onChange={handleChange} className="w-12 h-12 mt-1" />
-                <span className="text-3xl font-semibold text-gray-800">I confirm that all provided information is accurate and valid</span>
-              </label>
+              <div className="p-2 bg-blue-50 border-4 border-blue-300 rounded-2xl">
+                <div className="relative bg-white border-4 border-gray-300 rounded-2xl overflow-hidden" style={{ height: 250 }}>
+                  <canvas
+                    ref={(canvas) => {
+                      if (!canvas || (canvas as any).__sigInit) return;
+                      (canvas as any).__sigInit = true;
+
+                      canvas.width = canvas.offsetWidth;
+                      canvas.height = canvas.offsetHeight;
+
+                      const ctx = canvas.getContext("2d")!;
+                      ctx.strokeStyle = "#1d4ed8";
+                      ctx.lineWidth = 4;
+                      ctx.lineCap = "round";
+                      ctx.lineJoin = "round";
+
+                      let drawing = false;
+
+                      const getPos = (e: MouseEvent | TouchEvent) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const src = "touches" in e ? e.touches[0] : e;
+                        return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+                      };
+
+                      const start = (e: MouseEvent | TouchEvent) => { e.preventDefault(); drawing = true; const { x, y } = getPos(e); ctx.beginPath(); ctx.moveTo(x, y); };
+                      const move = (e: MouseEvent | TouchEvent) => { e.preventDefault(); if (!drawing) return; const { x, y } = getPos(e); ctx.lineTo(x, y); ctx.stroke(); };
+                      const end = () => {
+                        drawing = false;
+                        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                        const hasMark = data.some((v, i) => i % 4 === 3 && v > 0);
+                        setFormData((prev) => ({ ...prev, confirmed: hasMark }));
+                        if (hasMark && stepValidationErrors.length > 0) setStepValidationErrors([]);
+                      };
+
+                      canvas.addEventListener("mousedown", start);
+                      canvas.addEventListener("mousemove", move);
+                      canvas.addEventListener("mouseup", end);
+                      canvas.addEventListener("touchstart", start, { passive: false });
+                      canvas.addEventListener("touchmove", move, { passive: false });
+                      canvas.addEventListener("touchend", end);
+                    }}
+                    className="w-full h-full touch-none"
+                    style={{ cursor: "crosshair" }}
+                  />
+                  {!formData.confirmed && (
+                    <p className="absolute inset-0 flex items-center justify-center text-gray-300 text-4xl font-light pointer-events-none select-none">
+                      Sign here
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const canvas = document.querySelector("canvas") as HTMLCanvasElement | null;
+                    if (canvas) canvas.getContext("2d")!.clearRect(0, 0, canvas.width, canvas.height);
+                    setFormData((prev) => ({ ...prev, confirmed: false }));
+                  }}
+                  className="mt-3 text-xl text-red-500 hover:text-red-700 font-semibold underline"
+                >
+                  Clear Signature
+                </button>
+              </div>
 
               {errors.confirmed && <p className="text-red-600 text-xl mt-2">{errors.confirmed}</p>}
+
             </div>
           )}
         </div>
@@ -891,9 +951,8 @@ export default function PickupKiosk() {
           {step < 4 ? (
             <button
               onClick={handleContinue}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${
-                canProceed() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${canProceed() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
               Continue
               <ChevronRight size={36} />
@@ -910,9 +969,8 @@ export default function PickupKiosk() {
                 handleSubmit();
               }}
               disabled={isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
-                !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${!isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>

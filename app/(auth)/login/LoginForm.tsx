@@ -25,18 +25,17 @@ export default function LoginForm() {
       const idToken = await user.getIdToken();
       const cookieOpts = `path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Strict`;
 
-      // Set session cookie (for middleware auth check)
       document.cookie = `session=${idToken}; ${cookieOpts}`;
 
-      // Set role cookie (for middleware role check)
-      // profile is already fetched inside login() in AuthContext
-      // We read it from the AuthContext after login via a small delay
-      // OR we can fetch it inline here:
-      const { getUserProfile } = await import("../../services/userService");
+      const { getUserProfile, updateLastLogin } = await import("../../services/userService");
       const profile = await getUserProfile(user.uid);
+
       if (profile?.role) {
         document.cookie = `userRole=${profile.role}; ${cookieOpts}`;
       }
+
+      // ── Track login timestamp ──
+      await updateLastLogin(user.uid);
 
       const callbackUrl = searchParams.get("callbackUrl") ?? "/admin/dashboard";
       router.push(callbackUrl);
@@ -100,13 +99,6 @@ export default function LoginForm() {
             )}
           </button>
         </form>
-
-        {/* <p className="text-center text-slate-400 text-sm mt-6">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-blue-600 font-medium hover:underline">
-            Sign up
-          </Link>
-        </p> */}
       </div>
     </>
   );

@@ -64,7 +64,7 @@ async function saveToSheet(returnData: ReturnData) {
     // Save to Returns sheet
     const respReturns = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "Returns!A:A",
+        range: "Copy of Returns!A:A",
     });
 
     const rowsReturns = respReturns.data.values || [];
@@ -72,7 +72,7 @@ async function saveToSheet(returnData: ReturnData) {
 
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Returns!A${lastRowReturns}:J${lastRowReturns}`,
+        range: `Copy of Returns!A${lastRowReturns}:J${lastRowReturns}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [

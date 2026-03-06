@@ -437,7 +437,6 @@ export default function DashboardClient() {
 
   const stuckPanelItems = useMemo(() => (data.stuckOrders ?? []) as StuckItem[], [data.stuckOrders]);
   const missingPanelItems = useMemo(() => (data.missingInvalidRows ?? []) as MissingItem[], [data.missingInvalidRows]);
-<<<<<<< Updated upstream
 
   // const duplicatePanelGroups = useMemo(
   //   () => (data.duplicateGroups ?? []) as DuplicateGroup[],
@@ -497,9 +496,7 @@ useEffect(() => {
 }, [duplicatePanelData]);
 
 
-=======
   const duplicatePanelGroups = useMemo(() => (data.duplicateGroups ?? []) as DuplicateGroup[], [data.duplicateGroups]);
->>>>>>> Stashed changes
 
   return (
     <div className="min-h-screen bg-gray-50">
