@@ -646,7 +646,7 @@ export default function PickupKiosk() {
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Your Contact Information</h2>
                 <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
                   <p className="text-3xl font-semibold text-yellow-800">
-                    <span className="font-bold">DISCLAIMER:</span> Please scroll down or tap outside the fields to see Continue button.
+                    <span className="font-bold">DISCLAIMER:</span> Tap outside the box or scroll down to Continue.
                   </p>
                 </div>
 
