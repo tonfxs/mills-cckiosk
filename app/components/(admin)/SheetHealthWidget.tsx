@@ -44,7 +44,7 @@ export default function SheetHealthWidget({ data, loading }: Props) {
     status === 'ok' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200' :
     status === 'warn' ? 'bg-yellow-400 hover:bg-yellow-500 shadow-yellow-200' :
     status === 'critical' ? 'bg-red-500 hover:bg-red-600 shadow-red-200' :
-    'bg-slate-600 hover:bg-slate-700 shadow-slate-200';
+    'bg-blue-600 hover:bg-blue-700 shadow-slate-200';
 
   const barColor =
     status === 'ok' ? 'bg-emerald-500' :
@@ -68,7 +68,7 @@ export default function SheetHealthWidget({ data, loading }: Props) {
     status === 'ok' ? 'text-emerald-500' :
     status === 'warn' ? 'text-yellow-500' :
     status === 'critical' ? 'text-red-500' :
-    'text-slate-400';
+    'text-blue-600';
 
   const statusLabel =
     status === 'ok' ? 'Healthy' :
@@ -90,7 +90,7 @@ export default function SheetHealthWidget({ data, loading }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center gap-2">
-              <HeartPulse className="h-4 w-4 text-slate-400" />
+              <HeartPulse className="h-6 w-6" />
               <span className="text-sm font-semibold text-slate-700">Sheet Health</span>
             </div>
             <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export default function SheetHealthWidget({ data, loading }: Props) {
       {/* FAB */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`relative flex items-center justify-center w-12 h-12 rounded-full text-white shadow-lg transition-all duration-200 active:scale-95 ${fabColor}`}
+        className={`relative flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all duration-200 active:scale-95 ${fabColor}`}
         title="Sheet Health"
       >
         {/* Pulse ring for warn/critical */}

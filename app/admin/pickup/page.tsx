@@ -294,7 +294,7 @@ export default function PickupOrdersClient() {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); openDetails(r); }}
-                          className="rounded-xl border px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 transition-colors"
                         >
                           View
                         </button>

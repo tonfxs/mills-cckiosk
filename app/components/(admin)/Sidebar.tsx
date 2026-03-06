@@ -20,6 +20,8 @@ import {
   ShieldCheck,
   Settings,
   TextSearch,
+  Navigation,
+  List,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRole } from "../../hooks/useRole";
@@ -90,6 +92,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       // no allowedRoles = visible to everyone
     },
     {
+      id: "masterlist",
+      icon: List,
+      label: "Kiosk Masterlist",
+      href: "/admin/masterlist",
+      match: "startsWith",
+
+    },
+    {
       id: "pickups",
       icon: ShoppingCart,
       label: "Pick Up Orders",
@@ -158,6 +168,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       icon: Settings,
       label: "Settings",
       href: "/admin/settings",
+      match: "startsWith",
+      allowedRoles: ["superadmin", "admin"],
+    },
+    {
+      id: "audit-trail",
+      icon: Navigation,
+      label: "Audit Trail",
+      href: "/admin/audit-trail",
       match: "startsWith",
       allowedRoles: ["superadmin", "admin"],
     },

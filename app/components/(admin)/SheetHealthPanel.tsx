@@ -63,8 +63,8 @@ function ConfirmExpandDialog({
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-sm mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 pt-6 pb-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 shrink-0">
-            <PlusSquare className="h-5 w-5 text-slate-600" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-100 shrink-0">
+            <PlusSquare className="h-5 w-5 text-blue-600" />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-slate-800">Expand Sheet Rows</h2>
@@ -90,8 +90,8 @@ function ConfirmExpandDialog({
                   onClick={() => { setSelected(p); setUseCustom(false); }}
                   className={`text-xs font-semibold rounded-lg px-2 py-2 border transition-colors ${
                     !useCustom && selected === p
-                      ? 'bg-slate-800 text-white border-slate-800'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-blue-600 border-blue-200 hover:border-blue-400'
                   }`}
                 >
                   {p.toLocaleString()}
@@ -115,7 +115,7 @@ function ConfirmExpandDialog({
                 value={customValue}
                 onFocus={() => setUseCustom(true)}
                 onChange={(e) => { setCustomValue(e.target.value); setUseCustom(true); }}
-                className={`w-full text-xs rounded-lg border px-3 py-2 outline-none transition-colors ${
+                className={`w-full text-xs rounded-lg border px-3 py-2 outline-none transition-colors text-slate-600 ${
                   useCustom
                     ? customValid
                       ? 'border-slate-800 ring-1 ring-slate-800'
@@ -141,14 +141,14 @@ function ConfirmExpandDialog({
           <button
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 text-sm font-medium text-slate-600 border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="flex-1 text-sm font-medium text-red-600 border border-red-200 rounded-xl px-4 py-2.5 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={() => finalRows && onConfirm(finalRows)}
             disabled={!canSubmit}
-            className="flex-1 text-sm font-medium text-white bg-slate-800 rounded-xl px-4 py-2.5 hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 text-sm font-medium text-white bg-blue-600 rounded-xl px-4 py-2.5 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -257,12 +257,12 @@ export default function SheetHealthPanel() {
         {/* Panel Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100">
-              <HeartPulse className="h-5 w-5 text-slate-600" />
+            <div className="flex items-center justify-center w-9 h-9">
+              <HeartPulse className="h-7 w-7 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-800">Sheet Health</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h3 className="text-xl font-semibold text-slate-800">Sheet Health</h3>
+              <p className="text-sm text-slate-400 mt-0.5">
                 {lastUpdated
                   ? `Last checked ${new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(lastUpdated)}`
                   : 'Checking…'}
@@ -272,7 +272,7 @@ export default function SheetHealthPanel() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 border border-blue-300 rounded-lg px-3 py-1.5 hover:bg-blue-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
