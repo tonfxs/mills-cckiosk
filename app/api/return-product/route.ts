@@ -10,6 +10,7 @@ interface ReturnData {
     rmaID: string;
     carParkBay: string;
     confirmed: boolean;
+    notes: string;
 }
 
 // ----------------------------
@@ -62,6 +63,8 @@ async function saveToSheet(returnData: ReturnData) {
     const timestamp = getAustraliaTimestamp();
 
     // Save to Returns sheet
+    // Columns: A=Timestamp, B=Name, C=Phone, D=RMA ID, E=Car Park Bay,
+    //          F=Confirmed, G=Status, H=Notes, I="", J=""
     const respReturns = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: "Returns!A:A",
@@ -84,7 +87,7 @@ async function saveToSheet(returnData: ReturnData) {
                     returnData.carParkBay,
                     returnData.confirmed ? "Yes" : "No",
                     "Pending Pickup",
-                    "",
+                    returnData.notes,  // Column H — Notes
                     "",
                     "",
                 ],
@@ -93,6 +96,8 @@ async function saveToSheet(returnData: ReturnData) {
     });
 
     // Save to MASTER LIST sheet
+    // Columns: A=Timestamp, B=Name, C=Phone, D=RMA ID, E="", F="", G="",
+    //          H=Car Park Bay, I=Status, J="", K=Transaction Type, L=Notes
     const respMaster = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: "MASTER LIST!A:A",
@@ -103,7 +108,7 @@ async function saveToSheet(returnData: ReturnData) {
 
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `MASTER LIST!A${lastRowMaster}:K${lastRowMaster}`,
+        range: `MASTER LIST!A${lastRowMaster}:M${lastRowMaster}`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
             values: [
@@ -117,8 +122,10 @@ async function saveToSheet(returnData: ReturnData) {
                     "",
                     returnData.carParkBay,
                     "Pending Pickup",
-                    "",
-                    "Return Product", // Transaction Type
+                    "",               // Column J — empty
+                    "Return Product",
+                    "", // Column L — boolean
+                    returnData.notes, // Column M — Notes
                 ],
             ],
         },
@@ -133,6 +140,12 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const firstName = (formData.get("firstName") || "").toString().trim();
         const lastName = (formData.get("lastName") || "").toString().trim();
+        const hasRmaPaperwork = formData.get("hasRmaPaperwork")?.toString();
+
+        // Build the notes value from the paperwork status
+        const notes = hasRmaPaperwork === "true"
+            ? "RMA Paperwork: Provided"
+            : "RMA Paperwork: Not Provided — Print the form";
 
         const returnData: ReturnData = {
             fullName: `${firstName} ${lastName}`.trim(),
@@ -140,6 +153,7 @@ export async function POST(request: NextRequest) {
             rmaID: (formData.get("rmaID") || "").toString().trim(),
             carParkBay: (formData.get("carParkBay") || "").toString().trim(),
             confirmed: formData.get("confirmed") === "true",
+            notes,
         };
 
         // Validation
@@ -166,7 +180,7 @@ export async function POST(request: NextRequest) {
         for (const rmaId of rmaIDs) {
             const singleReturnData = {
                 ...returnData,
-                rmaID: rmaId
+                rmaID: rmaId,
             };
             await saveToSheet(singleReturnData);
         }
@@ -175,7 +189,7 @@ export async function POST(request: NextRequest) {
             success: true,
             message: `${rmaIDs.length} return request${rmaIDs.length > 1 ? 's' : ''} submitted successfully`,
             rmaCount: rmaIDs.length,
-            rmaIDs: rmaIDs
+            rmaIDs: rmaIDs,
         });
     } catch (err: any) {
         console.error("❌ ERROR:", err);
@@ -229,6 +243,7 @@ export async function GET(request: NextRequest) {
                 carParkBay: match[4],
                 confirmed: match[5] === "Yes",
                 status: match[6],
+                notes: match[7] || "",   // Column H — Notes
                 agent: match[9] || "",
             },
         });
