@@ -26,7 +26,7 @@ export default function SuccessScreen({
 
     const timer = setTimeout(() => {
       onDone();
-    }, 3000); // waits 3 seconds
+    }, 10000); // waits 3 seconds
 
     return () => clearTimeout(timer);
   }, [onDone]);
