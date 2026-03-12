@@ -359,9 +359,6 @@ export default function PickupKiosk() {
 
       setShowSuccess(true);
 
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 3000);
     } catch (error) {
       console.error("Submission error:", error);
       alert("An error occurred. Please try again.");
@@ -403,6 +400,7 @@ export default function PickupKiosk() {
           identifierLabel="Order Number"
           identifierValue={formData.orderNumber}
           redirectMessage="Redirecting to main menu..."
+          onDone={() => { window.location.href = "/";}}
         />
       )}
 
