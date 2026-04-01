@@ -310,9 +310,15 @@ export default function ReturnAProductForm() {
             <div className="space-y-6">
               <div className="bg-white rounded-3xl shadow-xl p-10">
                 <h2 className="text-5xl font-bold mb-8 text-gray-800">Enter Your Details</h2>
+                <div className="my-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                  <p className="text-3xl font-semibold text-yellow-800">
+                    <span className="font-bold">DISCLAIMER:</span> Tap outside the box or scroll down to Continue.
+                  </p>
+                </div>
+                
 
                 <div>
-                  <label className="block text-4xl font-semibold mb-4 text-gray-700">RMA ID(s)</label>
+                  <label className="block text-4xl font-semibold mb-4 py-4 text-gray-700">RMA ID(s)</label>
                   <p className="text-red-600 text-3xl font-semibold my-4">(Note: Separate multiple order numbers with a comma.)</p>
 
                   <input
