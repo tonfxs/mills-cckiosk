@@ -15,10 +15,20 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const isReturn = body.formType === "return";
 
+    // const transporter = nodemailer.createTransport({
+    //   host: "smtp.gmail.com",
+    //   port: 465,
+    //   secure: true,
+    //   auth: {
+    //     user: process.env.MAIL_USER,
+    //     pass: process.env.MAIL_PASSWORD,
+    //   },
+    // });
+
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
+      port: 587,        // ← change from 465
+      secure: false,    // ← change from true (587 uses STARTTLS, not SSL)
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASSWORD,
