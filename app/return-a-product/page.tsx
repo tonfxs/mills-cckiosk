@@ -569,23 +569,45 @@ export default function ReturnAProductForm() {
           ) : (
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const errs = validateStep(3);
                 if (errs.length > 0) {
                   setStepErrors(errs);
                   return;
                 }
+              
+                // Send Freshdesk email notification
+                try {
+                  await fetch("/api/send-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      formType: "return",           // ← tells the API this is a return
+                      rmaID: formData.rmaID,
+                      firstName: formData.firstName,
+                      lastName: formData.lastName,
+                      phone: formData.phone,
+                      hasRmaPaperwork: formData.hasRmaPaperwork,
+                      carParkBay: formData.carParkBay,
+                    }),
+                  });
+                } catch (err) {
+                  console.error("Failed to send Freshdesk email:", err);
+                  // Non-blocking: proceeds to submit even if email fails
+                }
+              
                 handleSubmit();
               }}
               disabled={isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${!isSubmitting
-                ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
+                !isSubmitting
+                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>
-          )}
+                      )}
         </div>
       </div>
     </div>

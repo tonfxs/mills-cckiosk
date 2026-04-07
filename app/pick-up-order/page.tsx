@@ -902,23 +902,66 @@ export default function PickupKiosk() {
               <ChevronRight size={36} />
             </button>
           ) : (
+            // <button
+            //   type="button"
+            //   onClick={() => {
+            //     const errs = validateStep(4);
+            //     if (errs.length > 0) {
+            //       setStepValidationErrors(errs);
+            //       return;
+            //     }
+            //     handleSubmit();
+            //   }}
+            //   disabled={isSubmitting}
+            //   className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
+            //     !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            //   }`}
+            // >
+            //   {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
+            // </button>
+
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const errs = validateStep(4);
                 if (errs.length > 0) {
                   setStepValidationErrors(errs);
                   return;
                 }
+              
+                // Send Freshdesk email notification before submitting
+                try {
+                  await fetch("/api/send-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      formType: "pickup",
+                      orderNumber: formData.orderNumber,
+                      firstName: formData.firstName,
+                      lastName: formData.lastName,
+                      phone: formData.phone,
+                      paymentMethod: formData.paymentMethod,
+                      creditCard: formData.creditCard,
+                      validId: formData.validId,
+                      carParkBay: formData.carParkBay,
+                    }),
+                  });
+                } catch (err) {
+                  console.error("Failed to send Freshdesk email:", err);
+                  // Non-blocking: continues to submit even if email fails
+                }
+              
                 handleSubmit();
               }}
               disabled={isSubmitting}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
-                !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+    !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
             </button>
+
+            
           )}
         </div>
       </div>
