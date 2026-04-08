@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ChevronRight, Package, UserRoundPen, PackageCheckIcon } from "lucide-react";
 import Link from "next/link";
 import SuccessScreen from "../components/SuccessScreen";
@@ -28,6 +28,7 @@ export default function ReturnAProductForm() {
   const [showBayPopup, setShowBayPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showRmaModal, setShowRmaModal] = useState(true);
+    const isSubmittingRef = useRef(false);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -38,6 +39,7 @@ export default function ReturnAProductForm() {
     confirmed: false,
     hasRmaPaperwork: null,
   });
+
 
   const [errors, setErrors] = useState<Errors>({});
   const [stepErrors, setStepErrors] = useState<string[]>([]);
@@ -570,19 +572,23 @@ export default function ReturnAProductForm() {
             <button
               type="button"
               onClick={async () => {
+                // ✅ Guard: block immediately before any async work
+                if (isSubmittingRef.current) return;
+                isSubmittingRef.current = true;
+              
                 const errs = validateStep(3);
                 if (errs.length > 0) {
                   setStepErrors(errs);
+                  isSubmittingRef.current = false; // ← reset if validation fails
                   return;
                 }
               
-                // Send Freshdesk email notification
                 try {
                   await fetch("/api/send-email", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                      formType: "return",           // ← tells the API this is a return
+                      formType: "return",
                       rmaID: formData.rmaID,
                       firstName: formData.firstName,
                       lastName: formData.lastName,
@@ -593,10 +599,10 @@ export default function ReturnAProductForm() {
                   });
                 } catch (err) {
                   console.error("Failed to send Freshdesk email:", err);
-                  // Non-blocking: proceeds to submit even if email fails
                 }
               
-                handleSubmit();
+                await handleSubmit();
+                isSubmittingRef.current = false;
               }}
               disabled={isSubmitting}
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${

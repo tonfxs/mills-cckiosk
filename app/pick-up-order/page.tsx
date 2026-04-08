@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronRight, Package, UserRoundPen, PackageCheck, IdCardIcon } from "lucide-react";
 import SuccessScreen from "@/app/components/SuccessScreen";
 import Link from "next/link";
@@ -148,6 +148,7 @@ const NumberPad = ({
 export default function PickupKiosk() {
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -923,13 +924,17 @@ export default function PickupKiosk() {
             <button
               type="button"
               onClick={async () => {
+                // ✅ Guard: block immediately before any async work
+                if (isSubmittingRef.current) return;
+                isSubmittingRef.current = true;
+              
                 const errs = validateStep(4);
                 if (errs.length > 0) {
                   setStepValidationErrors(errs);
+                  isSubmittingRef.current = false; // ← reset if validation fails
                   return;
                 }
               
-                // Send Freshdesk email notification before submitting
                 try {
                   await fetch("/api/send-email", {
                     method: "POST",
@@ -948,14 +953,16 @@ export default function PickupKiosk() {
                   });
                 } catch (err) {
                   console.error("Failed to send Freshdesk email:", err);
-                  // Non-blocking: continues to submit even if email fails
                 }
               
-                handleSubmit();
+                await handleSubmit(); // ← make sure handleSubmit is awaited
+                isSubmittingRef.current = false;
               }}
-              disabled={isSubmitting}
+              disabled={isSubmitting} // ← this still controls the visual state
               className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
-    !isSubmitting ? "bg-green-600 text-white hover:bg-green-700 shadow-lg" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                !isSubmitting
+                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
               {isSubmitting ? "SUBMITTING..." : "SUBMIT ORDER"}
