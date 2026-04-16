@@ -923,20 +923,57 @@ export default function PickupKiosk() {
 
             <button
               type="button"
+              // onClick={async () => {
+              //   // ✅ Guard: block immediately before any async work
+              //   if (isSubmittingRef.current) return;
+              //   isSubmittingRef.current = true;
+              
+              //   const errs = validateStep(4);
+              //   if (errs.length > 0) {
+              //     setStepValidationErrors(errs);
+              //     isSubmittingRef.current = false; // ← reset if validation fails
+              //     return;
+              //   }
+              
+              //   try {
+              //     await fetch("/api/send-email", {
+              //       method: "POST",
+              //       headers: { "Content-Type": "application/json" },
+              //       body: JSON.stringify({
+              //         formType: "pickup",
+              //         orderNumber: formData.orderNumber,
+              //         firstName: formData.firstName,
+              //         lastName: formData.lastName,
+              //         phone: formData.phone,
+              //         paymentMethod: formData.paymentMethod,
+              //         creditCard: formData.creditCard,
+              //         validId: formData.validId,
+              //         carParkBay: formData.carParkBay,
+              //       }),
+              //     });
+              //   } catch (err) {
+              //     console.error("Failed to send Freshdesk email:", err);
+              //   }
+              
+              //   await handleSubmit(); // ← make sure handleSubmit is awaited
+              //   isSubmittingRef.current = false;
+              // }}
+
               onClick={async () => {
-                // ✅ Guard: block immediately before any async work
                 if (isSubmittingRef.current) return;
                 isSubmittingRef.current = true;
-              
+
                 const errs = validateStep(4);
                 if (errs.length > 0) {
                   setStepValidationErrors(errs);
-                  isSubmittingRef.current = false; // ← reset if validation fails
+                  isSubmittingRef.current = false;
                   return;
                 }
               
+                setIsSubmitting(true);
+              
                 try {
-                  await fetch("/api/send-email", {
+                  const emailRes = await fetch("/api/send-email", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -951,11 +988,17 @@ export default function PickupKiosk() {
                       carParkBay: formData.carParkBay,
                     }),
                   });
+                
+                  if (!emailRes.ok) throw new Error("FD ticket failed");
                 } catch (err) {
                   console.error("Failed to send Freshdesk email:", err);
+                  setStepValidationErrors(["Submission failed. Please press the Submit button again."]);
+                  setIsSubmitting(false);
+                  isSubmittingRef.current = false;
+                  return;
                 }
               
-                await handleSubmit(); // ← make sure handleSubmit is awaited
+                await handleSubmit();
                 isSubmittingRef.current = false;
               }}
               disabled={isSubmitting} // ← this still controls the visual state

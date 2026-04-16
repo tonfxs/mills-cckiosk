@@ -28,6 +28,7 @@ export default function Home() {
           width={650}
           height={300}
           priority
+          style={{ height: "auto" }}
           className="mx-auto h-auto w-[300px] sm:w-[400px] md:w-[500px] lg:w-[600px]"
         />
       </header>
@@ -35,16 +36,19 @@ export default function Home() {
       {/* Slideshow */}
       <section className="relative flex items-center justify-center flex-1 w-full overflow-hidden px-4">
         {images.map((src, index) => (
-          <Image
-            key={index}
-            src={src}
-            alt={`Slide ${index + 1}`}
-            width={1000}
-            height={900}
-            className={`absolute transition-opacity duration-1000 ease-in-out ${index === current ? "opacity-100" : "opacity-0"
-              } h-auto w-[100vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw]`}
-          />
-        ))}
+        <Image
+          key={index}
+          src={src}
+          alt={`Slide ${index + 1}`}
+          width={1000}
+          height={900}
+          {...(index === 0 ? { priority: true, loading: "eager" } : {})}
+          style={{ height: "auto" }}   // ← add this
+          className={`absolute transition-opacity duration-1000 ease-in-out ${
+            index === current ? "opacity-100" : "opacity-0"
+          } w-[100vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw]`}
+        />
+      ))}
       </section>
 
       <footer
@@ -62,6 +66,7 @@ export default function Home() {
           alt="Touch icon"
           width={80}
           height={100}
+          style={{ width: "auto", height: "auto" }}
           className="object-contain max-h-[100px] mb-10"
         />
 

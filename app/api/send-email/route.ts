@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    await transporter.verify();
+    // await transporter.verify();
 
     const submittedAt = new Date().toLocaleString("en-AU", { timeZone: "Australia/Sydney" });
 
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
               ${needsCardVerification ? `
               <tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 12px 8px; font-weight: bold; color: #374151;">Card Last 4 Digits</td>
-                <td style="padding: 12px 8px; color: #111827;">****${body.creditCard ?? "N/A"}</td>
+                <td style="padding: 12px 8px; color: #111827;">**** **** **** ${body.creditCard ?? "N/A"}</td>
               </tr>` : ""}
               <tr>
                 <td style="padding: 12px 8px; font-weight: bold; color: #374151;">Car Park Bay</td>

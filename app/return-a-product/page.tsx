@@ -571,20 +571,55 @@ export default function ReturnAProductForm() {
           ) : (
             <button
               type="button"
-              onClick={async () => {
-                // ✅ Guard: block immediately before any async work
-                if (isSubmittingRef.current) return;
-                isSubmittingRef.current = true;
+              // onClick={async () => {
+              //   // ✅ Guard: block immediately before any async work
+              //   if (isSubmittingRef.current) return;
+              //   isSubmittingRef.current = true;
               
+              //   const errs = validateStep(3);
+              //   if (errs.length > 0) {
+              //     setStepErrors(errs);
+              //     isSubmittingRef.current = false; // ← reset if validation fails
+              //     return;
+              //   }
+              
+              //   try {
+              //     await fetch("/api/send-email", {
+              //       method: "POST",
+              //       headers: { "Content-Type": "application/json" },
+              //       body: JSON.stringify({
+              //         formType: "return",
+              //         rmaID: formData.rmaID,
+              //         firstName: formData.firstName,
+              //         lastName: formData.lastName,
+              //         phone: formData.phone,
+              //         hasRmaPaperwork: formData.hasRmaPaperwork,
+              //         carParkBay: formData.carParkBay,
+              //       }),
+              //     });
+              //   } catch (err) {
+              //     console.error("Failed to send Freshdesk email:", err);
+              //   }
+              
+              //   await handleSubmit();
+              //   isSubmittingRef.current = false;
+              // }}
+
+              onClick={async () => {
+                if (isSubmittingRef.current) return;
+                isSubmittingRef.current = true;             
+
                 const errs = validateStep(3);
                 if (errs.length > 0) {
                   setStepErrors(errs);
-                  isSubmittingRef.current = false; // ← reset if validation fails
+                  isSubmittingRef.current = false;
                   return;
-                }
-              
+                }             
+
+                setIsSubmitting(true);              
+
                 try {
-                  await fetch("/api/send-email", {
+                  const emailRes = await fetch("/api/send-email", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -596,11 +631,17 @@ export default function ReturnAProductForm() {
                       hasRmaPaperwork: formData.hasRmaPaperwork,
                       carParkBay: formData.carParkBay,
                     }),
-                  });
+                  });             
+
+                  if (!emailRes.ok) throw new Error("FD ticket failed");
                 } catch (err) {
                   console.error("Failed to send Freshdesk email:", err);
-                }
-              
+                  setStepErrors(["Submission failed. Please press the Submit button again."]);
+                  setIsSubmitting(false);
+                  isSubmittingRef.current = false;
+                  return;
+                }             
+
                 await handleSubmit();
                 isSubmittingRef.current = false;
               }}
