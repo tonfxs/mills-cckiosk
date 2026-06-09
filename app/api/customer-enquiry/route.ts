@@ -79,12 +79,12 @@ async function saveToSheet(data: EnquiryData) {
   const category = formatCategory(data.enquiryCategory);
 
   // ----------------------------
-  // Product Enquiry tab (A:H)
+  // Customer Enquiry tab (A:H)
   // Columns: Timestamp | Full Name | Phone | Enquiry Category | Bay | Notes | Status | Agent
   // ----------------------------
   const enquiryResp = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Product Enquiry!A:A",
+    range: "Customer Enquiry!A:A",
   });
 
   const enquiryRows = enquiryResp.data.values || [];
@@ -92,7 +92,7 @@ async function saveToSheet(data: EnquiryData) {
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `Product Enquiry!A${enquiryRow}:H${enquiryRow}`,
+    range: `Customer Enquiry!A${enquiryRow}:H${enquiryRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -139,7 +139,7 @@ async function saveToSheet(data: EnquiryData) {
           data.carParkBay,  // H - Bay
           "Pending Verification",        // I - Status
           "",               // J - Agent
-          "Product Enquiry",// K - Form Type
+          "Customer Enquiry",// K - Form Type
           "",               // L - (N/A for enquiry)
           data.notes || "", // M- Notes
         ],
@@ -168,7 +168,7 @@ async function sendSms(phone: string, firstName: string) {
   // const message =
   //   "Thank you. Our team will contact you within the next 5 minutes to assist with your enquiry using the number provided.";
 
-  const message = `Hi ${firstName}, thank you for your product enquiry. Our team has received your request and will contact you on the number provided within the next 5 minutes to assist you further. Thank you!`;
+  const message = `Hi ${firstName}, thank you for your enquiry. Our team has received your request and will contact you on the number provided within the next 5 minutes to assist you further. Thank you!`;
 
 
 
@@ -231,10 +231,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Product enquiry saved successfully",
+      message: "Customer enquiry saved successfully",
     });
   } catch (err: any) {
-    console.error("Product Enquiry ERROR:", err);
+    console.error("Customer Enquiry ERROR:", err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

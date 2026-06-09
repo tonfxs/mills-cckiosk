@@ -51,7 +51,7 @@ export default function CarParkBayPopup({ open, onClose, value, onConfirm }: Pro
       />
 
       {/* Modal (TALLER) */}
-      <div className="relative w-[96vw] max-w-[1280px] h-[92vh] max-h-[980px] rounded-3xl bg-white shadow-2xl border border-gray-200 overflow-hidden flex flex-col">
+      <div className="relative w-[96vw] max-w-[1280px] h-[92vh] max-h-[1060px] rounded-3xl bg-white shadow-2xl border border-gray-200 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between px-8 py-6 border-b shrink-0">
           <div>
