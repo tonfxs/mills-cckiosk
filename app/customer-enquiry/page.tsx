@@ -169,7 +169,7 @@ export default function ProductEnquiryKiosk() {
     setStepValidationErrors([]);
 
     const payload = {
-      formType: "product-enquiry",
+      formType: "customer-enquiry",
       enquiryCategory: formData.enquiryCategory,
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -179,8 +179,8 @@ export default function ProductEnquiryKiosk() {
     };
 
     try {
-      // Save to Google Sheets (Product Enquiry tab + MASTER LIST)
-      const sheetRes = await fetch("/api/product-enquiry", {
+      // Save to Google Sheets (Customer Enquiry tab + MASTER LIST)
+      const sheetRes = await fetch("/api/customer-enquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -235,7 +235,7 @@ export default function ProductEnquiryKiosk() {
       {/* Header */}
       <div className="bg-blue-600 text-white px-10 py-16 shadow-lg">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-7xl font-bold mb-2">Product Enquiry</h1>
+          <h1 className="text-7xl font-bold mb-2">Customer Enquiry</h1>
           <p className="text-3xl text-blue-100 font-semibold">
             Mills Brands Click &amp; Collect Kiosk
           </p>
