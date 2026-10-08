@@ -85,14 +85,6 @@ export default function ChooseService() {
         >
           Customer Enquiry
         </button> 
-
-        {/* <button
-          onClick={() => handleServiceClick("/parts-assistance")}
-          className={baseButton}
-          type="button"
-        >
-          Parts Assistance
-        </button> */}
       </section>
     </main>
   );
