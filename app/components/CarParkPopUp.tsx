@@ -51,12 +51,12 @@ export default function CarParkBayPopup({ open, onClose, value, onConfirm }: Pro
       />
 
       {/* Modal (TALLER) */}
-      <div className="relative w-[96vw] max-w-[1280px] h-[92vh] max-h-[1060px] rounded-3xl bg-white shadow-2xl border border-gray-200 overflow-hidden flex flex-col">
+      <div className="relative w-[96vw] max-w-[1280px] h-[92vh] max-h-[1060px] rounded-2xl md:rounded-3xl bg-white shadow-2xl border border-gray-200 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between px-8 py-6 border-b shrink-0">
+        <div className="flex items-start justify-between gap-3 px-4 py-4 md:px-8 md:py-6 border-b shrink-0">
           <div>
-            <div className="text-3xl font-extrabold text-gray-900">Select Car Park Bay</div>
-            <div className="text-lg font-bold text-red-600 mt-1">
+            <div className="text-xl md:text-3xl font-extrabold text-gray-900">Select Car Park Bay</div>
+            <div className="text-sm md:text-lg font-bold text-red-600 mt-1">
               Note: Please do not relocate after confirming your bay.
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function CarParkBayPopup({ open, onClose, value, onConfirm }: Pro
           <button
             type="button"
             onClick={onClose}
-            className="h-14 w-14 rounded-2xl border-2 border-gray-300 text-3xl font-black text-gray-700 hover:bg-gray-100 active:scale-95"
+            className="shrink-0 h-10 w-10 md:h-14 md:w-14 rounded-2xl border-2 border-gray-300 text-2xl md:text-3xl font-black text-gray-700 hover:bg-gray-100 active:scale-95"
             aria-label="Close popup"
           >
             ×
@@ -72,7 +72,7 @@ export default function CarParkBayPopup({ open, onClose, value, onConfirm }: Pro
         </div>
 
         {/* BODY: takes all remaining height */}
-        <div className="flex-1 p-8 flex items-center justify-center bg-white">
+        <div className="flex-1 min-h-0 p-2 md:p-8 flex items-start md:items-center justify-center bg-white">
           {/* Map fills the available space directly */}
           <div className="w-full h-full">
             <CarParkMap value={draft} onChange={setDraft} />
@@ -82,17 +82,17 @@ export default function CarParkBayPopup({ open, onClose, value, onConfirm }: Pro
 
 
         {/* Footer */}
-        <div className="shrink-0 px-8 py-6 border-t bg-white">
-          <div className="flex items-center justify-between gap-6">
-            <div className="text-xl font-bold text-gray-700">
+        <div className="shrink-0 px-4 py-3 md:px-8 md:py-6 border-t bg-white">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-6">
+            <div className="text-base md:text-xl font-bold text-gray-700">
               Selected: <span className="text-gray-900">{draft || "None"}</span>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3 md:gap-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-8 py-4 rounded-2xl border-2 border-gray-300 text-xl font-extrabold text-gray-700 hover:bg-gray-100 active:scale-95"
+                className="flex-1 md:flex-none px-4 py-3 md:px-8 md:py-4 rounded-2xl border-2 border-gray-300 text-lg md:text-xl font-extrabold text-gray-700 hover:bg-gray-100 active:scale-95"
               >
                 Cancel
               </button>
@@ -105,7 +105,7 @@ export default function CarParkBayPopup({ open, onClose, value, onConfirm }: Pro
                   onClose();
                 }}
                 className={[
-                  "px-10 py-4 rounded-2xl text-xl font-extrabold active:scale-95 transition",
+                  "flex-1 md:flex-none px-4 py-3 md:px-10 md:py-4 rounded-2xl text-lg md:text-xl font-extrabold active:scale-95 transition",
                   canConfirm ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-200 text-gray-400 cursor-not-allowed",
                 ].join(" ")}
               >

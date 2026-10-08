@@ -94,10 +94,6 @@ export default function ChooseService() {
           Parts Assistance
         </button> */}
 
-        {/* <button onClick={handleConnectToAgent} className={baseButton} type="button">
-          Connect to a Live Agent
-        </button> */}
-
       </section>
     </main>
   );
