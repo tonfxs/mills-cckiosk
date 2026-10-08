@@ -6,14 +6,14 @@ import Link from "next/link";
 export default function ChooseService() {
   const router = useRouter();
 
-  const handleConnectToAgent = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.dispatchEvent(new Event("open-doxy"));
-  };
+  // const handleConnectToAgent = (e: React.MouseEvent) => {
+  //   e.preventDefault();
+  //   window.dispatchEvent(new Event("open-doxy"));
+  // };
 
   const handleServiceClick = (href: string) => {
     // Open Doxy first
-    window.dispatchEvent(new Event("open-doxy"));
+    // window.dispatchEvent(new Event("open-doxy"));
 
     // Small delay to ensure Doxy starts opening, then navigate
     setTimeout(() => {
@@ -92,8 +92,7 @@ export default function ChooseService() {
           type="button"
         >
           Parts Assistance
-        </button> 
-
+        </button> */}
       </section>
     </main>
   );
