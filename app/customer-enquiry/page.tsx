@@ -233,31 +233,31 @@ export default function ProductEnquiryKiosk() {
       )}
 
       {/* Header */}
-      <div className="bg-blue-600 text-white px-10 py-16 shadow-lg">
+      <div className="bg-blue-600 text-white px-5 py-10 md:px-10 md:py-16 shadow-lg">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-7xl font-bold mb-2">Customer Enquiry</h1>
-          <p className="text-3xl text-blue-100 font-semibold">
+          <h1 className="text-4xl md:text-7xl font-bold mb-2">Customer Enquiry</h1>
+          <p className="text-xl md:text-3xl text-blue-100 font-semibold">
             Mills Brands Click &amp; Collect Kiosk
           </p>
         </div>
       </div>
 
       {/* Progress Steps */}
-      <div className="bg-white shadow-sm border-b border-gray-200 p-6">
+      <div className="bg-white shadow-sm border-b border-gray-200 p-3 md:p-6">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           {STEPS.map(({ num, label, icon: Icon }) => (
             <div key={num} className="flex flex-col items-center flex-1">
               <div
-                className={`w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold mb-2 transition-all ${
+                className={`w-12 h-12 md:w-24 md:h-24 rounded-full flex items-center justify-center text-base md:text-2xl font-bold mb-2 transition-all ${
                   step >= num
                     ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-500"
                 }`}
               >
-                {step > num ? "✓" : <Icon size={40} />}
+                {step > num ? "✓" : <Icon className="w-6 h-6 md:w-10 md:h-10" />}
               </div>
               <span
-                className={`text-sm font-medium ${
+                className={`text-xs md:text-sm text-center font-medium ${
                   step >= num ? "text-blue-600" : "text-gray-400"
                 }`}
               >
@@ -269,18 +269,18 @@ export default function ProductEnquiryKiosk() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
 
           {/* Validation Errors */}
           {stepValidationErrors.length > 0 && (
-            <div className="mb-6 bg-red-50 border-4 border-red-500 rounded-2xl p-8">
-              <h3 className="text-3xl font-bold text-red-700 mb-4">
+            <div className="mb-6 bg-red-50 border-4 border-red-500 rounded-2xl p-4 md:p-8">
+              <h3 className="text-xl md:text-3xl font-bold text-red-700 mb-4">
                 PLEASE FIX THE FOLLOWING:
               </h3>
               <ul className="list-disc list-inside space-y-2">
                 {stepValidationErrors.map((error, i) => (
-                  <li key={i} className="text-2xl text-red-600 font-semibold">
+                  <li key={i} className="text-base md:text-2xl text-red-600 font-semibold">
                     {error}
                   </li>
                 ))}
@@ -290,15 +290,15 @@ export default function ProductEnquiryKiosk() {
 
           {/* ── Step 1: Enquiry Category ─────────────────────────────────────── */}
           {step === 1 && (
-            <div className="bg-white rounded-3xl shadow-xl p-10 text-black">
-              <h2 className="text-5xl font-bold mb-4 text-gray-800">
+            <div className="bg-white rounded-3xl shadow-xl p-5 md:p-10 text-black">
+              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-800">
                 What can we help you with?
               </h2>
-              <p className="text-3xl text-gray-500 mb-10">
+              <p className="text-lg md:text-3xl text-gray-500 mb-6 md:mb-10">
                 Please select the category that best describes your enquiry.
               </p>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 {ENQUIRY_CATEGORIES.map(({ value, label, icon: Icon }) => (
                   <button
                     key={value}
@@ -307,13 +307,13 @@ export default function ProductEnquiryKiosk() {
                       setFormData((prev) => ({ ...prev, enquiryCategory: value }));
                       setStepValidationErrors([]);
                     }}
-                    className={`flex flex-col items-center gap-4 text-3xl p-10 rounded-2xl border-4 font-semibold transition-all ${
+                    className={`flex flex-col items-center text-center gap-2 md:gap-4 text-lg md:text-3xl p-4 md:p-10 rounded-2xl border-4 font-semibold transition-all ${
                       formData.enquiryCategory === value
                         ? "bg-blue-600 text-white border-blue-600"
                         : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
                     }`}
                   >
-                    <Icon size={48} />
+                    <Icon className="w-8 h-8 md:w-12 md:h-12" />
                     {label}
                   </button>
                 ))}
@@ -323,13 +323,13 @@ export default function ProductEnquiryKiosk() {
 
           {/* ── Step 2: Customer Information ─────────────────────────────────── */}
           {step === 2 && (
-            <div className="bg-white rounded-3xl shadow-xl p-10 space-y-8">
-              <h2 className="text-5xl font-bold text-gray-800">
+            <div className="bg-white rounded-3xl shadow-xl p-5 md:p-10 space-y-6 md:space-y-8">
+              <h2 className="text-3xl md:text-5xl font-bold text-gray-800">
                 Your Information
               </h2>
 
-              <div className="mt-4 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
-                <p className="text-3xl font-semibold text-yellow-800">
+              <div className="mt-4 p-4 md:p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
+                <p className="text-lg md:text-3xl font-semibold text-yellow-800">
                   <span className="font-bold">TIP:</span> Tap outside the box or
                   scroll down to continue.
                 </p>
@@ -337,7 +337,7 @@ export default function ProductEnquiryKiosk() {
 
               {/* First Name */}
               <div>
-                <label className="block text-4xl font-semibold mb-3 text-gray-700">
+                <label className="block text-2xl md:text-4xl font-semibold mb-3 text-gray-700">
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -345,14 +345,14 @@ export default function ProductEnquiryKiosk() {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                  className="w-full text-xl md:text-3xl p-4 md:p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                   placeholder="Enter First Name"
                 />
               </div>
 
               {/* Last Name */}
               <div>
-                <label className="block text-4xl font-semibold mb-3 text-gray-700">
+                <label className="block text-2xl md:text-4xl font-semibold mb-3 text-gray-700">
                   Last Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -360,18 +360,18 @@ export default function ProductEnquiryKiosk() {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                  className="w-full text-xl md:text-3xl p-4 md:p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                   placeholder="Enter Last Name"
                 />
               </div>
 
               {/* Phone */}
               <div>
-                <label className="block text-4xl font-semibold mb-3 text-gray-700">
+                <label className="block text-2xl md:text-4xl font-semibold mb-3 text-gray-700">
                   Contact Number <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-4">
-                  <div className="text-3xl p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
+                <div className="flex gap-2 md:gap-4">
+                  <div className="text-xl md:text-3xl p-4 md:p-6 border-4 border-gray-300 rounded-2xl bg-gray-50 text-gray-400">
                     +61
                   </div>
                   <input
@@ -399,7 +399,7 @@ export default function ProductEnquiryKiosk() {
                         target: { ...e.target, value: formatted, name: "phone" },
                       } as any);
                     }}
-                    className="flex-1 text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
+                    className="flex-1 min-w-0 text-xl md:text-3xl p-4 md:p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black"
                     placeholder="04XX XXX XXX"
                   />
                 </div>
@@ -407,9 +407,9 @@ export default function ProductEnquiryKiosk() {
 
               {/* Notes */}
               <div>
-                <label className="block text-4xl font-semibold mb-3 text-gray-700">
+                <label className="block text-2xl md:text-4xl font-semibold mb-3 text-gray-700">
                   Notes{" "}
-                  <span className="text-gray-400 font-normal text-3xl">
+                  <span className="text-gray-400 font-normal text-xl md:text-3xl">
                     (optional)
                   </span>
                 </label>
@@ -418,7 +418,7 @@ export default function ProductEnquiryKiosk() {
                   value={formData.notes}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full text-3xl p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black resize-none"
+                  className="w-full text-xl md:text-3xl p-4 md:p-6 border-4 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none text-black resize-none"
                   placeholder="Any additional details about your enquiry..."
                 />
               </div>
@@ -428,32 +428,32 @@ export default function ProductEnquiryKiosk() {
           {/* ── Step 3: Confirm ──────────────────────────────────────────────── */}
           {step === 3 && (
             <div className="space-y-6">
-              <div className="bg-white rounded-3xl shadow-xl p-10">
-                <h2 className="text-6xl font-bold mb-8 text-gray-800">Review &amp; Confirm</h2>
+              <div className="bg-white rounded-3xl shadow-xl p-5 md:p-10">
+                <h2 className="text-4xl md:text-6xl font-bold mb-6 md:mb-8 text-gray-800">Review &amp; Confirm</h2>
 
-                <div className="space-y-4 mb-8 bg-gray-50 p-8 rounded-2xl">
-                  <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
+                <div className="space-y-4 mb-8 bg-gray-50 p-4 md:p-8 rounded-2xl">
+                  <div className="flex justify-between gap-4 text-xl md:text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Enquiry Category:</span>
-                    <span className="font-bold text-black">
+                    <span className="font-bold text-black text-right">
                       {ENQUIRY_CATEGORIES.find((c) => c.value === formData.enquiryCategory)?.label ?? formData.enquiryCategory}
                     </span>
                   </div>
 
-                  <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
+                  <div className="flex justify-between gap-4 text-xl md:text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Name:</span>
-                    <span className="font-bold text-black">
+                    <span className="font-bold text-black text-right break-words">
                       {formData.firstName} {formData.lastName}
                     </span>
                   </div>
 
-                  <div className="flex justify-between text-4xl border-b border-gray-200 pb-4">
+                  <div className="flex justify-between gap-4 text-xl md:text-4xl border-b border-gray-200 pb-4">
                     <span className="font-semibold text-gray-600">Phone:</span>
-                    <span className="font-bold text-black">{formData.phone}</span>
+                    <span className="font-bold text-black text-right">{formData.phone}</span>
                   </div>
 
-                  <div className="flex justify-between text-4xl">
+                  <div className="flex justify-between gap-4 text-xl md:text-4xl">
                     <span className="font-semibold text-gray-600">Notes:</span>
-                    <span className="font-bold text-black text-right max-w-[60%]">{formData.notes || "—"}</span>
+                    <span className="font-bold text-black text-right max-w-[60%] break-words">{formData.notes || "—"}</span>
                   </div>
 
                   {/* <div className="mt-6 p-6 bg-yellow-100 border-4 border-yellow-400 rounded-2xl">
@@ -464,16 +464,16 @@ export default function ProductEnquiryKiosk() {
 
                 {/* CARPARK */}
                     <div className="mb-8">
-                  <label className="block text-3xl font-semibold mb-2 text-gray-700 text-center">Select Car Park Bay</label>
+                  <label className="block text-2xl md:text-3xl font-semibold mb-2 text-gray-700 text-center">Select Car Park Bay</label>
 
-                  <label className="block text-xl font-semibold mb-6 text-red-700 text-center">
+                  <label className="block text-base md:text-xl font-semibold mb-6 text-red-700 text-center">
                     Note: Please do not relocate after confirming your bay.
                   </label>
 
-                  <div className="mt-6 flex items-center justify-between rounded-2xl border bg-white p-6">
+                  <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border bg-white p-4 md:p-6">
                     <div>
                       <div className="text-xl font-extrabold text-gray-900">Car Park Bay</div>
-                      <div className="text-4xl font-bold text-gray-600 mt-1">
+                      <div className="text-2xl md:text-4xl font-bold text-gray-600 mt-1">
                         {formData.carParkBay ? formData.carParkBay : "Not selected"}
                       </div>
                     </div>
@@ -481,7 +481,7 @@ export default function ProductEnquiryKiosk() {
                     <button
                       type="button"
                       onClick={() => setShowBayPopup(true)}
-                      className="px-10 py-5 rounded-2xl bg-blue-600 text-white text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
+                      className="px-5 py-3 md:px-10 md:py-5 rounded-2xl bg-blue-600 text-white text-lg md:text-2xl font-extrabold hover:bg-blue-700 active:scale-95"
                     >
                       {formData.carParkBay ? "Change" : "Select Bay"}
                     </button>
@@ -514,13 +514,13 @@ export default function ProductEnquiryKiosk() {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="bg-white border-t-4 border-gray-200 px-10 py-16 shadow-lg">
-        <div className="max-w-4xl mx-auto flex gap-6">
+      <div className="bg-white border-t-4 border-gray-200 px-4 py-6 md:px-10 md:py-16 shadow-lg">
+        <div className="max-w-4xl mx-auto flex gap-3 md:gap-6">
 
           {step === 1 && (
             <Link
               href="/choose-service"
-              className="flex-1 text-4xl font-bold py-8 px-10 bg-yellow-200 text-yellow-700 rounded-2xl hover:bg-yellow-300 transition-all flex items-center justify-center"
+              className="flex-1 text-xl md:text-4xl font-bold py-4 px-4 md:py-8 md:px-10 bg-yellow-200 text-yellow-700 rounded-2xl hover:bg-yellow-300 transition-all flex items-center justify-center"
             >
               ⬑ Main Menu
             </Link>
@@ -529,7 +529,7 @@ export default function ProductEnquiryKiosk() {
           {step > 1 && (
             <button
               onClick={() => setStep(step - 1)}
-              className="flex-1 text-4xl font-bold py-8 px-10 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all"
+              className="flex-1 text-xl md:text-4xl font-bold py-4 px-4 md:py-8 md:px-10 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all"
             >
               ← Back
             </button>
@@ -538,21 +538,21 @@ export default function ProductEnquiryKiosk() {
           {step < 3 ? (
             <button
               onClick={handleContinue}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all flex items-center justify-center gap-4 ${
+              className={`flex-1 text-xl md:text-4xl font-bold py-4 px-4 md:py-8 md:px-10 rounded-2xl transition-all flex items-center justify-center gap-2 md:gap-4 ${
                 canProceed()
                   ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
               Continue
-              <ChevronRight size={36} />
+              <ChevronRight className="w-6 h-6 md:w-9 md:h-9" />
             </button>
           ) : (
             <button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className={`flex-1 text-4xl font-bold py-8 px-10 rounded-2xl transition-all ${
+              className={`flex-1 text-xl md:text-4xl font-bold py-4 px-4 md:py-8 md:px-10 rounded-2xl transition-all ${
                 !isSubmitting
                   ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
