@@ -6,11 +6,6 @@ import Link from "next/link";
 export default function ChooseService() {
   const router = useRouter();
 
-  // const handleConnectToAgent = (e: React.MouseEvent) => {
-  //   e.preventDefault();
-  //   window.dispatchEvent(new Event("open-doxy"));
-  // };
-
   const handleServiceClick = (href: string) => {
     // Open Doxy first
     // window.dispatchEvent(new Event("open-doxy"));
