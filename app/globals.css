@@ -20,7 +20,7 @@
   }
 }
 
-/* Kiosk / tablet scaling: shrink all rem-based Tailwind sizes on md+ screens */
+/* Kiosk / tablet scaling: shrink all rem-based Tailwind sizes on md+ screens and mini kiosk tablets*/
 @media (min-width: 768px) {
   html {
     font-size: min(1.5vw, 16px);
