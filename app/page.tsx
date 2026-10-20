@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const images = [
-  "/images/clickncollect/click-and-collect.png",
+  "/images/click_collect.svg",
   "/images/edisons/edisons-logo Black.svg",
   "/images/mytopia/mytopia-logo-black.svg",
 ];
