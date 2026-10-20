@@ -6,11 +6,6 @@ import Link from "next/link";
 export default function ChooseService() {
   const router = useRouter();
 
-  // const handleConnectToAgent = (e: React.MouseEvent) => {
-  //   e.preventDefault();
-  //   window.dispatchEvent(new Event("open-doxy"));
-  // };
-
   const handleServiceClick = (href: string) => {
     // Open Doxy first
     // window.dispatchEvent(new Event("open-doxy"));
@@ -85,14 +80,6 @@ export default function ChooseService() {
         >
           Customer Enquiry
         </button> 
-
-        {/* <button
-          onClick={() => handleServiceClick("/parts-assistance")}
-          className={baseButton}
-          type="button"
-        >
-          Parts Assistance
-        </button> */}
       </section>
     </main>
   );
