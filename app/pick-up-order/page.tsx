@@ -347,14 +347,12 @@ export default function PickupKiosk() {
             { num: 3, label: "Select ID", icon: IdCardIcon },
             { num: 4, label: "Disclaimer", icon: ShieldAlert }, 
             { num: 5, label: "Confirm", icon: PackageCheck },
-          ].map(({ num, label, icon: Icon }) => (
+          ].map(({ num, label, icon: Icon }) => ( 
             <div key={num} className="flex flex-col items-center flex-1">
               <div
                 className={`w-10 h-10 md:w-20 md:h-20 rounded-full flex items-center justify-center text-base md:text-2xl font-bold mb-2 transition-all ${
                   step >= num
-                    ? num === 4
-                      ? "bg-red-500 text-white" //  Distinct color for disclaimer step
-                      : "bg-blue-600 text-white"
+                    ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-500"
                 }`}
               >
@@ -363,9 +361,7 @@ export default function PickupKiosk() {
               <span
                 className={`text-[10px] md:text-sm text-center font-medium ${
                   step >= num
-                    ? num === 4
-                      ? "text-red-500"
-                      : "text-blue-600"
+                    ? "text-blue-600"
                     : "text-gray-400"
                 }`}
               >
@@ -757,7 +753,7 @@ export default function PickupKiosk() {
                 {!formData.disclaimerAcknowledged && (
                   <div className="mt-6 p-4 md:p-6 bg-red-50 border-4 border-red-300 rounded-2xl text-center">
                     <p className="text-base md:text-2xl font-bold text-red-600">
-                      ⚠ You must tick the checkbox above to proceed to the next step.
+                      ⚠ Tick the checkbox above to proceed to the next step.
                     </p>
                   </div>
                 )}
